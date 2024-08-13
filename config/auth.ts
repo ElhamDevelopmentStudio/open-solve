@@ -82,6 +82,73 @@ export const authConfig = {
       { label: "Contest cadence", value: "Weekly" },
     ],
   },
+  forgotPassword: {
+    badge: "PASSWORD RECOVERY",
+    headline: "Reset access credentials",
+    description:
+      "Enter your email and we'll send a time-limited reset link. This process is logged and you'll receive a notification once the reset is complete.",
+    security: [
+      "Link expires in 60 minutes",
+      "One-time use only",
+      "IP address logged for audit",
+      "Active sessions preserved",
+    ],
+  },
+  resetPassword: {
+    badge: "NEW CREDENTIALS",
+    headline: "Set your new password",
+    description:
+      "Choose a strong password. All active sessions except the current one will be invalidated after reset.",
+    requirements: [
+      "Minimum 8 characters",
+      "At least one uppercase letter",
+      "At least one lowercase letter",
+      "At least one number",
+    ],
+    invalid: {
+      headline: "Invalid or expired link",
+      description:
+        "This password reset link is no longer valid. It may have expired or already been used.",
+    },
+  },
+  verifyEmail: {
+    badge: "EMAIL VERIFICATION",
+    loading: {
+      headline: "Verifying your email",
+      description: "Processing verification token...",
+    },
+    success: {
+      headline: "Email verified",
+      description: "Your email has been successfully verified. You now have full platform access.",
+      features: [
+        "Contest registration enabled",
+        "Prize claims activated",
+        "Full API access granted",
+        "Discussion posting unlocked",
+      ],
+    },
+    error: {
+      headline: "Verification failed",
+      description:
+        "This verification link is invalid or has expired. Request a new verification email from your account settings.",
+    },
+  },
+  magicLink: {
+    badge: "PASSWORDLESS AUTH",
+    loading: {
+      headline: "Authenticating",
+      description: "Validating your magic link token...",
+    },
+    success: {
+      headline: "Authentication successful",
+      description: "You're being redirected to your dashboard.",
+    },
+    error: {
+      headline: "Authentication failed",
+      description:
+        "This magic link is invalid or has expired. Magic links are single-use and expire after 15 minutes.",
+    },
+  },
 };
 
 export type AuthConfig = typeof authConfig;
