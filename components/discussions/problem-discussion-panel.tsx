@@ -1,21 +1,21 @@
 "use client";
-import { trpc } from "@/lib/trpc/client";
-import type { DiscussionSort } from "@/lib/discussions/types";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
-import { DiscussionVoteToggle } from "@/components/discussions/discussion-vote-toggle";
-import { SpoilerBlock } from "@/components/discussions/spoiler-block";
 import { DiscussionComposer } from "@/components/discussions/discussion-composer";
 import { DiscussionReplyItem } from "@/components/discussions/discussion-reply";
 import { DiscussionReportButton } from "@/components/discussions/discussion-report-button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { formatDistanceToNow } from "date-fns";
-import { useMemo } from "react";
-import { useQueryState, parseAsStringLiteral } from "nuqs";
-import Link from "next/link";
+import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
+import { DiscussionVoteToggle } from "@/components/discussions/discussion-vote-toggle";
+import { SpoilerBlock } from "@/components/discussions/spoiler-block";
 import { LoaderCircle, Plus } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { DiscussionSort } from "@/lib/discussions/types";
+import { trpc } from "@/lib/trpc/client";
+import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useMemo } from "react";
 
 const cuidRegex = /^c[0-9a-z]{24}$/i;
 const isCuidLike = (value?: string | null) =>
@@ -77,7 +77,7 @@ export function ProblemDiscussionPanel({ problem }: ProblemDiscussionPanelProps)
   const threadVote = (thread?.viewer?.vote ?? 0) as -1 | 0 | 1;
   if (listQuery.isLoading) {
     return (
-      <div className="flex items-center justify-center rounded-3xl border border-border/60 bg-card/70 p-10 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center border border-border/60 bg-card/70 p-10 text-sm text-muted-foreground">
         <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading discussions…
       </div>
     );
@@ -85,7 +85,7 @@ export function ProblemDiscussionPanel({ problem }: ProblemDiscussionPanelProps)
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-border/70 bg-card/80 p-6">
+      <div className="border border-border/70 bg-card/80 p-6">
         <DiscussionComposer
           mode="thread"
           problemId={problem.id}
@@ -143,7 +143,7 @@ export function ProblemDiscussionPanel({ problem }: ProblemDiscussionPanelProps)
         </section>
 
         <section className="space-y-4">
-          <div className="rounded-3xl border border-border/70 bg-card/80 p-6">
+          <div className="border border-border/70 bg-card/80 p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase text-muted-foreground">Discussion</p>
@@ -198,7 +198,7 @@ export function ProblemDiscussionPanel({ problem }: ProblemDiscussionPanelProps)
             <h3 className="text-sm font-semibold uppercase text-muted-foreground">Replies</h3>
             {thread ? (
               replies.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
+                <p className="border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
                   Be the first to reply.
                 </p>
               ) : (
@@ -219,12 +219,12 @@ export function ProblemDiscussionPanel({ problem }: ProblemDiscussionPanelProps)
                 </div>
               )
             ) : (
-              <p className="rounded-2xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
+              <p className="border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
                 Select a thread to view replies.
               </p>
             )}
             {thread ? (
-              <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
+              <div className="border border-border/60 bg-card/70 p-4">
                 <DiscussionComposer
                   mode="reply"
                   threadId={thread.id}
@@ -236,7 +236,7 @@ export function ProblemDiscussionPanel({ problem }: ProblemDiscussionPanelProps)
           </div>
         </section>
 
-        <section className="space-y-4 rounded-3xl border border-border/70 bg-card/60 p-6">
+        <section className="space-y-4 border border-border/70 bg-card/60 p-6">
           <div>
             <p className="text-xs uppercase text-muted-foreground">Problem</p>
             <h3 className="text-base font-semibold">{problem.title}</h3>
