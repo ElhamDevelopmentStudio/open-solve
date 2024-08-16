@@ -12,6 +12,7 @@ type RenderProblemLibraryOptions = {
   searchParams: Record<string, string | string[] | undefined>;
   viewerHasSession?: boolean;
   problemBasePath?: string;
+  tagSlug?: string;
 };
 
 export async function resolveViewerSessionFlag() {
@@ -23,6 +24,7 @@ export async function renderProblemLibraryPage({
   searchParams,
   viewerHasSession = false,
   problemBasePath,
+  tagSlug,
 }: RenderProblemLibraryOptions) {
   const filters = (await problemSearchParams.parse(searchParams)) as ProblemFiltersInput;
   const state = await buildHydrationState([
@@ -51,6 +53,7 @@ export async function renderProblemLibraryPage({
         initialFilters={filters}
         viewerHasSession={viewerHasSession}
         problemBasePath={problemBasePath}
+        tagSlug={tagSlug}
       />
     </HydrationBoundary>
   );
