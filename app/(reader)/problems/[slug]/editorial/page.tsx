@@ -1,17 +1,18 @@
 import "katex/dist/katex.min.css";
 
-import { notFound } from "next/navigation";
-import { createTRPCCaller } from "@/lib/trpc/server/caller";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import rehypeHighlight from "rehype-highlight";
+import { Lock, MessageSquareText } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { format } from "date-fns";
+import { problemsConfig } from "@/config/problems";
 import { getCachedProblemDetail } from "@/lib/cache/problems";
+import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { format } from "date-fns";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 
 type Params = { slug: string };
 
@@ -32,39 +33,68 @@ export default async function ProblemEditorialPage({
   const content =
     editorial?.content ?? (problem.editorialIsReleased ? problem.content.editorial : null);
 
+  const { editorial: editorialConfig } = problemsConfig;
+
   return (
-    <div className="space-y-8 py-10">
-      <header className="rounded-3xl border border-border/70 bg-card/80 p-6">
-        <p className="text-xs uppercase text-muted-foreground">Editorial</p>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight">{problem.title}</h1>
-          {problem.difficulty ? <Badge>{problem.difficulty}</Badge> : null}
-          {problem.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag.slug} variant="outline">
-              #{tag.name}
+    <div className="space-y-12">
+      <div className="space-y-6 border-2 border-border bg-background p-6">
+        <div className="space-y-4">
+          <div className="font-mono text-xs font-bold uppercase text-primary/80">
+            {editorialConfig.badge}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-3xl font-black leading-tight text-transparent">
+              {problem.title}
+            </h1>
+            {problem.difficulty ? (
+              <Badge className="rounded-none border font-mono text-xs font-bold uppercase">
+                {problem.difficulty}
+              </Badge>
+            ) : null}
+            {problem.tags.slice(0, 3).map((tag) => (
+              <Badge
+                key={tag.slug}
+                variant="outline"
+                className="rounded-none border font-mono text-xs font-bold uppercase"
+              >
+                #{tag.name}
+              </Badge>
+            ))}
+            <Badge
+              variant={isReleased ? "secondary" : "outline"}
+              className="ml-auto rounded-none border font-mono text-xs font-bold uppercase"
+            >
+              {isReleased ? editorialConfig.states.released : editorialConfig.states.locked}
             </Badge>
-          ))}
-          <Badge variant={isReleased ? "secondary" : "outline"} className="ml-auto">
-            {isReleased ? "Released" : "Locked"}
-          </Badge>
+          </div>
+          {releaseAt && !isReleased ? (
+            <p className="font-mono text-sm text-muted-foreground">
+              {editorialConfig.states.scheduledPrefix} {format(releaseAt, "PPP p")}
+            </p>
+          ) : null}
         </div>
-        {releaseAt && !isReleased ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Scheduled to unlock {format(releaseAt, "PPP p")}
-          </p>
-        ) : null}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href={`/problems/${slug}`}>Back to problem</Link>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            asChild
+            className="h-10 rounded-none border-2 border-primary bg-primary px-8 font-mono text-sm font-bold text-primary-foreground shadow-sm shadow-primary/20 transition-all hover:shadow-md hover:shadow-primary/30"
+          >
+            <Link href={`/problems/${slug}`}>{editorialConfig.actions.backToProblem}</Link>
           </Button>
-          <Button variant="ghost" asChild>
-            <Link href={`/problems/${slug}/discuss`}>View discussions</Link>
+          <Button
+            variant="outline"
+            asChild
+            className="h-10 rounded-none border-2 border-border bg-transparent px-8 font-mono text-sm hover:border-primary/50 hover:bg-accent"
+          >
+            <Link href={`/problems/${slug}/discuss`}>
+              <MessageSquareText className="mr-2 h-4 w-4" />
+              {editorialConfig.actions.viewDiscussions}
+            </Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       {isReleased && content ? (
-        <article className="prose prose-neutral max-w-none rounded-3xl border border-border/60 bg-card/80 p-6 text-foreground dark:prose-invert">
+        <article className="prose prose-neutral max-w-none border-2 border-border bg-background p-6 font-mono text-sm text-foreground dark:prose-invert">
           <ReactMarkdown
             remarkPlugins={[remarkMath]}
             rehypePlugins={[rehypeKatex, rehypeHighlight]}
@@ -73,24 +103,28 @@ export default async function ProblemEditorialPage({
           </ReactMarkdown>
         </article>
       ) : (
-        <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-10 text-center">
-          <h2 className="text-xl font-semibold">Editorial locked</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="border-2 border-border bg-background p-10 text-center">
+          <Lock className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h2 className="mt-4 font-mono text-xl font-bold text-foreground">
+            {editorialConfig.states.lockedTitle}
+          </h2>
+          <p className="mt-2 font-mono text-sm text-muted-foreground">
             {releaseAt
-              ? `This write-up unlocks ${format(releaseAt, "PPP p")}.`
-              : "Editors will publish this walkthrough soon."}
+              ? `${editorialConfig.states.lockedDescription} ${format(releaseAt, "PPP p")}.`
+              : editorialConfig.states.lockedFallback}
           </p>
         </div>
       )}
 
       {problem.content.hints ? (
-        <section className="rounded-3xl border border-border/60 bg-card/70 p-6">
-          <h3 className="text-lg font-semibold">Hints refresher</h3>
-          <Separator className="my-3" />
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
-            {problem.content.hints}
-          </p>
-        </section>
+        <div className="space-y-4 border-2 border-border bg-background p-6">
+          <h3 className="font-mono text-lg font-bold">{editorialConfig.hints.title}</h3>
+          <div className="border-t border-border pt-4">
+            <p className="whitespace-pre-line font-mono text-sm text-muted-foreground">
+              {problem.content.hints}
+            </p>
+          </div>
+        </div>
       ) : null}
     </div>
   );
