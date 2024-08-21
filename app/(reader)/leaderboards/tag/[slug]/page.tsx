@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { HydrationBoundary } from "@tanstack/react-query";
+
+import { TagLeaderboardClient } from "@/components/leaderboards/leaderboard-client";
 import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
-import { TagLeaderboardClient } from "@/components/leaderboards/leaderboard-client";
 import type { LeaderboardWindow } from "@/lib/leaderboard/service";
 
 const DEFAULT_WINDOW: LeaderboardWindow = "all_time";
@@ -17,7 +18,7 @@ export async function generateMetadata({
   const { slug } = await params;
   return {
     title: `#${slug} Leaderboard | OpenSolve`,
-    description: `See who’s dominating the #${slug} topic.`,
+    description: `See who's dominating the #${slug} topic.`,
   };
 }
 
