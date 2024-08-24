@@ -1,32 +1,25 @@
 "use client";
 
-import { trpc } from "@/lib/trpc/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { CodeEditor } from "@/components/code/code-editor";
+import { RichTextEditor } from "@/components/editor/rich-text-editor";
+import {
+  Eye,
+  FileText,
+  Info,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Save,
+  Send,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  UserPlus,
+} from "@/components/icons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -35,35 +28,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CodeEditor } from "@/components/code/code-editor";
-import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import {
-  Loader2,
-  Plus,
-  Save,
-  Send,
-  ShieldCheck,
-  ShieldAlert,
-  UserPlus,
-  Trash2,
-  RotateCcw,
-  Info,
-  Eye,
-  FileText,
-} from "@/components/icons";
-import { cn } from "@/lib/utils";
-import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
-import type { ProblemVisibility, Tag } from "@prisma/client";
-import { uploadImageToMinio } from "@/lib/storage/minio-upload";
-import TurndownService from "turndown";
-import { marked } from "marked";
-import { TagInput, type Tag as EmblorTag } from "emblor";
-import { useQueryClient } from "@tanstack/react-query";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { invalidateTags } from "@/lib/react-query/invalidation";
+import { uploadImageToMinio } from "@/lib/storage/minio-upload";
+import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+import type { ProblemVisibility, Tag } from "@prisma/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { TagInput, type Tag as EmblorTag } from "emblor";
+import { marked } from "marked";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import TurndownService from "turndown";
 
 type TestCaseRow = {
   id?: string;
@@ -691,7 +691,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   {contentState.samples.map((sample, index) => (
                     <div
                       key={`sample-${index}`}
-                      className="space-y-4 rounded-2xl border border-white/10 bg-muted/5 p-4"
+                      className="space-y-4 border border-white/10 bg-muted/5 p-4"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-medium text-foreground">Sample #{index + 1}</p>
@@ -769,7 +769,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 {data.curators.map((curator) => (
                   <div
                     key={curator.userId}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-muted/30 px-4 py-3"
+                    className="flex items-center justify-between border border-white/5 bg-muted/30 px-4 py-3"
                   >
                     <div>
                       <p className="font-medium">
@@ -849,7 +849,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   return (
                     <div
                       key={language.code}
-                      className="rounded-2xl border border-white/5 bg-card/50 p-4 shadow-inner shadow-black/10"
+                      className="border border-white/5 bg-card/50 p-4 shadow-inner shadow-black/10"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -1009,7 +1009,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                         key={option.value}
                         htmlFor={id}
                         className={cn(
-                          "cursor-pointer rounded-2xl border bg-card/50 p-3 text-left transition hover:border-primary/60",
+                          "cursor-pointer border bg-card/50 p-3 text-left transition hover:border-primary/60",
                           isActive ? "border-primary shadow-sm" : "border-border/60",
                         )}
                       >
@@ -1231,7 +1231,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                     {data.reviews.map((review) => (
                       <li
                         key={review.id}
-                        className="rounded-lg border border-white/5 bg-muted/10 p-2"
+                        className="border border-white/5 bg-muted/10 p-2"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium">
@@ -1408,7 +1408,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
                 onValueChange={handleKindChange}
                 className="grid gap-3 md:grid-cols-2"
               >
-                <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3">
+                <div className="flex items-start gap-2 border border-border/60 p-3">
                   <RadioGroupItem value="sample" id="case-kind-sample" />
                   <div>
                     <Label htmlFor="case-kind-sample" className="font-medium">
@@ -1419,7 +1419,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3">
+                <div className="flex items-start gap-2 border border-border/60 p-3">
                   <RadioGroupItem value="hidden" id="case-kind-hidden" />
                   <div>
                     <Label htmlFor="case-kind-hidden" className="font-medium">
