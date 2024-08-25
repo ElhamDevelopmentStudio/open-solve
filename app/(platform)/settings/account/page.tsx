@@ -1,6 +1,20 @@
 "use client";
 
 import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  LogOut,
+  Mail,
+  Monitor,
+  Shield,
+  Smartphone,
+  Tablet,
+  Trash2,
+  User as UserIcon,
+  XCircle,
+} from "@/components/icons";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,20 +34,6 @@ import { sessionQueryOptions, userScopedListOptions } from "@/lib/react-query/po
 import { trpc } from "@/lib/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  LogOut,
-  Mail,
-  Monitor,
-  Shield,
-  Smartphone,
-  Tablet,
-  Trash2,
-  User as UserIcon,
-  XCircle,
-} from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -123,12 +123,12 @@ export default function AccountSettingsPage() {
     return (
       <div className="mx-auto max-w-4xl space-y-8 animate-fade-in">
         <div>
-          <Skeleton className="h-8 w-48 rounded-xl" />
-          <Skeleton className="mt-2 h-4 w-96 rounded-lg" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-4 w-96" />
         </div>
-        <div className="premium-card space-y-6 rounded-2xl p-8">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
+        <div className="premium-card space-y-6 p-8">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
       </div>
     );
@@ -147,14 +147,14 @@ export default function AccountSettingsPage() {
         </p>
       </div>
 
-      <div className="premium-card space-y-6 rounded-2xl p-8">
+      <div className="premium-card space-y-6 p-8">
         <div>
           <h2 className="text-lg font-semibold">Account Information</h2>
           <p className="text-sm text-muted-foreground">Your core account details</p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-2 rounded-xl border border-border/50 bg-muted/30 p-4">
+          <div className="space-y-2 border border-border/50 bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <Mail className="h-3.5 w-3.5" />
               Email Address
@@ -179,14 +179,14 @@ export default function AccountSettingsPage() {
                 variant="outline"
                 onClick={() => resendVerification.mutate()}
                 disabled={resendVerification.isPending}
-                className="mt-2 h-8 rounded-lg text-xs"
+                className="mt-2 h-8 text-xs"
               >
                 {resendVerification.isPending ? "Sending..." : "Resend Verification"}
               </Button>
             ) : null}
           </div>
 
-          <div className="space-y-2 rounded-xl border border-border/50 bg-muted/30 p-4">
+          <div className="space-y-2 border border-border/50 bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <UserIcon className="h-3.5 w-3.5" />
               Username
@@ -194,7 +194,7 @@ export default function AccountSettingsPage() {
             <p className="font-medium">@{session.user.handle}</p>
           </div>
 
-          <div className="space-y-2 rounded-xl border border-border/50 bg-muted/30 p-4">
+          <div className="space-y-2 border border-border/50 bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
               Account Role
@@ -204,7 +204,7 @@ export default function AccountSettingsPage() {
             </Badge>
           </div>
 
-          <div className="space-y-2 rounded-xl border border-border/50 bg-muted/30 p-4">
+          <div className="space-y-2 border border-border/50 bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
               Two-Factor Auth
@@ -217,7 +217,7 @@ export default function AccountSettingsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push("/settings/security")}
-                className="h-7 rounded-lg text-xs"
+                className="h-7 text-xs"
               >
                 Manage
               </Button>
@@ -226,7 +226,7 @@ export default function AccountSettingsPage() {
         </div>
       </div>
 
-      <div className="premium-card space-y-6 rounded-2xl p-8">
+      <div className="premium-card space-y-6 p-8">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Active Sessions</h2>
@@ -243,10 +243,10 @@ export default function AccountSettingsPage() {
           {sessions?.map((sess) => (
             <div
               key={sess.id}
-              className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-card/50 p-4 smooth-transition hover:border-border"
+              className="flex items-center justify-between gap-4 border border-border/50 bg-card/50 p-4 smooth-transition hover:border-border"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/60">
+                <div className="flex h-10 w-10 items-center justify-center bg-muted/60">
                   {getDeviceIcon(sess.userAgent)}
                 </div>
                 <div className="space-y-1">
@@ -270,7 +270,7 @@ export default function AccountSettingsPage() {
                   size="sm"
                   onClick={() => revokeSessionMutation.mutate({ sessionId: sess.id })}
                   disabled={revokeSessionMutation.isPending}
-                  className="h-8 rounded-lg text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
                   {revokeSessionMutation.isPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -285,7 +285,7 @@ export default function AccountSettingsPage() {
 
         <div className="h-px bg-border/50" />
 
-        <div className="flex items-center justify-between rounded-xl border border-warning/30 bg-warning/5 p-4">
+        <div className="flex items-center justify-between border border-warning/30 bg-warning/5 p-4">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-warning" />
             <div>
@@ -311,9 +311,9 @@ export default function AccountSettingsPage() {
         </div>
       </div>
 
-      <div className="premium-card space-y-6 rounded-2xl border-destructive/20 p-8">
+      <div className="premium-card space-y-6 border-destructive/20 p-8">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+          <div className="flex h-10 w-10 items-center justify-center bg-destructive/10">
             <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div className="flex-1">
@@ -328,7 +328,7 @@ export default function AccountSettingsPage() {
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" className="w-full rounded-xl sm:w-auto">
+            <Button variant="destructive" className="w-full sm:w-auto">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Account
             </Button>
@@ -360,7 +360,7 @@ export default function AccountSettingsPage() {
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
                   placeholder="Your password"
-                  className="mt-2 rounded-xl"
+                  className="mt-2"
                 />
               </div>
             </div>

@@ -1,9 +1,9 @@
 import { SubmissionsClient } from "@/components/submissions/submissions-client";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 import { buildSubmissionListInputFromParams } from "@/lib/submissions/filter-utils";
 import { loadSubmissionSearchParams } from "@/lib/submissions/search-params";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { notFound } from "next/navigation";
-import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 export default async function ProblemSubmissionsPage({
   params,
@@ -39,7 +39,7 @@ export default async function ProblemSubmissionsPage({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-card/70 p-4">
+      <div className="border border-border bg-card/70 p-4">
         <p className="text-xs uppercase text-muted-foreground">Problem</p>
         <h1 className="text-xl font-semibold text-foreground">{problem.title}</h1>
       </div>
