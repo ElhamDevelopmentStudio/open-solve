@@ -40,6 +40,7 @@ import {
   FloppyDiskIcon,
   GithubIcon,
   GlobeIcon,
+  GridIcon,
   GroupLayersIcon,
   Heading02Icon,
   HonourStarIcon,
@@ -63,6 +64,7 @@ import {
   Mail01Icon,
   Menu01Icon,
   Message01Icon,
+  Message02Icon,
   Moon02Icon,
   More01Icon,
   More02Icon,
@@ -86,6 +88,7 @@ import {
   TextBoldIcon,
   TextItalicIcon,
   TextSquareIcon,
+  ThirdBracketCircleIcon,
   Tick01Icon,
   Tick02Icon,
   ToggleOffIcon,
@@ -215,3 +218,6 @@ export const Users = UserGroupIcon;
 export const Users2 = UserGroupIcon;
 export const XCircle = CancelCircleIcon;
 export const XIcon = Cancel02Icon;
+export const MessageSquareText = Message02Icon;
+export const TrendUp = ThirdBracketCircleIcon;
+export const Hash = GridIcon;
