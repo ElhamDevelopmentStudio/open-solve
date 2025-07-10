@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/opensolve?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/opensolve?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: opensolve
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d opensolve -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  runner:
+    image: node:20-alpine
+    command: ["tail", "-f", "/dev/null"]
+    profiles:
+      - judge
+    restart: unless-stopped
+    environment:
+      LOG_LEVEL: info
+
+volumes:
+  postgres-data:

@@ -1,0 +1,10 @@
+.git
+.github
+.next
+.vscode
+Dockerfile
+node_modules
+npm-debug.log
+package-lock.json
+tmp
+coverage
