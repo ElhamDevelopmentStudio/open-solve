@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/opensolve"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/opensolve"
+      NEXTAUTH_SECRET: "ci-secret-placeholder-nextauth"
+      NEXTAUTH_URL: "http://localhost:3000"
+      JWT_PRIVATE_KEY: "ci-placeholder"
+      JWT_PUBLIC_KEY: "ci-placeholder"
+      LOG_LEVEL: "info"
+      RATE_LIMIT_WINDOW_SECONDS: "60"
+      RATE_LIMIT_MAX_REQUESTS: "30"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: opensolve
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd="pg_isready -d opensolve -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
