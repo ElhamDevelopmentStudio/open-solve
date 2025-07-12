@@ -1,0 +1,8 @@
+.next
+node_modules
+coverage
+dist
+*.log
+package-lock.json
+Dockerfile
+docker-compose.yml
