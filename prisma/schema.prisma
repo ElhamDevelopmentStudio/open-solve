@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SubmissionStatus {
+  PENDING
+  RUNNING
+  ACCEPTED
+  WRONG_ANSWER
+  TLE
+  RUNTIME_ERROR
+  COMPILE_ERROR
+  INTERNAL_ERROR
+}
+
+enum ProgrammingLanguage {
+  CPP
+  JAVA
+  PYTHON
+  JAVASCRIPT
+  TYPESCRIPT
+  GO
+  RUST
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  username        String        @unique
+  hashedPassword  String?
+  avatarUrl       String?
+  bio             String?
+  location        String?
+  provider        String        @default("credentials")
+  providerId      String?
+  role            String        @default("USER")
+  submissions     Submission[]
+  createdProblems Problem[]     @relation("ProblemAuthor")
+  leaderboard     LeaderboardSnapshot[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([provider, providerId])
+}
+
+model Problem {
+  id            String              @id @default(cuid())
+  slug          String              @unique
+  title         String
+  difficulty    Difficulty
+  statement     Json
+  constraints   Json
+  starterCode   Json
+  templates     Json
+  timeLimitMs   Int                 @default(2000)
+  memoryLimitMb Int                 @default(256)
+  isPublished   Boolean             @default(false)
+  tags          ProblemTag[]
+  testCases     TestCase[]
+  submissions   Submission[]
+  editorials    Editorial[]
+  authorId      String
+  author        User                @relation("ProblemAuthor", fields: [authorId], references: [id])
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([difficulty, isPublished])
+}
+
+model Editorial {
+  id        String   @id @default(cuid())
+  problem   Problem  @relation(fields: [problemId], references: [id])
+  problemId String
+  title     String
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  slug      String      @unique
+  problems  ProblemTag[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model ProblemTag {
+  problem   Problem @relation(fields: [problemId], references: [id])
+  problemId String
+  tag       Tag     @relation(fields: [tagId], references: [id])
+  tagId     String
+
+  @@id([problemId, tagId])
+}
+
+model TestCase {
+  id            String   @id @default(cuid())
+  problem       Problem  @relation(fields: [problemId], references: [id])
+  problemId     String
+  input         Json
+  output        Json
+  isSample      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Submission {
+  id              String            @id @default(cuid())
+  user            User              @relation(fields: [userId], references: [id])
+  userId          String
+  problem         Problem           @relation(fields: [problemId], references: [id])
+  problemId       String
+  language        ProgrammingLanguage
+  status          SubmissionStatus  @default(PENDING)
+  sourceCode      String
+  runtimeMs       Int?
+  memoryKb        Int?
+  diagnostics     Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([userId, problemId])
+  @@index([status, createdAt])
+}
+
+model LeaderboardSnapshot {
+  id             String   @id @default(cuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+  problemsSolved Int      @default(0)
+  rating         Int      @default(1500)
+  streak         Int      @default(0)
+  capturedAt     DateTime @default(now())
+
+  @@unique([userId, capturedAt])
+}
