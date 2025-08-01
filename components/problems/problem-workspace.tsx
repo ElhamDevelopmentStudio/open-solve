@@ -1,8 +1,9 @@
 "use client";
 
 import { CodeEditor } from "@/components/code/code-editor";
-import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Shield } from "@/components/icons";
+import { useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
+import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,9 +35,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
 import { useContestAntiCheat } from "@/hooks/use-contest-anti-cheat";
+import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
+import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { invalidateTags } from "@/lib/react-query/invalidation";
 import {
@@ -50,11 +53,8 @@ import type {
   SubmissionDetailPayload,
   SubmissionHistoryEntry,
 } from "@/lib/submissions/types";
-import { trackAnalyticsEvent } from "@/lib/analytics/client";
-import { useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
 import { trpc } from "@/lib/trpc/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
-import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -574,49 +574,74 @@ export function ProblemWorkspace({
 
   return (
     <TooltipProvider>
+      {/* Mobile Warning Banner - Shows on screens < 768px (iPad portrait) */}
+      <div className="block border-2 border-warning/50 bg-warning/10 p-6 md:hidden">
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-none border-2 border-warning bg-warning/20">
+            <Alert01Icon className="h-6 w-6 text-warning" strokeWidth={2} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-xl font-black text-transparent">
+              Device Not Supported
+            </h3>
+            <p className="font-mono text-sm text-muted-foreground">
+              The code editor requires a larger screen. Please use a laptop, desktop, or tablet (iPad
+              or larger) to solve problems.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 font-mono text-xs text-muted-foreground">
+            <p>✓ Laptops & Desktops</p>
+            <p>✓ Tablets (iPad & larger)</p>
+            <p>✗ Mobile phones</p>
+          </div>
+        </div>
+      </div>
+
       <section
         id="editor"
-        className={cn(
-          "rounded-3xl border border-dashed border-primary/40 bg-card/80 p-6 shadow-lg shadow-primary/5",
-          examModeClass,
-        )}
+        className={cn("hidden border-2 border-border bg-background p-4 md:block md:p-6", examModeClass)}
       >
-        <div className="flex flex-wrap items-center gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Ready to solve</p>
-            <h2 className="text-2xl font-semibold tracking-tight">{problem.title}</h2>
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <p className="font-mono text-xs text-muted-foreground">Ready to solve</p>
+            <h2 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-xl font-black text-transparent md:text-2xl">
+              {problem.title}
+            </h2>
           </div>
-          <Badge variant="outline" className="rounded-full">
+          <Badge
+            variant="outline"
+            className="rounded-none border font-mono text-xs font-bold uppercase"
+          >
             {problem.difficulty ?? "Unrated"}
           </Badge>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 md:ml-auto md:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setDrawerOpen(true)}
-              className="gap-2"
+              className="h-9 flex-1 gap-2 rounded-none border-2 border-border font-mono text-sm hover:border-primary/50 hover:bg-accent md:flex-initial"
             >
               <BookOpen01Icon className="h-4 w-4" strokeWidth={2} />
-              Statement
+              <span className="md:inline">Statement</span>
             </Button>
             <PreferencesMenu preferences={preferences} onChange={setPreferences} />
           </div>
         </div>
 
         {presenceWarning ? (
-          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200">
+          <div className="mt-4 flex items-center gap-2 border-2 border-warning/50 bg-warning/10 px-4 py-3 font-mono text-sm text-warning">
             <Alert01Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             Another tab is editing this problem. To avoid overwriting drafts, close other sessions.
           </div>
         ) : null}
         {isOffline ? (
-          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-sky-400/40 bg-sky-500/10 px-4 py-3 text-sm text-sky-700 dark:text-sky-200">
+          <div className="mt-4 flex items-center gap-2 border-2 border-info/40 bg-info/10 px-4 py-3 font-mono text-sm text-info">
             <CircleArrowReload01Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             Offline mode — drafts stay local and sample runs fall back to the local simulator.
           </div>
         ) : null}
         {requiresManualReview ? (
-          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-purple-400/40 bg-purple-500/10 px-4 py-3 text-sm text-purple-800 dark:text-purple-200">
+          <div className="mt-4 flex items-center gap-2 border-2 border-primary/40 bg-primary/10 px-4 py-3 font-mono text-sm text-foreground">
             <Legal01Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             {manualOnly
               ? "This problem is reviewed manually. Expect longer turnaround while a curator scores your submission."
@@ -624,27 +649,27 @@ export function ProblemWorkspace({
           </div>
         ) : null}
         {contestGuard.enabled ? (
-          <div className="mt-4 rounded-2xl border border-sky-400/60 bg-sky-500/10 px-4 py-3 text-sm">
+          <div className="mt-4 border-2 border-info/60 bg-info/10 px-4 py-3 font-mono text-sm">
             <div className="flex flex-wrap items-center gap-2">
-              <Shield className="h-4 w-4 text-sky-500" />
-              <span className="font-semibold text-sky-900 dark:text-sky-100">
+              <Shield className="h-4 w-4 text-info" />
+              <span className="font-mono text-sm font-bold text-foreground">
                 Anti-cheat guard active
               </span>
               {contestGuard.status ? (
                 <Badge
                   variant="outline"
-                  className="rounded-full border-sky-500/40 text-[10px] uppercase text-sky-500"
+                  className="rounded-none border border-info/40 font-mono text-[10px] uppercase text-info"
                 >
                   {contestGuard.status.toLowerCase()}
                 </Badge>
               ) : null}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
               {contestContext?.antiCheat.warnings.reminderCopy ??
                 "Tab switches, large pastes, and multi-device logins trigger reviews."}
             </p>
             {contestGuard.warnings.length ? (
-              <ul className="mt-2 space-y-1 text-xs text-amber-600 dark:text-amber-300">
+              <ul className="mt-2 space-y-1 font-mono text-xs text-warning">
                 {contestGuard.warnings.map((warning) => (
                   <li key={warning}>• {warning}</li>
                 ))}
@@ -653,80 +678,134 @@ export function ProblemWorkspace({
           </div>
         ) : null}
         {contestGuard.disqualified ? (
-          <div className="mt-4 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
+          <div className="mt-4 border-2 border-destructive/50 bg-destructive/10 px-4 py-3 font-mono text-sm text-destructive">
             You have been disqualified from this contest. Submissions are blocked for this window.
           </div>
         ) : null}
 
-        <div className="mt-6">
-          <ResizablePanelGroup direction="horizontal" className="h-full min-h-[560px]">
-            <ResizablePanel defaultSize={65} minSize={55} className="pr-3">
-              <EditorColumn
-                activeLanguage={activeLanguage}
-                languageOptions={languageOptions}
-                onLanguageChange={handleLanguageChange}
-                code={activeCode}
-                onChange={(next) => {
-                  touchActivity();
-                  setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
-                }}
-                onCopy={handleCopy}
-                onReset={handleReset}
-                onSave={() => handleSaveDraft("manual")}
-                appearance={editorTheme === "dark" ? "dark" : "light"}
-                preferences={preferences}
-                customInput={customInput}
-                onInputChange={(value) => {
-                  touchActivity();
-                  setCustomInput(value);
-                }}
-                onPaste={contestGuard.recordPaste}
-                autosaveState={autosaveState}
-                runInProgress={runSample.isPending}
-                submitInProgress={createSubmission.isPending}
-                onRun={handleRun}
-                onSubmit={handleSubmit}
-                consoleLines={consoleLines}
-              />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={35} minSize={30} className="pl-3">
-              <SidePanel
-                problem={problem}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                result={activeResult}
-                submissionHistory={historyQuery.data?.entries ?? []}
-                onSelectSubmission={(submissionId) => {
-                  trackAnalyticsEvent(
-                    "submission.timeline_open",
-                    { submissionId },
-                    baseAnalyticsContext,
-                  );
-                  setCurrentSubmissionId(submissionId);
-                  setViewMode("submission");
-                }}
-                drafts={draftsQuery.data ?? []}
-                onRestoreDraft={(source) =>
-                  setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: source }))
-                }
-              />
-            </ResizablePanel>
-          </ResizablePanelGroup>
+        <div className="mt-4 md:mt-6">
+          {/* Desktop & Large Tablets: Horizontal split with resizable panels */}
+          <div className="hidden lg:block">
+            <ResizablePanelGroup direction="horizontal" className="h-full min-h-[560px]">
+              <ResizablePanel defaultSize={65} minSize={55} className="pr-3">
+                <EditorColumn
+                  activeLanguage={activeLanguage}
+                  languageOptions={languageOptions}
+                  onLanguageChange={handleLanguageChange}
+                  code={activeCode}
+                  onChange={(next) => {
+                    touchActivity();
+                    setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
+                  }}
+                  onCopy={handleCopy}
+                  onReset={handleReset}
+                  onSave={() => handleSaveDraft("manual")}
+                  appearance={editorTheme === "dark" ? "dark" : "light"}
+                  preferences={preferences}
+                  customInput={customInput}
+                  onInputChange={(value) => {
+                    touchActivity();
+                    setCustomInput(value);
+                  }}
+                  onPaste={contestGuard.recordPaste}
+                  autosaveState={autosaveState}
+                  runInProgress={runSample.isPending}
+                  submitInProgress={createSubmission.isPending}
+                  onRun={handleRun}
+                  onSubmit={handleSubmit}
+                  consoleLines={consoleLines}
+                />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={35} minSize={30} className="pl-3">
+                <SidePanel
+                  problem={problem}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  result={activeResult}
+                  submissionHistory={historyQuery.data?.entries ?? []}
+                  onSelectSubmission={(submissionId) => {
+                    trackAnalyticsEvent(
+                      "submission.timeline_open",
+                      { submissionId },
+                      baseAnalyticsContext,
+                    );
+                    setCurrentSubmissionId(submissionId);
+                    setViewMode("submission");
+                  }}
+                  drafts={draftsQuery.data ?? []}
+                  onRestoreDraft={(source) =>
+                    setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: source }))
+                  }
+                />
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
+
+          {/* iPad Portrait: Stacked vertical layout without resizable */}
+          <div className="block space-y-4 lg:hidden">
+            <EditorColumn
+              activeLanguage={activeLanguage}
+              languageOptions={languageOptions}
+              onLanguageChange={handleLanguageChange}
+              code={activeCode}
+              onChange={(next) => {
+                touchActivity();
+                setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
+              }}
+              onCopy={handleCopy}
+              onReset={handleReset}
+              onSave={() => handleSaveDraft("manual")}
+              appearance={editorTheme === "dark" ? "dark" : "light"}
+              preferences={preferences}
+              customInput={customInput}
+              onInputChange={(value) => {
+                touchActivity();
+                setCustomInput(value);
+              }}
+              onPaste={contestGuard.recordPaste}
+              autosaveState={autosaveState}
+              runInProgress={runSample.isPending}
+              submitInProgress={createSubmission.isPending}
+              onRun={handleRun}
+              onSubmit={handleSubmit}
+              consoleLines={consoleLines}
+            />
+            <SidePanel
+              problem={problem}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              result={activeResult}
+              submissionHistory={historyQuery.data?.entries ?? []}
+              onSelectSubmission={(submissionId) => {
+                trackAnalyticsEvent(
+                  "submission.timeline_open",
+                  { submissionId },
+                  baseAnalyticsContext,
+                );
+                setCurrentSubmissionId(submissionId);
+                setViewMode("submission");
+              }}
+              drafts={draftsQuery.data ?? []}
+              onRestoreDraft={(source) =>
+                setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: source }))
+              }
+            />
+          </div>
         </div>
       </section>
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{problem.title}</DrawerTitle>
-            <DrawerDescription>
+        <DrawerContent className="rounded-none border-t-2 border-border bg-background">
+          <DrawerHeader className="px-4 md:px-6">
+            <DrawerTitle className="font-mono text-lg font-bold md:text-xl">{problem.title}</DrawerTitle>
+            <DrawerDescription className="font-mono text-xs text-muted-foreground md:text-sm">
               Quick reference of the statement without leaving the editor.
             </DrawerDescription>
           </DrawerHeader>
-          <ScrollArea className="max-h-[70vh] px-6 pb-6">
-            <article className="prose prose-sm dark:prose-invert">
-              <pre>{problem.content.statement}</pre>
+          <ScrollArea className="max-h-[60vh] px-4 pb-6 md:max-h-[70vh] md:px-6">
+            <article className="prose prose-sm font-mono dark:prose-invert">
+              <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">{problem.content.statement}</pre>
             </article>
           </ScrollArea>
         </DrawerContent>
@@ -782,17 +861,17 @@ function EditorColumn(props: {
     consoleLines,
   } = props;
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="rounded-2xl border border-white/10 bg-background/80 p-4 shadow-inner shadow-black/5">
-        <div className="flex flex-wrap items-center gap-3">
+    <div className="flex h-full flex-col gap-3 md:gap-4">
+      <div className="border-2 border-border bg-background p-3 md:p-4">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <Select
             value={activeLanguage}
             onValueChange={(value) => onLanguageChange(value as SupportedLanguage)}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full rounded-none border-2 border-border font-mono text-sm md:w-48">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-none border-2 border-border font-mono text-sm">
               {languageOptions.map((language) => (
                 <SelectItem key={language.code} value={language.code}>
                   {language.displayName}
@@ -800,40 +879,56 @@ function EditorColumn(props: {
               ))}
             </SelectContent>
           </Select>
-          <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex w-full flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground md:ml-auto md:w-auto">
             <span
               className={cn(
-                "flex items-center gap-1 rounded-full px-3 py-1 transition",
+                "flex items-center gap-1 px-2 py-1 transition md:px-3",
                 autosaveState === "saving"
-                  ? "text-amber-500"
+                  ? "text-warning"
                   : autosaveState === "saved"
-                    ? "text-emerald-500"
+                    ? "text-success"
                     : "text-muted-foreground",
               )}
             >
-              <span className="h-2 w-2 rounded-full bg-current" />
-              {autosaveState === "saving" ? "Saving…" : "Saved"}
+              <span className="h-2 w-2 rounded-none bg-current" />
+              <span className="hidden md:inline">{autosaveState === "saving" ? "Saving…" : "Saved"}</span>
+              <span className="md:hidden">{autosaveState === "saving" ? "…" : "✓"}</span>
             </span>
-            <Button variant="ghost" size="sm" onClick={onReset}>
-              Reset
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+              className="h-8 rounded-none font-mono text-xs md:text-sm"
+            >
+              <span className="md:inline">Reset</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={onCopy} className="gap-2">
-              <Copy01Icon className="h-4 w-4" strokeWidth={2} />
-              Copy
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCopy}
+              className="h-8 gap-1 rounded-none font-mono text-xs md:gap-2 md:text-sm"
+            >
+              <Copy01Icon className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2} />
+              <span className="hidden md:inline">Copy</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={onSave} className="gap-2">
-              <SaveEnergy01Icon className="h-4 w-4" strokeWidth={2} />
-              Save
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSave}
+              className="h-8 gap-1 rounded-none font-mono text-xs md:gap-2 md:text-sm"
+            >
+              <SaveEnergy01Icon className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2} />
+              <span className="hidden md:inline">Save</span>
             </Button>
           </div>
         </div>
-        <div className="mt-4 rounded-xl border border-white/5 bg-black/20">
+        <div className="mt-3 border-2 border-border bg-background md:mt-4">
           <CodeEditor
             value={code}
             onChange={onChange}
             onPaste={onPaste}
             language={activeLanguage}
-            minHeight={420}
+            minHeight={320}
             appearance={appearance}
             fontSize={preferences.fontSize}
             wrapLines={preferences.wrapLines}
@@ -841,18 +936,25 @@ function EditorColumn(props: {
             ariaLabel="In-browser code editor"
           />
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="mt-3 grid gap-3 md:mt-4 md:grid-cols-2">
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Custom Input</label>
+            <label className="font-mono text-xs font-bold uppercase text-muted-foreground">
+              Custom Input
+            </label>
             <Textarea
               value={customInput}
               onChange={(event) => onInputChange(event.target.value)}
-              className="mt-1 h-24 resize-none"
+              className="mt-1 h-20 resize-none rounded-none border-2 border-border font-mono text-sm md:h-24"
               placeholder="stdin sent to the runner"
             />
           </div>
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-end">
-            <Button variant="outline" className="gap-2" onClick={onRun} disabled={runInProgress}>
+          <div className="flex flex-col gap-2 md:items-end md:justify-end">
+            <Button
+              variant="outline"
+              className="h-10 w-full gap-2 rounded-none border-2 border-border font-mono text-sm hover:border-primary/50 hover:bg-accent md:w-auto"
+              onClick={onRun}
+              disabled={runInProgress}
+            >
               {runInProgress ? (
                 <Spinner className="h-4 w-4" />
               ) : (
@@ -860,7 +962,11 @@ function EditorColumn(props: {
               )}
               Run Samples
             </Button>
-            <Button className="gap-2" onClick={onSubmit} disabled={submitInProgress}>
+            <Button
+              className="h-10 w-full gap-2 rounded-none border-2 border-primary bg-primary font-mono text-sm font-bold text-primary-foreground shadow-sm shadow-primary/20 transition-all hover:shadow-md hover:shadow-primary/30 md:w-auto"
+              onClick={onSubmit}
+              disabled={submitInProgress}
+            >
               {submitInProgress ? (
                 <Spinner className="h-4 w-4" />
               ) : (
@@ -879,23 +985,23 @@ function EditorColumn(props: {
 function ConsolePanel({ lines }: { lines: string[] }) {
   if (lines.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/5 bg-black/20 p-4 text-sm text-muted-foreground">
+      <div className="border-2 border-border bg-background p-3 font-mono text-xs text-muted-foreground md:p-4 md:text-sm">
         <div className="flex items-center gap-2">
-          <Train01Icon className="h-4 w-4" strokeWidth={2} />
+          <Train01Icon className="h-3.5 w-3.5 md:h-4 md:w-4" strokeWidth={2} />
           Console output will appear here.
         </div>
       </div>
     );
   }
   return (
-    <div className="rounded-2xl border border-white/5 bg-black/30 p-4 font-mono text-sm text-muted-foreground">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground/80">
+    <div className="border-2 border-border bg-background p-3 font-mono text-xs text-muted-foreground md:p-4 md:text-sm">
+      <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wide text-primary/80">
         <Train01Icon className="h-3.5 w-3.5" strokeWidth={2} />
         Console
       </div>
-      <div className="mt-3 space-y-1 overflow-auto">
+      <div className="mt-2 max-h-32 space-y-1 overflow-auto md:mt-3 md:max-h-40">
         {lines.map((line, index) => (
-          <p key={`${line}-${index}`} className="whitespace-pre-wrap text-foreground/80">
+          <p key={`${line}-${index}`} className="whitespace-pre-wrap font-mono text-foreground/80">
             {line}
           </p>
         ))}
@@ -925,46 +1031,79 @@ function SidePanel(props: {
     onRestoreDraft,
   } = props;
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-3 md:gap-4">
       <Tabs
         value={viewMode}
         onValueChange={(value) => onViewModeChange(value as "run" | "submission")}
       >
-        <TabsList className="w-full justify-between">
-          <TabsTrigger value="run">Run output</TabsTrigger>
-          <TabsTrigger value="submission">Judge</TabsTrigger>
+        <TabsList className="grid h-9 w-full grid-cols-2 rounded-none border-2 border-border bg-background p-0 font-mono text-xs md:h-10 md:text-sm">
+          <TabsTrigger
+            value="run"
+            className="rounded-none border-r border-border data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            <span className="hidden md:inline">Run output</span>
+            <span className="md:hidden">Run</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="submission"
+            className="rounded-none data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            Judge
+          </TabsTrigger>
         </TabsList>
       </Tabs>
-      <div className="rounded-2xl border border-white/5 bg-background/80 p-4">
+      <div className="border-2 border-border bg-background p-3 md:p-4">
         <ResultPanel result={result} />
       </div>
       <Tabs defaultValue="description" className="flex-1">
-        <TabsList className="w-full justify-around">
-          <TabsTrigger value="description">Description</TabsTrigger>
-          <TabsTrigger value="editorial" disabled={!problem.editorialIsReleased}>
-            Editorial
+        <TabsList className="grid h-9 w-full grid-cols-4 rounded-none border-2 border-border bg-background p-0 font-mono text-[10px] md:h-10 md:text-xs">
+          <TabsTrigger
+            value="description"
+            className="rounded-none border-r text-xs border-border data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            <span className="hidden md:inline">Description</span>
+            <span className="md:hidden">Desc</span>
           </TabsTrigger>
-          <TabsTrigger value="submissions">Submissions</TabsTrigger>
-          <TabsTrigger value="drafts">My Code</TabsTrigger>
+          <TabsTrigger
+            value="editorial"
+            disabled={!problem.editorialIsReleased}
+            className="rounded-none border-r text-xs border-border data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            <span className="hidden md:inline">Editorial</span>
+            <span className="md:hidden">Edit</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="submissions"
+            className="rounded-none border-r text-xs border-border data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            <span className="hidden md:inline">Submissions</span>
+            <span className="md:hidden">Subs</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="drafts"
+            className="rounded-none text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+          >
+            <span className="hidden md:inline">My Code</span>
+            <span className="md:hidden">Code</span>
+          </TabsTrigger>
         </TabsList>
         <TabsContent
           value="description"
-          className="rounded-2xl border border-white/5 bg-background/60 p-4 text-sm text-muted-foreground"
+          className="border-2 border-border bg-background p-3 font-mono text-xs text-muted-foreground md:p-4 md:text-sm"
         >
-          <ScrollArea className="h-64">
-            <p className="whitespace-pre-line text-foreground">{problem.content.statement}</p>
+          <ScrollArea className="h-48 md:h-64">
+            <p className="whitespace-pre-line font-mono text-foreground">
+              {problem.content.statement}
+            </p>
           </ScrollArea>
         </TabsContent>
-        <TabsContent
-          value="editorial"
-          className="rounded-2xl border border-white/5 bg-background/60 p-4"
-        >
+        <TabsContent value="editorial" className="border-2 border-border bg-background p-3 md:p-4">
           {problem.editorialIsReleased && problem.content.editorial ? (
-            <ScrollArea className="h-64 text-sm text-foreground">
+            <ScrollArea className="h-48 font-mono text-xs text-foreground md:h-64 md:text-sm">
               <p className="whitespace-pre-line">{problem.content.editorial}</p>
             </ScrollArea>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="font-mono text-xs text-muted-foreground md:text-sm">
               Editorial locked
               {problem.editorialReleaseAt
                 ? ` until ${format(new Date(problem.editorialReleaseAt), "PPP p")}`
@@ -974,7 +1113,7 @@ function SidePanel(props: {
           )}
         </TabsContent>
         <TabsContent value="submissions">
-          <div className="h-64 space-y-3 overflow-auto rounded-2xl border border-white/5 bg-background/80 p-4 text-sm">
+          <div className="h-48 space-y-2 overflow-auto border-2 border-border bg-background p-3 font-mono text-xs md:h-64 md:space-y-3 md:p-4 md:text-sm">
             {submissionHistory.length === 0 ? (
               <p className="text-muted-foreground">No submissions yet.</p>
             ) : (
@@ -983,51 +1122,58 @@ function SidePanel(props: {
                   key={entry.id}
                   type="button"
                   onClick={() => onSelectSubmission(entry.id)}
-                  className="w-full rounded-xl border border-white/5 bg-card/70 px-3 py-2 text-left transition hover:border-primary/40"
+                  className="w-full border-2 border-border bg-background px-2 py-2 text-left transition hover:border-primary/40 md:px-3"
                 >
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{new Date(entry.createdAt).toLocaleString()}</span>
+                  <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground md:text-xs">
+                    <span className="truncate">{new Date(entry.createdAt).toLocaleString()}</span>
                     <SubmissionStatusBadge
                       verdict={entry.verdictCode}
                       status={entry.status}
                       size="sm"
                     />
                   </div>
-                  <p className="mt-1 text-sm font-medium text-foreground">
+                  <p className="mt-1 truncate font-mono text-xs font-medium text-foreground md:text-sm">
                     {entry.verdictCode ?? "Pending"} • {entry.languageCode.toUpperCase()}
                   </p>
                 </button>
               ))
             )}
-            <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start rounded-none font-mono text-xs md:text-sm"
+              asChild
+            >
               <Link href={`/problems/${problem.slug}/submissions`}>View history</Link>
             </Button>
           </div>
         </TabsContent>
         <TabsContent value="drafts">
-          <div className="h-64 space-y-3 overflow-auto rounded-2xl border border-white/5 bg-background/80 p-4 text-sm">
+          <div className="h-48 space-y-2 overflow-auto border-2 border-border bg-background p-3 font-mono text-xs md:h-64 md:space-y-3 md:p-4 md:text-sm">
             {drafts.length === 0 ? (
               <p className="text-muted-foreground">No cloud drafts yet.</p>
             ) : (
               drafts.map((draft) => (
-                <div
-                  key={draft.id}
-                  className="rounded-xl border border-white/5 bg-card/70 p-3 text-left"
-                >
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{new Date(draft.updatedAt).toLocaleString()}</span>
-                    <Badge variant="outline">{draft.savedVia}</Badge>
+                <div key={draft.id} className="border-2 border-border bg-background p-2 text-left md:p-3">
+                  <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground md:text-xs">
+                    <span className="truncate">{new Date(draft.updatedAt).toLocaleString()}</span>
+                    <Badge
+                      variant="outline"
+                      className="ml-2 rounded-none border font-mono text-[10px] font-bold uppercase md:text-xs"
+                    >
+                      {draft.savedVia}
+                    </Badge>
                   </div>
-                  <p className="mt-2 line-clamp-2 whitespace-pre-wrap font-mono text-xs text-foreground/80">
+                  <p className="mt-2 line-clamp-2 whitespace-pre-wrap font-mono text-[10px] text-foreground/80 md:text-xs">
                     {draft.sourceCode}
                   </p>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-2 gap-2"
+                    className="mt-2 h-7 gap-1 rounded-none font-mono text-xs md:h-8 md:gap-2 md:text-sm"
                     onClick={() => onRestoreDraft(draft.sourceCode)}
                   >
-                    <TimeScheduleIcon className="h-4 w-4" strokeWidth={2} />
+                    <TimeScheduleIcon className="h-3 w-3 md:h-4 md:w-4" strokeWidth={2} />
                     Restore
                   </Button>
                 </div>
@@ -1043,7 +1189,9 @@ function SidePanel(props: {
 function ResultPanel({ result }: { result: WorkspaceResult | null }) {
   if (!result) {
     return (
-      <div className="text-sm text-muted-foreground">Run samples or submit to see verdicts.</div>
+      <div className="font-mono text-xs text-muted-foreground md:text-sm">
+        Run samples or submit to see verdicts.
+      </div>
     );
   }
 
@@ -1051,35 +1199,39 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
   const variant = result.kind === "sample" ? "Samples" : "Judge";
   if (!summary) {
     return (
-      <div className="rounded-xl border border-dashed border-purple-400/40 bg-purple-500/5 p-4 text-sm text-purple-900 dark:text-purple-100">
-        Manual review pending — we&aspo;ll update this panel once a reviewer posts a verdict.
+      <div className="border-2 border-primary/40 bg-primary/5 p-3 font-mono text-xs text-foreground md:p-4 md:text-sm">
+        Manual review pending — we&apos;ll update this panel once a reviewer posts a verdict.
       </div>
     );
   }
   const verdict = summary.verdictCode ?? "WA";
   const statusLabel = result.kind === "sample" ? "SUCCEEDED" : result.status;
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-white/10 bg-card/80 p-4">
+    <div className="space-y-3 md:space-y-4">
+      <div className="border-2 border-border bg-background p-3 md:p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">{variant}</p>
-            <p className="text-lg font-semibold text-foreground">{verdict}</p>
+            <p className="font-mono text-[10px] text-muted-foreground md:text-xs">{variant}</p>
+            <p className="font-mono text-base font-bold text-foreground md:text-lg">{verdict}</p>
           </div>
           <SubmissionStatusBadge verdict={summary.verdictCode ?? null} status={statusLabel} />
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-4 text-xs text-muted-foreground">
+        <div className="mt-2 grid grid-cols-3 gap-2 font-mono text-[10px] text-muted-foreground md:mt-3 md:gap-4 md:text-xs">
           <div>
             <p>Passed</p>
-            <p className="text-base font-medium text-foreground">{summary?.passed ?? 0}</p>
+            <p className="font-mono text-sm font-medium text-foreground md:text-base">
+              {summary?.passed ?? 0}
+            </p>
           </div>
           <div>
             <p>Failed</p>
-            <p className="text-base font-medium text-foreground">{summary?.failed ?? 0}</p>
+            <p className="font-mono text-sm font-medium text-foreground md:text-base">
+              {summary?.failed ?? 0}
+            </p>
           </div>
           <div>
             <p>Runtime</p>
-            <p className="text-base font-medium text-foreground">
+            <p className="truncate font-mono text-sm font-medium text-foreground md:text-base">
               {summary?.runtimeMs ? `${summary.runtimeMs} ms` : "—"}
             </p>
           </div>
@@ -1087,18 +1239,18 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
       </div>
       <div>
         {result.cases.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No per-test details yet.</p>
+          <p className="font-mono text-[10px] text-muted-foreground md:text-xs">No per-test details yet.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="max-h-64 space-y-2 overflow-auto md:max-h-80">
             {result.cases.map((test) => (
               <motion.div
                 key={`${test.ordinal}-${test.verdictCode}`}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-lg border border-white/5 bg-background/60 p-3 text-xs"
+                className="border-2 border-border bg-background p-2 font-mono text-[10px] md:p-3 md:text-xs"
               >
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">Test #{test.ordinal}</p>
+                  <p className="font-mono font-medium text-foreground">Test #{test.ordinal}</p>
                   <SubmissionStatusBadge
                     verdict={test.verdictCode}
                     status={test.status}
@@ -1106,16 +1258,18 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
                   />
                 </div>
                 {test.inputPreview && (
-                  <p className="mt-2 text-muted-foreground">
-                    <span className="font-semibold text-foreground">In:</span> {test.inputPreview}
+                  <p className="mt-1 truncate font-mono text-muted-foreground md:mt-2">
+                    <span className="font-bold text-foreground">In:</span> {test.inputPreview}
                   </p>
                 )}
                 {test.actualOutput && (
-                  <p className="mt-1 text-muted-foreground">
-                    <span className="font-semibold text-foreground">Out:</span> {test.actualOutput}
+                  <p className="mt-1 truncate font-mono text-muted-foreground">
+                    <span className="font-bold text-foreground">Out:</span> {test.actualOutput}
                   </p>
                 )}
-                {test.stderr ? <p className="mt-1 text-rose-400">stderr: {test.stderr}</p> : null}
+                {test.stderr ? (
+                  <p className="mt-1 truncate font-mono text-destructive">stderr: {test.stderr}</p>
+                ) : null}
               </motion.div>
             ))}
           </div>
@@ -1135,48 +1289,63 @@ function PreferencesMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 flex-1 gap-2 rounded-none border-2 border-border font-mono text-sm hover:border-primary/50 hover:bg-accent md:flex-initial"
+        >
           <Settings02Icon className="h-4 w-4" strokeWidth={2} />
-          Preferences
+          <span className="hidden md:inline">Preferences</span>
+          <span className="md:hidden">Prefs</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60 space-y-2 p-3 text-sm">
-        <DropdownMenuLabel>Editor theme</DropdownMenuLabel>
+      <DropdownMenuContent
+        align="end"
+        className="w-56 space-y-2 rounded-none border-2 border-border bg-background p-3 font-mono text-xs md:w-60 md:text-sm"
+      >
+        <DropdownMenuLabel className="font-mono text-[10px] font-bold uppercase md:text-xs">
+          Editor theme
+        </DropdownMenuLabel>
         <div className="flex gap-2">
           {(["system", "light", "dark"] as const).map((theme) => (
             <Button
               key={theme}
               variant={preferences.theme === theme ? "default" : "outline"}
               size="sm"
-              className="flex-1"
+              className="flex-1 rounded-none border-2 font-mono text-[10px] md:text-xs"
               onClick={() => onChange({ ...preferences, theme })}
             >
               {theme}
             </Button>
           ))}
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Font size</DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-border" />
+        <DropdownMenuLabel className="font-mono text-[10px] font-bold uppercase md:text-xs">
+          Font size
+        </DropdownMenuLabel>
         <Input
           type="range"
           min={12}
           max={20}
           value={preferences.fontSize}
           onChange={(event) => onChange({ ...preferences, fontSize: Number(event.target.value) })}
+          className="rounded-none border-2 border-border"
         />
-        <DropdownMenuSeparator />
-        <div className="flex items-center justify-between text-xs">
+        <DropdownMenuSeparator className="bg-border" />
+        <div className="flex items-center justify-between font-mono text-[10px] md:text-xs">
           <span>Wrap lines</span>
           <Switch
             checked={preferences.wrapLines}
             onCheckedChange={(checked) => onChange({ ...preferences, wrapLines: checked })}
+            className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
           />
         </div>
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between font-mono text-[10px] md:text-xs">
           <span>Show minimap</span>
           <Switch
             checked={preferences.showMinimap}
             onCheckedChange={(checked) => onChange({ ...preferences, showMinimap: checked })}
+            className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
           />
         </div>
       </DropdownMenuContent>
