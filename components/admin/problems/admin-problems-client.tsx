@@ -1,9 +1,6 @@
 "use client";
 
-import { trpc } from "@/lib/trpc/client";
-import type { AppRouter } from "@/lib/trpc/router";
-import type { inferRouterOutputs } from "@trpc/server";
-import { useEffect, useState } from "react";
+import { BookOpenCheck, Search } from "@/components/icons";
 import {
   Badge,
   Card,
@@ -17,10 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
+import { trpc } from "@/lib/trpc/client";
+import type { AppRouter } from "@/lib/trpc/router";
 import { ProblemState, ProblemVisibility } from "@prisma/client";
-import { BookOpenCheck, Search } from "@/components/icons";
+import type { inferRouterOutputs } from "@trpc/server";
+import { formatDistanceToNow } from "date-fns";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type ProblemListResponse = inferRouterOutputs<AppRouter>["admin"]["problems"]["list"];
 
@@ -81,7 +81,7 @@ export function AdminProblemsClient({ initialData }: { initialData: ProblemListR
           </span>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex flex-1 items-center gap-2 rounded-xl border border-border/60 bg-background px-3 py-1.5">
+          <div className="flex flex-1 items-center gap-2 border border-border/60 bg-background px-3 py-1.5">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
               value={query}
@@ -128,7 +128,7 @@ export function AdminProblemsClient({ initialData }: { initialData: ProblemListR
         {problems.map((problem) => (
           <div
             key={problem.id}
-            className="rounded-xl border border-border/60 bg-background/80 p-4 transition hover:border-primary/40"
+            className="border border-border/60 bg-background/80 p-4 transition hover:border-primary/40"
           >
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
@@ -192,7 +192,7 @@ export function AdminProblemsClient({ initialData }: { initialData: ProblemListR
           </div>
         ))}
         {problems.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
+          <div className="border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
             No problems match that filter.
           </div>
         ) : null}
