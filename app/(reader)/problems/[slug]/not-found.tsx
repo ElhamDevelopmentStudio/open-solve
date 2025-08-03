@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function ProblemNotFound() {
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl border bg-card/70 px-6 py-12 text-center shadow-sm">
+    <div className="mx-auto max-w-2xl border bg-card/70 px-6 py-12 text-center shadow-sm">
       <p className="text-sm font-semibold uppercase tracking-wide text-emerald-500">
         404 — Missing problem
       </p>
