@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -35,46 +35,164 @@ enum ProgrammingLanguage {
   RUST
 }
 
-model User {
-  id              String        @id @default(cuid())
-  email           String        @unique
-  username        String        @unique
-  hashedPassword  String?
-  avatarUrl       String?
-  bio             String?
-  location        String?
-  provider        String        @default("credentials")
-  providerId      String?
-  role            String        @default("USER")
-  submissions     Submission[]
-  createdProblems Problem[]     @relation("ProblemAuthor")
-  leaderboard     LeaderboardSnapshot[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+enum UserRole {
+  USER
+  PROBLEM_CURATOR
+  ADMIN
+}
 
-  @@index([provider, providerId])
+enum AuthAuditAction {
+  SIGN_IN
+  SIGN_OUT
+  SIGN_IN_FAILED
+  SESSION_CREATED
+  SESSION_REVOKED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_CHANGED
+  EMAIL_CHANGED
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+  TWO_FACTOR_CHALLENGE_FAILED
+  RECOVERY_CODE_USED
+  MAGIC_LINK_SENT
+  MAGIC_LINK_CONSUMED
+  PROVIDER_LINKED
+  PROVIDER_UNLINKED
+  USER_BANNED
+  USER_UNBANNED
+}
+
+model User {
+  id                String                  @id @default(cuid())
+  email             String                  @unique
+  emailVerified     DateTime?
+  name              String?
+  handle            String                  @unique
+  hashedPassword    String?
+  avatarUrl         String?
+  bio               String?
+  country           String?
+  timezone          String?
+  role              UserRole                @default(USER)
+  twoFactorEnabled  Boolean                 @default(false)
+  lastLoginAt       DateTime?
+  bannedAt          DateTime?
+  passwordUpdatedAt DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  accounts          Account[]
+  sessions          Session[]
+  auditLogs         AuthAuditLog[]
+  twoFactorSecret   TwoFactorSecret?
+  recoveryCodes     TwoFactorRecoveryCode[]
+  submissions       Submission[]
+  createdProblems   Problem[]               @relation("ProblemAuthor")
+  leaderboard       LeaderboardSnapshot[]
+
+  @@index([handle])
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id                  String   @id @default(cuid())
+  sessionToken        String   @unique
+  refreshToken        String   @unique
+  refreshTokenExpires DateTime
+  userId              String
+  userAgent           String?
+  ipAddress           String?
+  lastUsedAt          DateTime @default(now())
+  twoFactorVerified   Boolean  @default(false)
+  expires             DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  type       String   @default("magic_link")
+  expires    DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
+}
+
+model TwoFactorSecret {
+  userId    String   @id
+  secret    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TwoFactorRecoveryCode {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, consumedAt])
+}
+
+model AuthAuditLog {
+  id        String          @id @default(cuid())
+  userId    String?
+  action    AuthAuditAction
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime        @default(now())
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
 }
 
 model Problem {
-  id            String              @id @default(cuid())
-  slug          String              @unique
+  id            String       @id @default(cuid())
+  slug          String       @unique
   title         String
   difficulty    Difficulty
   statement     Json
   constraints   Json
   starterCode   Json
   templates     Json
-  timeLimitMs   Int                 @default(2000)
-  memoryLimitMb Int                 @default(256)
-  isPublished   Boolean             @default(false)
+  timeLimitMs   Int          @default(2000)
+  memoryLimitMb Int          @default(256)
+  isPublished   Boolean      @default(false)
   tags          ProblemTag[]
   testCases     TestCase[]
   submissions   Submission[]
   editorials    Editorial[]
   authorId      String
-  author        User                @relation("ProblemAuthor", fields: [authorId], references: [id])
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  author        User         @relation("ProblemAuthor", fields: [authorId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@index([difficulty, isPublished])
 }
@@ -90,12 +208,12 @@ model Editorial {
 }
 
 model Tag {
-  id        String      @id @default(cuid())
-  name      String      @unique
-  slug      String      @unique
+  id        String       @id @default(cuid())
+  name      String       @unique
+  slug      String       @unique
   problems  ProblemTag[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
 
 model ProblemTag {
@@ -108,30 +226,30 @@ model ProblemTag {
 }
 
 model TestCase {
-  id            String   @id @default(cuid())
-  problem       Problem  @relation(fields: [problemId], references: [id])
-  problemId     String
-  input         Json
-  output        Json
-  isSample      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(cuid())
+  problem   Problem  @relation(fields: [problemId], references: [id])
+  problemId String
+  input     Json
+  output    Json
+  isSample  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Submission {
-  id              String            @id @default(cuid())
-  user            User              @relation(fields: [userId], references: [id])
-  userId          String
-  problem         Problem           @relation(fields: [problemId], references: [id])
-  problemId       String
-  language        ProgrammingLanguage
-  status          SubmissionStatus  @default(PENDING)
-  sourceCode      String
-  runtimeMs       Int?
-  memoryKb        Int?
-  diagnostics     Json?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id          String              @id @default(cuid())
+  user        User                @relation(fields: [userId], references: [id])
+  userId      String
+  problem     Problem             @relation(fields: [problemId], references: [id])
+  problemId   String
+  language    ProgrammingLanguage
+  status      SubmissionStatus    @default(PENDING)
+  sourceCode  String
+  runtimeMs   Int?
+  memoryKb    Int?
+  diagnostics Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
   @@index([userId, problemId])
   @@index([status, createdAt])
