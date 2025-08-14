@@ -315,53 +315,33 @@ export function ProblemLibraryShell({
       <a href="#problem-library-results" className="skip-link sr-only focus:not-sr-only">
         Skip to results
       </a>
-      <div className="space-y-8">
-        <header className="space-y-6">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 border-2 border-primary/50 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-primary">
-              {tagSlug ? `#${tagSlug}` : "LIBRARY"}
-            </div>
-            <h1 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-4xl font-black leading-tight text-transparent sm:text-5xl lg:text-6xl">
+      <div className="space-y-6">
+        <div className="border-2 border-border bg-card p-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-1 items-center gap-3">
               {tagSlug ? (
-                <>
-                  Problems tagged{" "}
-                  <span className="bg-linear-to-r from-primary to-primary/70 bg-clip-text">
-                    #{tagSlug}
-                  </span>
-                </>
-              ) : (
-                "Problem Library"
-              )}
-            </h1>
-            <p className="max-w-2xl font-mono text-base text-muted-foreground">
-              {tagSlug
-                ? `Browse public problems filtered by the #${tagSlug} tag.`
-                : "Browse algorithmic challenges with tags, difficulty filters, and fast search."}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[280px]">
+                <Badge variant="outline" className="text-[10px] uppercase">
+                  #{tagSlug}
+                </Badge>
+              ) : null}
               <Search01Icon
-                className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                className="h-5 w-5 text-muted-foreground"
                 strokeWidth={2}
+                aria-hidden
               />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search problems by title or description..."
+                placeholder="Search problems by title or description…"
                 aria-label="Search problems"
-                className="h-12 rounded-none border-2 border-border pl-11 pr-24 font-mono text-base transition-all focus:border-primary"
+                className="h-11 border-2 border-border bg-background px-3 font-mono text-sm"
               />
-              <span
-                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-none border border-border bg-muted px-2 py-1 font-mono text-xs font-medium text-muted-foreground"
-                aria-live="polite"
-              >
+              <span className="ml-3 border border-border bg-muted px-2 py-1 text-[11px] font-bold uppercase text-muted-foreground">
                 {results?.total ?? 0} results
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <Label htmlFor="sort" className="font-mono text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3">
+              <Label htmlFor="sort" className="text-xs font-bold uppercase text-muted-foreground">
                 Sort
               </Label>
               <Select
@@ -370,10 +350,13 @@ export function ProblemLibraryShell({
                   handleFilterChange({ sort: value as ProblemFiltersInput["sort"] })
                 }
               >
-                <SelectTrigger id="sort" className="w-[170px] rounded-none border-2 border-border font-mono text-sm">
+                <SelectTrigger
+                  id="sort"
+                  className="w-[170px] border-2 border-border font-mono text-sm"
+                >
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
-                <SelectContent className="rounded-none border-2 border-border font-mono">
+                <SelectContent className="border-2 border-border font-mono">
                   {Object.entries(SORT_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
@@ -383,19 +366,20 @@ export function ProblemLibraryShell({
               </Select>
               <Drawer open={filtersOpen} onOpenChange={setFiltersOpen} direction="bottom">
                 <DrawerTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 rounded-none border-2 border-border font-mono text-sm lg:hidden">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-2 border-border font-mono text-xs lg:hidden"
+                  >
                     <FilterIcon className="h-4 w-4" strokeWidth={2} /> Filters
-                    {hasActiveFilters && (
-                      <Badge
-                        variant="secondary"
-                        className="ml-1 h-5 rounded-none border px-1.5 font-mono text-[10px] font-semibold"
-                      >
+                    {hasActiveFilters ? (
+                      <Badge variant="secondary" className="ml-1 border px-1.5 text-[10px]">
                         {activeFilterCount}
                       </Badge>
-                    )}
+                    ) : null}
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent className="h-[88vh] rounded-none border-t-2 border-border bg-background p-1 pb-4">
+                <DrawerContent className="h-[88vh] border-t-2 border-border bg-background p-1 pb-4">
                   <DrawerHeader className="pb-2">
                     <DrawerTitle className="flex items-center justify-center gap-2 font-mono text-base">
                       <SlidersHorizontalIcon className="h-4 w-4" strokeWidth={2} /> Filters
@@ -412,18 +396,23 @@ export function ProblemLibraryShell({
                     />
                   </div>
                   <DrawerFooter className="border-t bg-background px-5">
-                    <Button variant="ghost" onClick={handleClearAll} disabled={!hasActiveFilters} className="rounded-none font-mono">
+                    <Button
+                      variant="ghost"
+                      onClick={handleClearAll}
+                      disabled={!hasActiveFilters}
+                      className="font-mono"
+                    >
                       Reset
                     </Button>
                     <DrawerClose asChild>
-                      <Button className="rounded-none font-mono">Done</Button>
+                      <Button className="font-mono">Done</Button>
                     </DrawerClose>
                   </DrawerFooter>
                 </DrawerContent>
               </Drawer>
             </div>
           </div>
-        </header>
+        </div>
 
         {listQuery.isError ? (
           <Alert variant="destructive" className="rounded-none border-2 font-mono">
@@ -458,7 +447,9 @@ export function ProblemLibraryShell({
           <section className="space-y-4" aria-live={isPending ? "polite" : "off"}>
             {statusFilterBlocked ? (
               <Alert className="rounded-none border-2 font-mono">
-                <AlertTitle className="font-mono font-bold">Sign in to use status filters</AlertTitle>
+                <AlertTitle className="font-mono font-bold">
+                  Sign in to use status filters
+                </AlertTitle>
                 <AlertDescription className="font-mono">
                   Progress filters rely on your submission history.{" "}
                   <Link
@@ -709,7 +700,12 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       <p className="mt-2 font-mono text-sm text-muted-foreground">
         Try adjusting your search criteria or clearing some filters to see more results.
       </p>
-      <Button className="mt-6 rounded-none border-2 font-mono" onClick={onReset} variant="default" size="sm">
+      <Button
+        className="mt-6 rounded-none border-2 font-mono"
+        onClick={onReset}
+        variant="default"
+        size="sm"
+      >
         <Cancel01Icon className="mr-2 h-4 w-4" strokeWidth={2} />
         Reset all filters
       </Button>

@@ -108,7 +108,7 @@ export function ProblemFiltersPanel({
             className="justify-start rounded-none border-2 font-mono"
             onClick={() => toggleDifficulty(null)}
           >
-            Any difficulty
+            Any
           </Button>
           {difficultyOptions.map((difficulty) => (
             <Button
@@ -216,7 +216,12 @@ export function ProblemFiltersPanel({
       </FilterCard>
 
       <Separator />
-      <Button variant="outline" onClick={onReset} className="w-full rounded-none border-2 font-mono" disabled={!hasActiveFilters}>
+      <Button
+        variant="outline"
+        onClick={onReset}
+        className="w-full rounded-none border-2 font-mono"
+        disabled={!hasActiveFilters}
+      >
         Reset filters
       </Button>
     </div>

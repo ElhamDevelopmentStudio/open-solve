@@ -38,6 +38,22 @@ export const problemsConfig = {
       of: "of",
     },
   },
+  notFound: {
+    marker: "[01] PROBLEM LOOKUP",
+    badge: "404 — missing problem",
+    title: "We couldn't find that one",
+    description:
+      "It may have been unpublished, hidden behind permissions, or the slug is misspelled.",
+    diagnostics: [
+      "Confirm the slug or switch to the latest published version.",
+      "Check if the author moved it into a contest-only set.",
+      "Private drafts are visible only to collaborators.",
+    ],
+    actions: {
+      library: "Back to library",
+      newest: "Browse newest",
+    },
+  },
   detail: {
     badge: "PROBLEM",
     breadcrumb: {
