@@ -23,6 +23,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { AuthAuditAction, IncidentSeverity } from "@prisma/client";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type BaseAuditLog = inferRouterOutputs<AppRouter>["admin"]["audit"]["logs"][number];
 type AuditLogEntry = BaseAuditLog & {
@@ -74,6 +75,7 @@ export function AdminAuditClient({
     onSuccess: () => incidentsQuery.refetch(),
     onError: (error) => toast.error("Failed to resolve incident", { description: error.message }),
   });
+  const [pendingResolve, setPendingResolve] = useState<string | null>(null);
 
   const logs = (logsQuery.data ?? initialLogs) as AuditLogs;
   const incidents = incidentsQuery.data ?? initialIncidents;
@@ -203,7 +205,7 @@ export function AdminAuditClient({
                   variant="ghost"
                   size="sm"
                   className="mt-2"
-                  onClick={() => resolveIncident.mutate({ id: incident.id })}
+                  onClick={() => setPendingResolve(incident.id)}
                 >
                   Resolve
                 </Button>
@@ -215,6 +217,23 @@ export function AdminAuditClient({
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog
+        variant="warning"
+        open={pendingResolve !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingResolve(null);
+        }}
+        title="Resolve incident?"
+        description="Marks the incident as resolved and updates audit records."
+        confirmLabel="Resolve"
+        loading={resolveIncident.isPending}
+        onConfirm={() => {
+          if (pendingResolve) {
+            resolveIncident.mutate({ id: pendingResolve });
+            setPendingResolve(null);
+          }
+        }}
+      />
     </div>
   );
 }
