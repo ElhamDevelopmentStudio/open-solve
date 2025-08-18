@@ -10,5 +10,9 @@ export default async function AdminAnalyticsPage() {
     caller.admin.analytics.problems(),
   ]);
 
-  return <AdminAnalyticsDashboard initialOverview={overview} initialProblems={problems} />;
+  return (
+    <div className="space-y-8 font-mono text-foreground">
+      <AdminAnalyticsDashboard initialOverview={overview} initialProblems={problems} />
+    </div>
+  );
 }
