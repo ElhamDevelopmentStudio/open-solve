@@ -1229,10 +1229,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 ) : (
                   <ul className="space-y-2 text-sm">
                     {data.reviews.map((review) => (
-                      <li
-                        key={review.id}
-                        className="border border-white/5 bg-muted/10 p-2"
-                      >
+                      <li key={review.id} className="border border-white/5 bg-muted/10 p-2">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">
                             {review.reviewer.name ?? review.reviewer.handle}
