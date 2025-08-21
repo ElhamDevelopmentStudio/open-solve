@@ -88,12 +88,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
                 <Link href="/dashboard">Workspace</Link>
               </Button>
             ) : (
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="hidden lg:inline-flex"
-              >
+              <Button asChild variant="outline" size="sm" className="hidden lg:inline-flex">
                 <Link href="/sign-in">Sign in</Link>
               </Button>
             )}
