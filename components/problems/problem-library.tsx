@@ -324,11 +324,7 @@ export function ProblemLibraryShell({
                   #{tagSlug}
                 </Badge>
               ) : null}
-              <Search01Icon
-                className="h-5 w-5 text-muted-foreground"
-                strokeWidth={2}
-                aria-hidden
-              />
+              <Search01Icon className="h-5 w-5 text-muted-foreground" strokeWidth={2} aria-hidden />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
