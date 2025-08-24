@@ -1,18 +1,20 @@
 "use client";
 
-import { submissionsConfig } from "@/config/submissions";
 import { useMemo, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { trpc } from "@/lib/trpc/client";
-import type { SubmissionDetailPayload } from "@/lib/submissions/types";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+import { AlertTriangle, ArrowLeft, Copy, Link2, RefreshCcw, Share2 } from "@/components/icons";
 import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, Copy, Link2, RefreshCcw, Share2 } from "@/components/icons";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { submissionsConfig } from "@/config/submissions";
 import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
+import { trpc } from "@/lib/trpc/client";
+import type { SubmissionDetailPayload } from "@/lib/submissions/types";
 import { cn } from "@/lib/utils";
 
 const detailConfig = submissionsConfig.detail;
@@ -26,6 +28,12 @@ export function SubmissionDetailClient({
   submissionId,
   initialSubmission,
 }: SubmissionDetailClientProps) {
+  const [pendingAction, setPendingAction] = useState<
+    | { type: "resubmit" }
+    | { type: "share"; enable: boolean }
+    | { type: "visibility"; hide: boolean }
+    | null
+  >(null);
   const router = useRouter();
   const utils = trpc.useUtils();
   const detailQuery = trpc.submissions.get.useQuery(
@@ -75,26 +83,6 @@ export function SubmissionDetailClient({
     },
     onError: (error) => toast.error(error.message ?? "Unable to update visibility"),
   });
-
-  const handleResubmit = () => {
-    if (typeof window !== "undefined") {
-      const confirmed = window.confirm("Resubmit the same code?");
-      if (!confirmed) return;
-    }
-    resubmit.mutate({ submissionId });
-  };
-
-  const handleShareToggle = () => {
-    if (submission.share.enabled) {
-      shareDisable.mutate({ submissionId });
-    } else {
-      shareEnable.mutate({ submissionId });
-    }
-  };
-
-  const handleVisibilityToggle = () => {
-    hideMutation.mutate({ submissionId, hidden: !submission.hiddenFromProfile });
-  };
 
   return (
     <div className="space-y-8 font-mono text-foreground">
@@ -150,7 +138,7 @@ export function SubmissionDetailClient({
       <div className="flex flex-wrap gap-3">
         {submission.permissions.canResubmit ? (
           <Button
-            onClick={handleResubmit}
+            onClick={() => setPendingAction({ type: "resubmit" })}
             disabled={resubmit.isPending}
             className="gap-2 text-xs font-bold uppercase"
           >
@@ -160,7 +148,7 @@ export function SubmissionDetailClient({
         ) : null}
         {submission.permissions.canToggleShare ? (
           <Button
-            onClick={handleShareToggle}
+            onClick={() => setPendingAction({ type: "share", enable: !submission.share.enabled })}
             variant={submission.share.enabled ? "secondary" : "outline"}
             className="gap-2 text-xs font-bold uppercase"
             disabled={shareEnable.isPending || shareDisable.isPending}
@@ -176,7 +164,9 @@ export function SubmissionDetailClient({
             variant="ghost"
             size="sm"
             disabled={hideMutation.isPending}
-            onClick={handleVisibilityToggle}
+            onClick={() =>
+              setPendingAction({ type: "visibility", hide: !submission.hiddenFromProfile })
+            }
             className="text-xs font-bold uppercase"
           >
             {submission.hiddenFromProfile ? detailConfig.actions.show : detailConfig.actions.hide}
@@ -190,6 +180,62 @@ export function SubmissionDetailClient({
       <CasesSection submission={submission} />
       <CodeSection submission={submission} />
       <ConsoleSection submission={submission} />
+
+      <ConfirmDialog
+        variant="default"
+        open={pendingAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingAction(null);
+        }}
+        title={
+          pendingAction?.type === "resubmit"
+            ? "Resubmit this code?"
+            : pendingAction?.type === "share"
+              ? pendingAction.enable
+                ? "Enable sharing?"
+                : "Disable sharing?"
+              : pendingAction?.type === "visibility"
+                ? pendingAction.hide
+                  ? "Hide from profile?"
+                  : "Show on profile?"
+                : "Confirm action"
+        }
+        description={
+          pendingAction?.type === "resubmit"
+            ? "Creates a new submission with the same code and input."
+            : pendingAction?.type === "share"
+              ? pendingAction.enable
+                ? "A public share link will be created for this submission."
+                : "Existing share link will stop working."
+              : pendingAction?.type === "visibility"
+                ? pendingAction.hide
+                  ? "This submission will be hidden from your public profile."
+                  : "This submission will appear on your public profile."
+                : ""
+        }
+        confirmLabel="Confirm"
+        loading={
+          resubmit.isPending ||
+          shareEnable.isPending ||
+          shareDisable.isPending ||
+          hideMutation.isPending
+        }
+        onConfirm={() => {
+          if (!pendingAction) return;
+          if (pendingAction.type === "resubmit") {
+            resubmit.mutate({ submissionId });
+          } else if (pendingAction.type === "share") {
+            if (pendingAction.enable) {
+              shareEnable.mutate({ submissionId });
+            } else {
+              shareDisable.mutate({ submissionId });
+            }
+          } else if (pendingAction.type === "visibility") {
+            hideMutation.mutate({ submissionId, hidden: pendingAction.hide });
+          }
+          setPendingAction(null);
+        }}
+      />
     </div>
   );
 }
