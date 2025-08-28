@@ -54,36 +54,36 @@ Status legend: `[x]` redesigned, `[ ]` pending. Grouped by how visitors navigate
 
 - [x] `/workspace/problems` (app/(platform)/workspace/problems/page.tsx)
 - [x] `/workspace/problems/[slug]` (app/(platform)/workspace/problems/[slug]/page.tsx)
-- [ ] `/workspace/editorials` (app/(platform)/workspace/editorials/page.tsx)
-- [ ] `/workspace/discuss` (app/(platform)/workspace/discuss/page.tsx)
-- [ ] `/workspace/leaderboards` (app/(platform)/workspace/leaderboards/page.tsx)
-- [ ] `/workspace/trails` (app/(platform)/workspace/trails/page.tsx)
+- [x] `/workspace/editorials` (app/(platform)/workspace/editorials/page.tsx)
+- [x] `/workspace/discuss` (app/(platform)/workspace/discuss/page.tsx)
+- [x] `/workspace/leaderboards` (app/(platform)/workspace/leaderboards/page.tsx)
+- [x] `/workspace/trails` (app/(platform)/workspace/trails/page.tsx)
 
 ## [06] Account & Settings
 
-- [ ] `/settings/account` (app/(platform)/settings/account/page.tsx)
-- [ ] `/settings/profile` (app/(platform)/settings/profile/page.tsx)
-- [ ] `/settings/security` (app/(platform)/settings/security/page.tsx)
+- [x] `/settings/account` (app/(platform)/settings/account/page.tsx)
+- [x] `/settings/profile` (app/(platform)/settings/profile/page.tsx)
+- [x] `/settings/security` (app/(platform)/settings/security/page.tsx)
 
 ## [07] Admin Console
 
-- [ ] `/admin` (app/admin/page.tsx)
-- [ ] `/admin/analytics` (app/admin/analytics/page.tsx)
-- [ ] `/admin/contests` (app/admin/contests/page.tsx)
-- [ ] `/admin/contests/[slug]/anti-cheat` (app/admin/contests/[slug]/anti-cheat/page.tsx)
-- [ ] `/admin/problems` (app/admin/problems/page.tsx)
-- [ ] `/admin/users` (app/admin/users/page.tsx)
-- [ ] `/admin/discussions` (app/admin/discussions/page.tsx)
-- [ ] `/admin/submissions` (app/admin/submissions/page.tsx)
-- [ ] `/admin/audit` (app/admin/audit/page.tsx)
-- [ ] `/admin/system` (app/admin/system/page.tsx)
+- [x] `/admin` (app/admin/page.tsx)
+- [x] `/admin/analytics` (app/admin/analytics/page.tsx)
+- [x] `/admin/contests` (app/admin/contests/page.tsx)
+- [x] `/admin/contests/[slug]/anti-cheat` (app/admin/contests/[slug]/anti-cheat/page.tsx)
+- [x] `/admin/problems` (app/admin/problems/page.tsx)
+- [x] `/admin/users` (app/admin/users/page.tsx)
+- [x] `/admin/discussions` (app/admin/discussions/page.tsx)
+- [x] `/admin/submissions` (app/admin/submissions/page.tsx)
+- [x] `/admin/audit` (app/admin/audit/page.tsx)
+- [x] `/admin/system` (app/admin/system/page.tsx)
 
 ## [08] Staff Tools
 
-- [ ] `/staff/problems` (app/staff/problems/page.tsx)
-- [ ] `/staff/problems/[id]` (app/staff/problems/[id]/page.tsx)
-- [ ] `/staff/proposals` (app/staff/proposals/page.tsx)
-- [ ] `/staff/proposals/[id]` (app/staff/proposals/[id]/page.tsx)
+- [x] `/staff/problems` (app/staff/problems/page.tsx)
+- [x] `/staff/problems/[id]` (app/staff/problems/[id]/page.tsx)
+- [x] `/staff/proposals` (app/staff/proposals/page.tsx)
+- [x] `/staff/proposals/[id]` (app/staff/proposals/[id]/page.tsx)
 - [ ] `/staff/contests` (app/staff/contests/page.tsx)
 - [ ] `/staff/contests/new` (app/staff/contests/new/page.tsx)
 - [ ] `/staff/judge/manual` (app/staff/judge/manual/page.tsx)
