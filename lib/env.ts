@@ -32,6 +32,17 @@ export const env = createEnv({
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),
+    // MinIO / S3-compatible storage (optional)
+    MINIO_ENDPOINT: emptyToUndefined(z.string()),
+    MINIO_BUCKET: emptyToUndefined(z.string()),
+    MINIO_ACCESS_KEY: emptyToUndefined(z.string()),
+    MINIO_SECRET_KEY: emptyToUndefined(z.string()),
+    MINIO_REGION: emptyToUndefined(z.string()),
+    MINIO_USE_SSL: z
+      .preprocess((v) => (typeof v === "string" ? v.toLowerCase() : v), z.enum(["true", "false"]).optional())
+      .transform((v) => v === "true")
+      .optional(),
+    MINIO_PUBLIC_URL: emptyToUndefined(z.string().url()),
   },
   client: {
     NEXT_PUBLIC_SENTRY_DSN: emptyToUndefined(z.string().url()),
@@ -58,6 +69,13 @@ export const env = createEnv({
     RATE_LIMIT_WINDOW_SECONDS: process.env.RATE_LIMIT_WINDOW_SECONDS,
     RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS,
     LOG_LEVEL: process.env.LOG_LEVEL,
+    MINIO_ENDPOINT: process.env.MINIO_ENDPOINT,
+    MINIO_BUCKET: process.env.MINIO_BUCKET,
+    MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
+    MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
+    MINIO_REGION: process.env.MINIO_REGION,
+    MINIO_USE_SSL: process.env.MINIO_USE_SSL,
+    MINIO_PUBLIC_URL: process.env.MINIO_PUBLIC_URL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
