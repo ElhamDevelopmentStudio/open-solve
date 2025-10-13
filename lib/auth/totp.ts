@@ -30,16 +30,7 @@ export function hashRecoveryCode(code: string): string {
   return crypto.createHash("sha256").update(code).digest("hex");
 }
 
-export function verifyRecoveryCode(
-  code: string,
-  hashedCode: string,
-): boolean {
+export function verifyRecoveryCode(code: string, hashedCode: string): boolean {
   const computedHash = hashRecoveryCode(code);
-  return crypto.timingSafeEqual(
-    Buffer.from(computedHash),
-    Buffer.from(hashedCode),
-  );
+  return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(hashedCode));
 }
-
-
-

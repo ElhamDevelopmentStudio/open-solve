@@ -29,15 +29,14 @@ export async function getClientInfo(): Promise<{
 }
 
 export function generateHandle(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .substring(0, 20) + Math.random().toString(36).substring(2, 8);
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "")
+      .substring(0, 20) + Math.random().toString(36).substring(2, 8)
+  );
 }
 
 export function isValidHandle(handle: string): boolean {
   return /^[a-z0-9_-]{3,20}$/.test(handle);
 }
-
-
-

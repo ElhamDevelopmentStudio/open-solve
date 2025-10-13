@@ -19,16 +19,10 @@ export async function createAuditLog(data: {
   });
 }
 
-export async function getUserAuditLogs(
-  userId: string,
-  limit = 50,
-) {
+export async function getUserAuditLogs(userId: string, limit = 50) {
   return prisma.authAuditLog.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
 }
-
-
-

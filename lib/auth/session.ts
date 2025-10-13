@@ -103,11 +103,13 @@ export async function deleteSession(sessionToken?: string): Promise<void> {
   }
 
   if (sessionToken) {
-    await prisma.session.delete({
-      where: { sessionToken },
-    }).catch(() => {
-      // Session may already be deleted
-    });
+    await prisma.session
+      .delete({
+        where: { sessionToken },
+      })
+      .catch(() => {
+        // Session may already be deleted
+      });
   }
 
   cookieStore.delete(SESSION_COOKIE_NAME);
@@ -183,4 +185,3 @@ export async function requireSession(): Promise<SessionData> {
   }
   return session;
 }
-

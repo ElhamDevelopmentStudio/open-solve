@@ -15,10 +15,7 @@ export function generateRefreshToken(): string {
 }
 
 export function hashToken(token: string): string {
-  return crypto
-    .createHmac("sha256", env.SESSION_SECRET)
-    .update(token)
-    .digest("hex");
+  return crypto.createHmac("sha256", env.SESSION_SECRET).update(token).digest("hex");
 }
 
 export function createVerificationToken(): {
@@ -32,9 +29,5 @@ export function createVerificationToken(): {
 
 export function verifyTokenHash(token: string, hashedToken: string): boolean {
   const computedHash = hashToken(token);
-  return crypto.timingSafeEqual(
-    Buffer.from(computedHash),
-    Buffer.from(hashedToken),
-  );
+  return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(hashedToken));
 }
-
