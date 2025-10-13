@@ -1,14 +1,14 @@
 "use client";
 
 import {
-    Button,
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-    Input,
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
 } from "@/components/ui";
 import { trpc } from "@/lib/trpc/client";
 import { signUpSchema, type SignUpInput } from "@/lib/validators/auth";
@@ -55,12 +55,7 @@ export function SignUpForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  {...field}
-                />
+                <Input type="email" placeholder="you@example.com" autoComplete="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -74,12 +69,7 @@ export function SignUpForm() {
             <FormItem>
               <FormLabel>Name (optional)</FormLabel>
               <FormControl>
-                <Input
-                  type="text"
-                  placeholder="John Doe"
-                  autoComplete="name"
-                  {...field}
-                />
+                <Input type="text" placeholder="John Doe" autoComplete="name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -93,12 +83,7 @@ export function SignUpForm() {
             <FormItem>
               <FormLabel>Handle (optional)</FormLabel>
               <FormControl>
-                <Input
-                  type="text"
-                  placeholder="johndoe"
-                  autoComplete="username"
-                  {...field}
-                />
+                <Input type="text" placeholder="johndoe" autoComplete="username" {...field} />
               </FormControl>
               <FormMessage />
               <p className="text-xs text-muted-foreground">
@@ -137,6 +122,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-
-
