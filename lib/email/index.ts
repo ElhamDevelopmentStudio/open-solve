@@ -99,10 +99,7 @@ export async function sendMagicLinkEmail(
   }
 }
 
-export async function sendTwoFactorEnabledEmail(
-  userId: string,
-  email: string,
-): Promise<void> {
+export async function sendTwoFactorEnabledEmail(userId: string, email: string): Promise<void> {
   const template = templates.getTwoFactorEnabledTemplate(email);
 
   const result = await sendEmail({
@@ -147,6 +144,3 @@ export async function sendEmailChangedNotification(
     }),
   ]);
 }
-
-
-

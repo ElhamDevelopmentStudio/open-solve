@@ -5,10 +5,7 @@ export interface EmailTemplate {
   html: string;
 }
 
-export function getVerifyEmailTemplate(
-  token: string,
-  email: string,
-): EmailTemplate {
+export function getVerifyEmailTemplate(token: string, email: string): EmailTemplate {
   const verifyUrl = `${env.APP_URL}/auth/verify-email?token=${token}`;
 
   return {
@@ -63,10 +60,7 @@ export function getVerifyEmailTemplate(
   };
 }
 
-export function getPasswordResetTemplate(
-  token: string,
-  email: string,
-): EmailTemplate {
+export function getPasswordResetTemplate(token: string, email: string): EmailTemplate {
   const resetUrl = `${env.APP_URL}/auth/reset-password?token=${token}`;
 
   return {
@@ -121,10 +115,7 @@ export function getPasswordResetTemplate(
   };
 }
 
-export function getMagicLinkTemplate(
-  token: string,
-  email: string,
-): EmailTemplate {
+export function getMagicLinkTemplate(token: string, email: string): EmailTemplate {
   const magicUrl = `${env.APP_URL}/auth/magic-link?token=${token}`;
 
   return {
@@ -225,10 +216,7 @@ export function getTwoFactorEnabledTemplate(email: string): EmailTemplate {
   };
 }
 
-export function getEmailChangedTemplate(
-  newEmail: string,
-  oldEmail: string,
-): EmailTemplate {
+export function getEmailChangedTemplate(newEmail: string, oldEmail: string): EmailTemplate {
   return {
     subject: "Your email address has been changed",
     html: `
@@ -264,6 +252,3 @@ export function getEmailChangedTemplate(
     `,
   };
 }
-
-
-
