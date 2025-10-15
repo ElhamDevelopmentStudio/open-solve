@@ -18,6 +18,4 @@ const serverParsers = buildProblemSearchParsers({
 export const problemSearchParams = createSearchParamsCache(serverParsers);
 export const loadProblemSearchParams = createLoader(serverParsers);
 
-export type ProblemSearchParams = Awaited<
-  ReturnType<typeof problemSearchParams.parse>
->;
+export type ProblemSearchParams = Awaited<ReturnType<typeof problemSearchParams.parse>>;

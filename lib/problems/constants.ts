@@ -2,12 +2,12 @@ export const DIFFICULTIES = ["EASY", "MEDIUM", "HARD"] as const;
 export const SUBMISSION_STATUSES = [
   "PENDING",
   "RUNNING",
-  "ACCEPTED",
-  "WRONG_ANSWER",
+  "AC",
+  "WA",
   "TLE",
-  "RUNTIME_ERROR",
-  "COMPILE_ERROR",
-  "INTERNAL_ERROR",
+  "MLE",
+  "RE",
+  "CE",
 ] as const;
 
 export type DifficultyValue = (typeof DIFFICULTIES)[number];
