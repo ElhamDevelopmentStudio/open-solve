@@ -17,9 +17,7 @@ const clientParsers = buildProblemSearchParsers({
   parseAsInteger,
 });
 
-export function useProblemFilters(
-  options?: UseQueryStatesOptions<typeof clientParsers>,
-) {
+export function useProblemFilters(options?: UseQueryStatesOptions<typeof clientParsers>) {
   return useQueryStates(clientParsers, {
     history: "replace",
     ...options,
