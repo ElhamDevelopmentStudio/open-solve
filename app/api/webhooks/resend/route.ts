@@ -12,15 +12,12 @@ type ResendEvent = {
 
 function extractMessageId(payload: ResendEvent): string | null {
   const d = payload.data ?? {};
-  return (
-    d.id || d.email_id || d.emailId || d.email?.id || payload.id || null
-  );
+  return d.id || d.email_id || d.emailId || d.email?.id || payload.id || null;
 }
 
 function extractRecipient(payload: ResendEvent): string | null {
   const d = payload.data ?? {};
-  const email =
-    d.to?.[0] || d.to || d.recipient || d.email?.to?.[0] || d.email?.to || null;
+  const email = d.to?.[0] || d.to || d.recipient || d.email?.to?.[0] || d.email?.to || null;
   return typeof email === "string" ? email : Array.isArray(email) ? email[0] : null;
 }
 
@@ -46,8 +43,7 @@ export async function POST(req: Request) {
   const status = normalizeStatus(eventType);
   const messageId = extractMessageId(body);
   const recipient = extractRecipient(body);
-  const providerReason =
-    body.data?.reason || body.data?.error || body["error"] || undefined;
+  const providerReason = body.data?.reason || body.data?.error || body["error"] || undefined;
 
   if (!messageId || !status) {
     logger.warn({ body }, "resend webhook: missing messageId or status");
@@ -80,4 +76,3 @@ export async function POST(req: Request) {
 }
 
 export const runtime = "nodejs";
-
