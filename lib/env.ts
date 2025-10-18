@@ -39,7 +39,10 @@ export const env = createEnv({
     MINIO_SECRET_KEY: emptyToUndefined(z.string()),
     MINIO_REGION: emptyToUndefined(z.string()),
     MINIO_USE_SSL: z
-      .preprocess((v) => (typeof v === "string" ? v.toLowerCase() : v), z.enum(["true", "false"]).optional())
+      .preprocess(
+        (v) => (typeof v === "string" ? v.toLowerCase() : v),
+        z.enum(["true", "false"]).optional(),
+      )
       .transform((v) => v === "true")
       .optional(),
     MINIO_PUBLIC_URL: emptyToUndefined(z.string().url()),

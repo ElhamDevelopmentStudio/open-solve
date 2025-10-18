@@ -51,4 +51,3 @@ export async function uploadAvatarToMinio({ userId, filename, contentType, buffe
 
   return key;
 }
-
