@@ -8,7 +8,10 @@ export const signUpSchema = z.object({
     .string()
     .min(3, "Handle must be at least 3 characters")
     .max(20, "Handle must be at most 20 characters")
-    .regex(/^[a-z0-9_-]+$/, "Handle can only contain lowercase letters, numbers, underscores, and hyphens")
+    .regex(
+      /^[a-z0-9_-]+$/,
+      "Handle can only contain lowercase letters, numbers, underscores, and hyphens",
+    )
     .optional(),
 });
 
@@ -87,6 +90,3 @@ export type EnableTwoFactorInput = z.infer<typeof enableTwoFactorSchema>;
 export type DisableTwoFactorInput = z.infer<typeof disableTwoFactorSchema>;
 export type VerifyRecoveryCodeInput = z.infer<typeof verifyRecoveryCodeSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-
-
-

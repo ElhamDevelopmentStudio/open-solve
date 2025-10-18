@@ -1,15 +1,7 @@
 import { createAuditLog } from "@/lib/auth/audit";
-import {
-  hashPassword,
-  validatePasswordStrength,
-  verifyPassword,
-} from "@/lib/auth/password";
+import { hashPassword, validatePasswordStrength, verifyPassword } from "@/lib/auth/password";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/auth/rate-limit";
-import {
-  createSession,
-  deleteAllUserSessions,
-  deleteSession,
-} from "@/lib/auth/session";
+import { createSession, deleteAllUserSessions, deleteSession } from "@/lib/auth/session";
 import { createVerificationToken, generateSecureToken } from "@/lib/auth/tokens";
 import {
   generateRecoveryCodes,
@@ -58,212 +50,200 @@ export const authRouter = router({
     };
   }),
 
-  signUp: publicProcedure
-    .input(authSchemas.signUpSchema)
-    .mutation(async ({ input }) => {
-      const { ipAddress, userAgent } = await getClientInfo();
+  signUp: publicProcedure.input(authSchemas.signUpSchema).mutation(async ({ input }) => {
+    const { ipAddress, userAgent } = await getClientInfo();
 
-      // Rate limit
-      const rateLimit = await checkRateLimit(
-        ipAddress ?? "anonymous",
-        "signup",
-        RATE_LIMITS.SIGNUP,
-      );
-      if (!rateLimit.allowed) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Too many signup attempts. Please try again later.",
-        });
-      }
-
-      // Validate password strength
-      const passwordValidation = validatePasswordStrength(input.password);
-      if (!passwordValidation.valid) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: passwordValidation.errors.join(", "),
-        });
-      }
-
-      const email = normalizeEmail(input.email);
-
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
+    // Rate limit
+    const rateLimit = await checkRateLimit(ipAddress ?? "anonymous", "signup", RATE_LIMITS.SIGNUP);
+    if (!rateLimit.allowed) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "Too many signup attempts. Please try again later.",
       });
+    }
 
-      if (existingUser) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "An account with this email already exists",
-        });
-      }
-
-      // Generate handle if not provided
-      let handle = input.handle;
-      if (!handle) {
-        handle = generateHandle(input.name || email.split("@")[0]);
-      }
-
-      // Check if handle is taken
-      const handleExists = await prisma.user.findUnique({
-        where: { handle },
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(input.password);
+    if (!passwordValidation.valid) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: passwordValidation.errors.join(", "),
       });
+    }
 
-      if (handleExists) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "This handle is already taken",
-        });
-      }
+    const email = normalizeEmail(input.email);
 
-      // Create user
-      const hashedPassword = await hashPassword(input.password);
-      const user = await prisma.user.create({
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "An account with this email already exists",
+      });
+    }
+
+    // Generate handle if not provided
+    let handle = input.handle;
+    if (!handle) {
+      handle = generateHandle(input.name || email.split("@")[0]);
+    }
+
+    // Check if handle is taken
+    const handleExists = await prisma.user.findUnique({
+      where: { handle },
+    });
+
+    if (handleExists) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "This handle is already taken",
+      });
+    }
+
+    // Create user
+    const hashedPassword = await hashPassword(input.password);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        hashedPassword,
+        name: input.name,
+        handle,
+      },
+    });
+
+    // Send verification email (link verifies account email)
+    const { token } = createVerificationToken();
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        type: "email_verification",
+        userId: user.id,
+        expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      },
+    });
+
+    await sendVerificationEmail(user.id, email, token);
+
+    // Create session
+    await createSession(user.id, userAgent, ipAddress);
+
+    // Audit log
+    await createAuditLog({
+      userId: user.id,
+      action: "SIGN_IN",
+      ipAddress,
+      userAgent,
+    });
+
+    return {
+      success: true,
+      message: "Account created successfully. Please check your email to verify your account.",
+    };
+  }),
+
+  signIn: publicProcedure.input(authSchemas.signInSchema).mutation(async ({ input }) => {
+    const { ipAddress, userAgent } = await getClientInfo();
+
+    // Rate limit
+    const rateLimit = await checkRateLimit(ipAddress ?? "anonymous", "login", RATE_LIMITS.LOGIN);
+    if (!rateLimit.allowed) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "Too many login attempts. Please try again later.",
+      });
+    }
+
+    const email = normalizeEmail(input.email);
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user || !user.hashedPassword) {
+      await createAuditLog({
+        action: "SIGN_IN_FAILED",
+        ipAddress,
+        userAgent,
+        metadata: { reason: "invalid_credentials" },
+      });
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid email or password",
+      });
+    }
+
+    // Check if user is banned
+    if (user.bannedAt) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Your account has been banned",
+      });
+    }
+
+    // Verify password
+    const isValid = await verifyPassword(input.password, user.hashedPassword);
+    if (!isValid) {
+      await createAuditLog({
+        userId: user.id,
+        action: "SIGN_IN_FAILED",
+        ipAddress,
+        userAgent,
+        metadata: { reason: "invalid_password" },
+      });
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid email or password",
+      });
+    }
+
+    // If 2FA is enabled, don't create session yet
+    if (user.twoFactorEnabled) {
+      // Create a temporary session marker
+      const tempSession = await prisma.session.create({
         data: {
-          email,
-          hashedPassword,
-          name: input.name,
-          handle,
+          userId: user.id,
+          sessionToken: "temp_" + Math.random().toString(36),
+          refreshToken: "temp_" + Math.random().toString(36),
+          userAgent,
+          ipAddress,
+          expires: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+          refreshTokenExpires: new Date(Date.now() + 5 * 60 * 1000),
+          twoFactorVerified: false,
         },
       });
 
-      // Send verification email (link verifies account email)
-      const { token } = createVerificationToken();
-      await prisma.verificationToken.create({
-        data: {
-          identifier: email,
-          token,
-          type: "email_verification",
-          userId: user.id,
-          expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-        },
-      });
-
-      await sendVerificationEmail(user.id, email, token);
-
-      // Create session
-      await createSession(user.id, userAgent, ipAddress);
-
-      // Audit log
-      await createAuditLog({
-        userId: user.id,
-        action: "SIGN_IN",
-        ipAddress,
-        userAgent,
-      });
-
       return {
-        success: true,
-        message: "Account created successfully. Please check your email to verify your account.",
+        requiresTwoFactor: true,
+        sessionId: tempSession.id,
       };
-    }),
+    }
 
-  signIn: publicProcedure
-    .input(authSchemas.signInSchema)
-    .mutation(async ({ input }) => {
-      const { ipAddress, userAgent } = await getClientInfo();
+    // Create session
+    await createSession(user.id, userAgent, ipAddress, input.rememberMe);
 
-      // Rate limit
-      const rateLimit = await checkRateLimit(
-        ipAddress ?? "anonymous",
-        "login",
-        RATE_LIMITS.LOGIN,
-      );
-      if (!rateLimit.allowed) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "Too many login attempts. Please try again later.",
-        });
-      }
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
 
-      const email = normalizeEmail(input.email);
+    // Audit log
+    await createAuditLog({
+      userId: user.id,
+      action: "SIGN_IN",
+      ipAddress,
+      userAgent,
+    });
 
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (!user || !user.hashedPassword) {
-        await createAuditLog({
-          action: "SIGN_IN_FAILED",
-          ipAddress,
-          userAgent,
-          metadata: { reason: "invalid_credentials" },
-        });
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid email or password",
-        });
-      }
-
-      // Check if user is banned
-      if (user.bannedAt) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Your account has been banned",
-        });
-      }
-
-      // Verify password
-      const isValid = await verifyPassword(input.password, user.hashedPassword);
-      if (!isValid) {
-        await createAuditLog({
-          userId: user.id,
-          action: "SIGN_IN_FAILED",
-          ipAddress,
-          userAgent,
-          metadata: { reason: "invalid_password" },
-        });
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Invalid email or password",
-        });
-      }
-
-      // If 2FA is enabled, don't create session yet
-      if (user.twoFactorEnabled) {
-        // Create a temporary session marker
-        const tempSession = await prisma.session.create({
-          data: {
-            userId: user.id,
-            sessionToken: "temp_" + Math.random().toString(36),
-            refreshToken: "temp_" + Math.random().toString(36),
-            userAgent,
-            ipAddress,
-            expires: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
-            refreshTokenExpires: new Date(Date.now() + 5 * 60 * 1000),
-            twoFactorVerified: false,
-          },
-        });
-
-        return {
-          requiresTwoFactor: true,
-          sessionId: tempSession.id,
-        };
-      }
-
-      // Create session
-      await createSession(user.id, userAgent, ipAddress, input.rememberMe);
-
-      // Update last login
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date() },
-      });
-
-      // Audit log
-      await createAuditLog({
-        userId: user.id,
-        action: "SIGN_IN",
-        ipAddress,
-        userAgent,
-      });
-
-      return {
-        success: true,
-        requiresTwoFactor: false,
-      };
-    }),
+    return {
+      success: true,
+      requiresTwoFactor: false,
+    };
+  }),
 
   verifyTwoFactor: publicProcedure
     .input(authSchemas.verifyTwoFactorSchema)
@@ -621,75 +601,73 @@ export const authRouter = router({
       };
     }),
 
-  verifyEmail: publicProcedure
-    .input(authSchemas.verifyEmailSchema)
-    .mutation(async ({ input }) => {
-      const verificationToken = await prisma.verificationToken.findUnique({
-        where: { token: input.token },
+  verifyEmail: publicProcedure.input(authSchemas.verifyEmailSchema).mutation(async ({ input }) => {
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: { token: input.token },
+    });
+
+    if (!verificationToken) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Invalid verification token",
+      });
+    }
+
+    if (verificationToken.expires < new Date()) {
+      await prisma.verificationToken.delete({ where: { token: input.token } });
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Verification link has expired",
+      });
+    }
+
+    if (verificationToken.type === "email_verification") {
+      const user = await prisma.user.findUnique({
+        where: { email: verificationToken.identifier },
       });
 
-      if (!verificationToken) {
+      if (!user) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Invalid verification token",
+          message: "User not found",
         });
       }
 
-      if (verificationToken.expires < new Date()) {
-        await prisma.verificationToken.delete({ where: { token: input.token } });
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Verification link has expired",
-        });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() },
+      });
+
+      await prisma.verificationToken.delete({ where: { token: input.token } });
+      return { success: true, message: "Email verified successfully" };
+    }
+
+    if (verificationToken.type === "email_change") {
+      if (!verificationToken.userId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid token payload" });
       }
-
-      if (verificationToken.type === "email_verification") {
-        const user = await prisma.user.findUnique({
-          where: { email: verificationToken.identifier },
-        });
-
-        if (!user) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "User not found",
-          });
-        }
-
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { emailVerified: new Date() },
-        });
-
-        await prisma.verificationToken.delete({ where: { token: input.token } });
-        return { success: true, message: "Email verified successfully" };
+      const user = await prisma.user.findUnique({ where: { id: verificationToken.userId } });
+      if (!user) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "User not found" });
       }
+      const oldEmail = user.email;
+      const newEmail = verificationToken.identifier;
 
-      if (verificationToken.type === "email_change") {
-        if (!verificationToken.userId) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid token payload" });
-        }
-        const user = await prisma.user.findUnique({ where: { id: verificationToken.userId } });
-        if (!user) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "User not found" });
-        }
-        const oldEmail = user.email;
-        const newEmail = verificationToken.identifier;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { email: newEmail, emailVerified: new Date() },
+      });
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { email: newEmail, emailVerified: new Date() },
-        });
+      await prisma.verificationToken.delete({ where: { token: input.token } });
 
-        await prisma.verificationToken.delete({ where: { token: input.token } });
+      // Notify both addresses
+      await sendEmailChangedNotification(user.id, newEmail, oldEmail);
 
-        // Notify both addresses
-        await sendEmailChangedNotification(user.id, newEmail, oldEmail);
+      return { success: true, message: "Email changed and verified successfully" };
+    }
 
-        return { success: true, message: "Email changed and verified successfully" };
-      }
-
-      throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported verification type" });
-    }),
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported verification type" });
+  }),
 
   verifyMagicLink: publicProcedure
     .input(z.object({ token: z.string() }))
@@ -1201,5 +1179,4 @@ export const authRouter = router({
     const url = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${env.APP_URL}/api/auth/github/callback`)}&scope=user:email&state=${state}`;
     return { url };
   }),
-
 });

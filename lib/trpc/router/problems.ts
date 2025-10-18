@@ -11,16 +11,14 @@ const problemFiltersInput = z.object({
 });
 
 export const problemsRouter = router({
-  list: publicProcedure
-    .input(problemFiltersInput)
-    .query(async ({ input }) => {
-      // TODO: Replace with actual Prisma query once problem records exist.
-      return {
-        filters: input,
-        total: 0,
-        items: [],
-      };
-    }),
+  list: publicProcedure.input(problemFiltersInput).query(async ({ input }) => {
+    // TODO: Replace with actual Prisma query once problem records exist.
+    return {
+      filters: input,
+      total: 0,
+      items: [],
+    };
+  }),
   filterMetadata: publicProcedure.query(async () => {
     return {
       difficulties: DIFFICULTIES,
