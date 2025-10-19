@@ -17,7 +17,6 @@ const sharedOptions = sentryEnabled
     };
 
 declare global {
-   
   var __APP_PROCESS_HANDLERS_INITIALIZED__: boolean | undefined;
 }
 
@@ -81,7 +80,10 @@ export function onRequestError(
     routerKind: "Pages Router" | "App Router";
     routePath: string;
     routeType: "render" | "route" | "action" | "proxy";
-    renderSource?: "react-server-components" | "react-server-components-payload" | "server-rendering";
+    renderSource?:
+      | "react-server-components"
+      | "react-server-components-payload"
+      | "server-rendering";
     revalidateReason: "on-demand" | "stale" | undefined;
   }>,
 ) {

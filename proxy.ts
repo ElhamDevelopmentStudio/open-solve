@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 const RATE_LIMITED_PATH = /^\/api\//;
 
@@ -86,8 +86,7 @@ function getIdentifier(request: NextRequest) {
     return first.trim();
   }
 
-  const realIp =
-    request.headers.get("x-real-ip") ?? request.headers.get("x-vercel-ip");
+  const realIp = request.headers.get("x-real-ip") ?? request.headers.get("x-vercel-ip");
   if (realIp) {
     return realIp;
   }

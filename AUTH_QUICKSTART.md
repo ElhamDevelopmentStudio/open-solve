@@ -1,6 +1,7 @@
 # Authentication System - Quickstart
 
 ## Overview
+
 Complete in-house authentication system built with tRPC, Prisma, and Next.js 16. Includes email/password, 2FA/TOTP, magic links, OAuth foundation, sessions, rate limiting, and email system.
 
 ## Environment Setup
@@ -37,6 +38,7 @@ npx prisma generate
 ### Core Components
 
 **Auth Utilities** (`lib/auth/`):
+
 - `password.ts` - bcrypt hashing & validation
 - `session.ts` - HttpOnly cookie sessions (8h default, 30d with remember-me)
 - `tokens.ts` - Secure token generation & verification
@@ -45,28 +47,33 @@ npx prisma generate
 - `audit.ts` - Authentication event logging
 
 **Email System** (`lib/email/`):
+
 - `resend.ts` - Resend API client (gracefully degrades without API key)
 - `templates.ts` - HTML email templates (verify, reset, magic link, 2FA, etc.)
 - `index.ts` - Send functions with EmailMessage logging
 
 **tRPC Router** (`lib/trpc/router/auth.ts`):
+
 - All auth procedures (sign-up, sign-in, 2FA, password management, etc.)
 - Rate limiting per action
 - Audit logging for security events
 
 **Middleware** (`lib/trpc/trpc.ts`):
+
 - `publicProcedure` - No auth required
 - `protectedProcedure` - Requires valid session
 - `adminProcedure` - Requires ADMIN role
 - `curatorProcedure` - Requires PROBLEM_CURATOR role
 
 **Context** (`lib/trpc/context.ts`):
+
 - Automatically loads session from cookies
 - Available in all tRPC procedures as `ctx.user` and `ctx.session`
 
 ### UI Pages
 
 **Auth Routes** (`app/(auth)/`):
+
 - `/sign-in` - Email/password + 2FA challenge
 - `/sign-up` - Registration with email verification
 - `/auth/forgot-password` - Request password reset
@@ -74,12 +81,14 @@ npx prisma generate
 - `/auth/verify-email` - Email verification handler
 
 **Settings Routes** (`app/(platform)/settings/`):
+
 - `/settings/account` - Profile, sessions, account deletion
 - `/settings/security` - Password, email, 2FA management
 
 ## Key Features
 
 ### Sessions
+
 - HttpOnly cookies (secure, SameSite=Lax)
 - Dual token: session (8h) + refresh (30d)
 - Device tracking (IP, user agent)
@@ -87,12 +96,14 @@ npx prisma generate
 - Automatic rotation on privilege change
 
 ### Two-Factor Auth
+
 - TOTP via authenticator apps (Google Auth, Authy, etc.)
 - QR code + manual secret display
 - 10 single-use recovery codes (hashed)
 - Recovery code regeneration on 2FA disable
 
 ### Rate Limiting
+
 - Per-IP + per-action limits
 - Configured in `lib/auth/rate-limit.ts`:
   - Signup: 3/hour
@@ -103,12 +114,14 @@ npx prisma generate
   - 2FA attempts: 5/5min
 
 ### Audit Logging
+
 - All auth events logged to `AuthAuditLog`
 - IP address, user agent, timestamps
 - Queryable per user
 - Visible in admin/user dashboards
 
 ### Email System
+
 - Templates: verify, reset, magic link, 2FA enabled, email changed
 - Sends via Resend (dev mode: console.log only)
 - `EmailMessage` table tracks delivery status
@@ -116,6 +129,7 @@ npx prisma generate
 - 15-minute TTL for all tokens
 
 ### Security
+
 - Passwords: bcrypt (12 rounds), strength validation
 - Sessions: HttpOnly + Secure + SameSite
 - Tokens: single-use, short-lived, HMAC-signed
@@ -151,6 +165,7 @@ export const myRouter = router({
 ### Middleware (Route Protection)
 
 Session is auto-loaded in tRPC context. Use appropriate procedure type:
+
 - `publicProcedure` - anyone
 - `protectedProcedure` - authenticated users
 - `adminProcedure` - admin only
@@ -169,17 +184,20 @@ Session is auto-loaded in tRPC context. Use appropriate procedure type:
 ## Extending
 
 ### Add OAuth Provider
+
 1. Update `lib/validators/auth.ts` with OAuth schemas
 2. Add provider routes in `lib/trpc/router/auth.ts`
 3. Use `Account` model to link external accounts
 4. Handle token exchange & account linking
 
 ### Custom RBAC
+
 - Add roles to `UserRole` enum in `schema.prisma`
 - Create custom middleware in `lib/trpc/trpc.ts`
 - Example: `moderatorProcedure`, `premiumProcedure`
 
 ### Email Webhooks
+
 - Implement `/api/webhooks/resend` route handler
 - Update `EmailMessage` status on delivery/bounce/complaint
 - Handle suppression list for bounced emails
@@ -218,6 +236,3 @@ Session is auto-loaded in tRPC context. Use appropriate procedure type:
 - [ ] Review audit logs regularly
 - [ ] Test 2FA enrollment & recovery flows
 - [ ] Test email deliverability across providers
-
-
-

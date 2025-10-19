@@ -22,14 +22,14 @@ OpenSolve brings the same experience to the open world:
 
 ## 🧱 Tech Stack
 
-| Layer | Technology                                                                     |
-| ------- | -------------------------------------------------------------------------------- |
-| **Frontend**      | Next.js, TailwindCSS, React Query                                              |
-| **Backend**      | Next.js, PostgreSQL, Prisma ORM                             |
-| **Judging System**      | Docker-isolated code runner (supports multiple languages)                      |
-| **Auth**      | JWT + OAuth2 (GitHub, Google)                                                  |
-| **Deployment**      | Docker Compose / Fly.io / Railway / Supabase backend                           |
-| **AI Features (optional)**      | OpenAI / Ollama local inference for hints, explanations, and code optimization |
+| Layer                      | Technology                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| **Frontend**               | Next.js, TailwindCSS, React Query                                              |
+| **Backend**                | Next.js, PostgreSQL, Prisma ORM                                                |
+| **Judging System**         | Docker-isolated code runner (supports multiple languages)                      |
+| **Auth**                   | JWT + OAuth2 (GitHub, Google)                                                  |
+| **Deployment**             | Docker Compose / Fly.io / Railway / Supabase backend                           |
+| **AI Features (optional)** | OpenAI / Ollama local inference for hints, explanations, and code optimization |
 
 ---
 
@@ -65,7 +65,46 @@ No restrictions. Just code.
 
 ## 🌍 Vision
 
->  *“Code is meant to be shared, not locked behind paywalls.”* 
+> _“Code is meant to be shared, not locked behind paywalls.”_
 > OpenSolve aims to democratize algorithmic practice and make technical learning accessible to everyone — from students in Kabul to developers in Silicon Valley.
 
 ---
+
+## 🪣 Object Storage (MinIO / S3)
+
+Uploads (avatars, attachments, future problem assets) use the S3 API via `lib/storage/minio.ts`. For local/self-hosted deployments we bundle a MinIO stack that behaves exactly like AWS S3.
+
+1. **Set the environment variables** (see `.env.example` for defaults):
+
+   ```env
+   MINIO_ENDPOINT=localhost:9000
+   MINIO_BUCKET=opensolve-assets
+   MINIO_ACCESS_KEY=opensolve
+   MINIO_SECRET_KEY=opensolve-secret
+   MINIO_REGION=us-east-1
+   MINIO_USE_SSL=false
+   MINIO_PUBLIC_URL=http://localhost:9000
+   MINIO_ROOT_USER=opensolve          # only used by docker compose
+   MINIO_ROOT_PASSWORD=opensolve-secret
+   ```
+
+2. **Start MinIO** (runs alongside the Next.js app):
+
+   ```bash
+   docker compose up minio -d
+   ```
+
+   - API: `http://localhost:9000`
+   - Console UI: `http://localhost:9001`
+
+3. **Provision the bucket (one-time).** Use the bundled MinIO Client profile:
+
+   ```bash
+   docker compose --profile storage up minio-mc
+   ```
+
+   The helper exits after calling `mc mb --ignore-existing local/$MINIO_BUCKET`, so it’s safe to rerun.
+
+4. **Run the app** (`docker compose up app`). Upload routes will now stream directly into your MinIO bucket. In production, point the same variables at any S3-compatible endpoint (e.g., AWS S3, DigitalOcean Spaces, Cloudflare R2) and update `MINIO_PUBLIC_URL` to whatever domain/CDN exposes the objects.
+
+If the storage variables are omitted the upload endpoints throw a descriptive error, so you can disable attachments entirely if desired.
