@@ -11,7 +11,7 @@ export default function SignUpPage() {
       </CardHeader>
       <CardContent className="space-y-4">
         <SignUpForm />
-        
+
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Already have an account? </span>
           <Link href="/sign-in" className="text-primary hover:underline">

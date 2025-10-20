@@ -1,5 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { SignInForm } from "@/components/auth/sign-in-form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import Link from "next/link";
 
 export default function SignInPage() {
@@ -11,16 +11,13 @@ export default function SignInPage() {
       </CardHeader>
       <CardContent className="space-y-4">
         <SignInForm />
-        
+
         <div className="text-center text-sm space-y-2">
-          <Link
-            href="/auth/forgot-password"
-            className="text-primary hover:underline"
-          >
+          <Link href="/auth/forgot-password" className="text-primary hover:underline">
             Forgot password?
           </Link>
           <div>
-            <span className="text-muted-foreground">Don't have an account? </span>
+            <span className="text-muted-foreground">Don&apos;t have an account? </span>
             <Link href="/sign-up" className="text-primary hover:underline">
               Sign up
             </Link>

@@ -54,9 +54,7 @@ export default function ResetPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Invalid Link</CardTitle>
-          <CardDescription>
-            This password reset link is invalid or has expired.
-          </CardDescription>
+          <CardDescription>This password reset link is invalid or has expired.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={() => router.push("/auth/forgot-password")} className="w-full">
@@ -71,9 +69,7 @@ export default function ResetPasswordPage() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Set New Password</CardTitle>
-        <CardDescription>
-          Enter your new password below.
-        </CardDescription>
+        <CardDescription>Enter your new password below.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -109,6 +105,3 @@ export default function ResetPasswordPage() {
     </Card>
   );
 }
-
-
-

@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -65,9 +58,7 @@ export default function MagicLinkPage() {
             <CheckCircle2 className="h-6 w-6" />
             Signed In
           </CardTitle>
-          <CardDescription>
-            You’re being redirected to your dashboard.
-          </CardDescription>
+          <CardDescription>You’re being redirected to your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={() => router.push("/dashboard")} className="w-full">
@@ -85,9 +76,7 @@ export default function MagicLinkPage() {
           <XCircle className="h-6 w-6" />
           Link Invalid or Expired
         </CardTitle>
-        <CardDescription>
-          This sign-in link is invalid or has expired.
-        </CardDescription>
+        <CardDescription>This sign-in link is invalid or has expired.</CardDescription>
       </CardHeader>
       <CardContent>
         <Button onClick={() => router.push("/sign-in")} className="w-full">
@@ -97,4 +86,3 @@ export default function MagicLinkPage() {
     </Card>
   );
 }
-

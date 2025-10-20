@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -82,9 +75,7 @@ export default function VerifyEmailPage() {
           <XCircle className="h-6 w-6" />
           Verification Failed
         </CardTitle>
-        <CardDescription>
-          This verification link is invalid or has expired.
-        </CardDescription>
+        <CardDescription>This verification link is invalid or has expired.</CardDescription>
       </CardHeader>
       <CardContent>
         <Button onClick={() => router.push("/sign-in")} className="w-full">
@@ -94,6 +85,3 @@ export default function VerifyEmailPage() {
     </Card>
   );
 }
-
-
-
