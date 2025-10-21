@@ -116,14 +116,8 @@ export default function AccountSettingsPage() {
           <div>
             <div className="text-sm font-medium">Two-Factor Authentication</div>
             <div className="flex items-center gap-2">
-              <span>
-                {session.user.twoFactorEnabled ? "Enabled" : "Disabled"}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/settings/security")}
-              >
+              <span>{session.user.twoFactorEnabled ? "Enabled" : "Disabled"}</span>
+              <Button variant="outline" size="sm" onClick={() => router.push("/settings/security")}>
                 Manage
               </Button>
             </div>
@@ -134,21 +128,14 @@ export default function AccountSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Active Sessions</CardTitle>
-          <CardDescription>
-            Manage devices where you're currently signed in
-          </CardDescription>
+          <CardDescription>Manage devices where you're currently signed in</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {sessions?.map((sess) => (
-            <div
-              key={sess.id}
-              className="flex items-center justify-between border rounded-lg p-4"
-            >
+            <div key={sess.id} className="flex items-center justify-between border rounded-lg p-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    {sess.userAgent || "Unknown Device"}
-                  </span>
+                  <span className="font-medium">{sess.userAgent || "Unknown Device"}</span>
                   {sess.isCurrent && (
                     <Badge variant="default" className="text-xs">
                       Current
@@ -156,8 +143,8 @@ export default function AccountSettingsPage() {
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {sess.ipAddress} • Last active{" "}
-                  {formatDistanceToNow(new Date(sess.lastUsedAt))} ago
+                  {sess.ipAddress} • Last active {formatDistanceToNow(new Date(sess.lastUsedAt))}{" "}
+                  ago
                 </div>
               </div>
               {!sess.isCurrent && (
@@ -188,9 +175,7 @@ export default function AccountSettingsPage() {
       <Card className="border-destructive">
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          <CardDescription>
-            Irreversible actions. Please be careful.
-          </CardDescription>
+          <CardDescription>Irreversible actions. Please be careful.</CardDescription>
         </CardHeader>
         <CardContent>
           <AlertDialog>
@@ -201,14 +186,12 @@ export default function AccountSettingsPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete your
-                  account and remove all your data from our servers.
+                  This action cannot be undone. This will permanently delete your account and remove
+                  all your data from our servers.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Enter your password to confirm:
-                </label>
+                <label className="text-sm font-medium">Enter your password to confirm:</label>
                 <Input
                   type="password"
                   value={deletePassword}
@@ -237,5 +220,3 @@ export default function AccountSettingsPage() {
     </div>
   );
 }
-
-

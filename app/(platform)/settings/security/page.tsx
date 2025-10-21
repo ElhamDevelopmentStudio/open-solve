@@ -119,9 +119,7 @@ export default function SecuritySettingsPage() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold">Security Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your password and security preferences.
-        </p>
+        <p className="text-muted-foreground">Manage your password and security preferences.</p>
       </div>
 
       <Card>
@@ -229,9 +227,7 @@ export default function SecuritySettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Two-Factor Authentication</CardTitle>
-          <CardDescription>
-            Add an extra layer of security to your account
-          </CardDescription>
+          <CardDescription>Add an extra layer of security to your account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -248,9 +244,7 @@ export default function SecuritySettingsPage() {
             {!session.user.twoFactorEnabled ? (
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button onClick={() => setupTwoFactorMutation.mutate()}>
-                    Enable 2FA
-                  </Button>
+                  <Button onClick={() => setupTwoFactorMutation.mutate()}>Enable 2FA</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
@@ -274,9 +268,7 @@ export default function SecuritySettingsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Enter your password
-                        </label>
+                        <label className="text-sm font-medium">Enter your password</label>
                         <Input
                           type="password"
                           value={setupPassword}
@@ -286,9 +278,7 @@ export default function SecuritySettingsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Enter verification code
-                        </label>
+                        <label className="text-sm font-medium">Enter verification code</label>
                         <Input
                           type="text"
                           maxLength={6}
@@ -363,6 +353,3 @@ export default function SecuritySettingsPage() {
     </div>
   );
 }
-
-
-

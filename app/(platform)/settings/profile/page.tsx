@@ -90,10 +90,13 @@ export default function ProfileSettingsPage() {
             >
               <div className="space-y-2">
                 <FormLabel>Avatar</FormLabel>
-                <input type="file" accept="image/*" onChange={handleAvatarChange} disabled={uploading} />
-                <p className="text-xs text-muted-foreground">
-                  Max 2MB. PNG or JPEG recommended.
-                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  disabled={uploading}
+                />
+                <p className="text-xs text-muted-foreground">Max 2MB. PNG or JPEG recommended.</p>
               </div>
 
               <FormField
@@ -177,4 +180,3 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
-

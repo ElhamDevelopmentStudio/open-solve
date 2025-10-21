@@ -11,9 +11,7 @@ type ProblemsPageProps = {
 
 export default async function ProblemsPage({ searchParams }: ProblemsPageProps) {
   const resolvedSearchParams = await searchParams;
-  const filters = (await problemSearchParams.parse(
-    resolvedSearchParams,
-  )) as ProblemFiltersInput;
+  const filters = (await problemSearchParams.parse(resolvedSearchParams)) as ProblemFiltersInput;
 
   const caller = await createTRPCCaller();
   const [problemList, metadata] = await Promise.all([
@@ -40,9 +38,9 @@ export default async function ProblemsPage({ searchParams }: ProblemsPageProps) 
             : `${problemList.total} problems available`}
         </p>
         <p>
-          tRPC responds with typed metadata and filter-normalized payloads. Current metadata includes{" "}
-          {metadata.difficulties.length} difficulty levels and {metadata.statuses.length} submission
-          statuses.
+          tRPC responds with typed metadata and filter-normalized payloads. Current metadata
+          includes {metadata.difficulties.length} difficulty levels and {metadata.statuses.length}{" "}
+          submission statuses.
         </p>
       </section>
     </div>
