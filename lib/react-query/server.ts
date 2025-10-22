@@ -2,13 +2,9 @@ import { dehydrate, QueryClient } from "@tanstack/react-query";
 import { cache } from "react";
 import { queryClientConfig } from "@/lib/react-query/config";
 
-export const getServerQueryClient = cache(
-  () => new QueryClient(queryClientConfig),
-);
+export const getServerQueryClient = cache(() => new QueryClient(queryClientConfig));
 
-export async function prefetchQuery<T>(
-  prefetcher: (queryClient: QueryClient) => Promise<T>,
-) {
+export async function prefetchQuery<T>(prefetcher: (queryClient: QueryClient) => Promise<T>) {
   const queryClient = getServerQueryClient();
   await prefetcher(queryClient);
   return queryClient;
