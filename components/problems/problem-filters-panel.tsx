@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui";
 import { useProblemFilters } from "@/hooks/use-problem-filters";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import type { ProblemSearchParams } from "@/lib/problems/search-params";
 import { trpc } from "@/lib/trpc/client";
 
@@ -12,7 +13,7 @@ type ProblemFiltersPanelProps = {
 export function ProblemFiltersPanel({ initialFilters }: ProblemFiltersPanelProps) {
   const [filters, setFilters] = useProblemFilters();
   const { data: metadata } = trpc.problems.filterMetadata.useQuery(undefined, {
-    staleTime: 5 * 60_000,
+    ...publicContentQueryOptions,
   });
 
   const hasFilters =
@@ -64,7 +65,15 @@ export function ProblemFiltersPanel({ initialFilters }: ProblemFiltersPanelProps
           </div>
           <div>
             <dt className="font-semibold uppercase tracking-wide text-foreground">Tags</dt>
-            <dd>{metadata.tags.length ? metadata.tags.join(", ") : "Coming soon"}</dd>
+            <dd>
+              {metadata.tags.length
+                ? metadata.tags
+                    .map((tag) =>
+                      tag.problemCount > 0 ? `${tag.name} (${tag.problemCount})` : tag.name,
+                    )
+                    .join(", ")
+                : "Coming soon"}
+            </dd>
           </div>
         </dl>
       ) : null}
