@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
+import { sessionQueryOptions, userScopedListOptions } from "@/lib/react-query/policies";
 import {
   Card,
   CardContent,
@@ -25,11 +27,18 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const { data: session } = trpc.auth.getSession.useQuery();
-  const { data: sessions } = trpc.auth.getSessions.useQuery();
+  const queryClient = useQueryClient();
+  const { data: session } = trpc.auth.getSession.useQuery(undefined, {
+    ...sessionQueryOptions,
+  });
+  const { data: sessions } = trpc.auth.getSessions.useQuery(undefined, {
+    ...userScopedListOptions,
+    enabled: Boolean(session),
+  });
   const resendVerification = trpc.auth.resendVerificationEmail.useMutation({
     onSuccess: (data) => toast.success(data.message),
     onError: (e) => toast.error(e.message),
@@ -39,7 +48,9 @@ export default function AccountSettingsPage() {
   const signOutAllMutation = trpc.auth.signOutAllDevices.useMutation({
     onSuccess: () => {
       toast.success("Signed out from all devices");
+      invalidateAuthSession(queryClient);
       router.push("/sign-in");
+      router.refresh();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -49,6 +60,7 @@ export default function AccountSettingsPage() {
   const revokeSessionMutation = trpc.auth.revokeSession.useMutation({
     onSuccess: () => {
       toast.success("Session revoked");
+      invalidateAuthSession(queryClient);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -58,7 +70,9 @@ export default function AccountSettingsPage() {
   const deleteAccountMutation = trpc.auth.deleteAccount.useMutation({
     onSuccess: () => {
       toast.success("Account deleted");
+      queryClient.clear();
       router.push("/");
+      router.refresh();
     },
     onError: (error) => {
       toast.error(error.message);

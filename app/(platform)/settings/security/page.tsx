@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
+import { sessionQueryOptions } from "@/lib/react-query/policies";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -34,9 +36,13 @@ import {
 import { toast } from "sonner";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SecuritySettingsPage() {
-  const { data: session } = trpc.auth.getSession.useQuery();
+  const queryClient = useQueryClient();
+  const { data: session } = trpc.auth.getSession.useQuery(undefined, {
+    ...sessionQueryOptions,
+  });
   const [twoFactorSetup, setTwoFactorSetup] = useState<{
     secret: string;
     uri: string;
@@ -66,6 +72,7 @@ export default function SecuritySettingsPage() {
     onSuccess: (data) => {
       toast.success(data.message);
       passwordForm.reset();
+      invalidateAuthSession(queryClient);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -76,6 +83,7 @@ export default function SecuritySettingsPage() {
     onSuccess: (data) => {
       toast.success(data.message);
       emailForm.reset();
+      invalidateAuthSession(queryClient);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -96,6 +104,7 @@ export default function SecuritySettingsPage() {
       setRecoveryCodes(data.recoveryCodes);
       setTwoFactorSetup(null);
       toast.success("Two-factor authentication enabled");
+      invalidateAuthSession(queryClient);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -105,6 +114,7 @@ export default function SecuritySettingsPage() {
   const disableTwoFactorMutation = trpc.auth.disableTwoFactor.useMutation({
     onSuccess: () => {
       toast.success("Two-factor authentication disabled");
+      invalidateAuthSession(queryClient);
     },
     onError: (error) => {
       toast.error(error.message);

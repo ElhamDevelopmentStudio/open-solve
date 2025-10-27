@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { sessionQueryOptions } from "@/lib/react-query/policies";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import {
   Card,
   CardContent,
@@ -22,9 +24,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateProfileSchema, type UpdateProfileInput } from "@/lib/validators/auth";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfileSettingsPage() {
-  const { data: session } = trpc.auth.getSession.useQuery();
+  const queryClient = useQueryClient();
+  const { data: session } = trpc.auth.getSession.useQuery(undefined, {
+    ...sessionQueryOptions,
+  });
 
   const form = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
@@ -42,6 +48,7 @@ export default function ProfileSettingsPage() {
   const updateMutation = trpc.auth.updateProfile.useMutation({
     onSuccess: (data) => {
       toast.success(data.message);
+      invalidateAuthSession(queryClient);
     },
     onError: (error) => {
       toast.error(error.message);
