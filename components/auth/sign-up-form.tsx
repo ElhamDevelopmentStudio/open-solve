@@ -11,14 +11,17 @@ import {
   Input,
 } from "@/components/ui";
 import { trpc } from "@/lib/trpc/client";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import { signUpSchema, type SignUpInput } from "@/lib/validators/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function SignUpForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
@@ -33,6 +36,7 @@ export function SignUpForm() {
   const signUpMutation = trpc.auth.signUp.useMutation({
     onSuccess: (data) => {
       toast.success(data.message);
+      invalidateAuthSession(queryClient);
       router.push("/dashboard");
       router.refresh();
     },

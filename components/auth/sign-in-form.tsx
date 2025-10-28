@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { trpc } from "@/lib/trpc/client";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import { signInSchema, type SignInInput } from "@/lib/validators/auth";
 import {
   Form,
@@ -18,9 +19,11 @@ import {
 } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function SignInForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [sessionId, setSessionId] = useState("");
 
@@ -41,6 +44,7 @@ export function SignInForm() {
         toast.info("Please enter your two-factor authentication code");
       } else {
         toast.success("Signed in successfully");
+        invalidateAuthSession(queryClient);
         router.push("/dashboard");
         router.refresh();
       }
@@ -53,6 +57,7 @@ export function SignInForm() {
   const verifyTwoFactorMutation = trpc.auth.verifyTwoFactor.useMutation({
     onSuccess: () => {
       toast.success("Signed in successfully");
+      invalidateAuthSession(queryClient);
       router.push("/dashboard");
       router.refresh();
     },
