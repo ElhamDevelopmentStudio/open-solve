@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 
 const RATE_LIMITED_PATH = /^\/api\//;
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!RATE_LIMITED_PATH.test(pathname)) {

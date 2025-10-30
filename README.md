@@ -108,3 +108,19 @@ Uploads (avatars, attachments, future problem assets) use the S3 API via `lib/st
 4. **Run the app** (`docker compose up app`). Upload routes will now stream directly into your MinIO bucket. In production, point the same variables at any S3-compatible endpoint (e.g., AWS S3, DigitalOcean Spaces, Cloudflare R2) and update `MINIO_PUBLIC_URL` to whatever domain/CDN exposes the objects.
 
 If the storage variables are omitted the upload endpoints throw a descriptive error, so you can disable attachments entirely if desired.
+
+---
+
+## ✅ Testing
+
+Integration tests exercise Prisma CRUD flows against a disposable Postgres schema.
+
+1. Ensure Postgres is running and migrations have been generated (`npx prisma migrate deploy`).
+2. Provide the required environment variables (the tests read from `.env`; at minimum set `DATABASE_URL`, `SESSION_SECRET`, and `APP_URL`).
+3. Run:
+
+```bash
+npm run test
+```
+
+Vitest will clone the schema into `test_<worker>` automatically, apply migrations, and run the CRUD suites without touching your development data. Use `npm run test:watch` during development for faster feedback.
