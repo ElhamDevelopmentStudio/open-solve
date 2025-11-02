@@ -3,6 +3,7 @@ import {
   createLoader,
   createSearchParamsCache,
   parseAsArrayOf,
+  parseAsBoolean,
   parseAsInteger,
   parseAsString,
   parseAsStringEnum,
@@ -13,6 +14,7 @@ const serverParsers = buildProblemSearchParsers({
   parseAsArrayOf,
   parseAsStringEnum,
   parseAsInteger,
+  parseAsBoolean,
 });
 
 export const problemSearchParams = createSearchParamsCache(serverParsers);
