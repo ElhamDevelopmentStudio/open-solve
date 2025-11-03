@@ -62,6 +62,7 @@ export const trpcProcedures = {
   },
   problems: {
     list: "problems.list" as ProcedureName,
+    detail: "problems.detail" as ProcedureName,
     filterMetadata: "problems.filterMetadata" as ProcedureName,
   },
 } as const;
@@ -70,7 +71,7 @@ export type QueryTag = "problems" | "problemDetail" | "tags" | "session";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
-  problemDetail: [trpcProcedures.problems.list],
+  problemDetail: [trpcProcedures.problems.detail],
   tags: [trpcProcedures.problems.filterMetadata],
   session: [trpcProcedures.auth.getSession, trpcProcedures.auth.getSessions],
 };
