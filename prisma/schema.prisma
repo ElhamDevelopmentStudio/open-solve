@@ -40,6 +40,9 @@ model User {
   badgeAwards          BadgeAward[]
   contestRegistrations ContestRegistration[]
   discussions          Discussion[]
+  lockedDiscussions    Discussion[]          @relation("DiscussionLockedBy")
+  discussionReportsFiled DiscussionReport[]  @relation("DiscussionReporter")
+  discussionReportsResolved DiscussionReport[] @relation("DiscussionResolver")
   leaderboardEntries   LeaderboardEntry[]
   createdProblems      Problem[]                @relation("ProblemAuthor")
   curatedProblems      ProblemCurator[]
@@ -55,6 +58,10 @@ model User {
   twoFactorSecret      TwoFactorSecret?
   stats                UserStats?
   votes                Vote[]
+  trailInsights        TrailInsight[]
+  trailInsightVotes    TrailInsightVote[]
+  trailReportsFiled    TrailReport[]           @relation("TrailReportReporter")
+  trailReportsResolved TrailReport[]           @relation("TrailReportResolver")
   leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
 
   @@index([handle])
@@ -220,6 +227,7 @@ model Tag {
   isFeatured  Boolean      @default(false)
   updatedById String?
   problems    ProblemTag[]
+  discussionTags DiscussionTag[]
   stats       TagStats?
 
   @@index([category, isFeatured])
@@ -281,8 +289,14 @@ model Problem {
   state            ProblemState      @default(DRAFT)
   updatedById      String?
   visibility       ProblemVisibility @default(INTERNAL)
+  editorialReleaseStrategy EditorialReleaseStrategy @default(ON_PUBLISH)
+  editorialReleaseAt DateTime?
+  editorialReleasedAt DateTime?
+  editorialReleaseOffsetDays Int?
+  editorialReleaseContestId String?
   contestProblems  ContestProblem[]
   discussions      Discussion[]
+  editorialReleaseContest Contest? @relation("ContestEditorialRelease", fields: [editorialReleaseContestId], references: [id], onDelete: SetNull)
   author           User              @relation("ProblemAuthor", fields: [authorId], references: [id])
   currentVersion   ProblemVersion?   @relation("ProblemCurrentVersion", fields: [currentVersionId], references: [id])
   difficulty       Difficulty?       @relation(fields: [difficultyId], references: [id])
@@ -295,6 +309,8 @@ model Problem {
   versions         ProblemVersion[]
   submissions      Submission[]
   submissionDrafts SubmissionDraft[]
+  trailInsights    TrailInsight[]
+  trailEdges       TrailEdge[]
   leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
 
   @@index([state, visibility, difficultyId, createdAt])
@@ -600,28 +616,68 @@ model SubmissionDraft {
 }
 
 model Discussion {
-  id          String          @id @default(cuid())
-  problemId   String
-  authorId    String
-  parentId    String?
-  content     String
-  score       Int             @default(0)
-  state       DiscussionState @default(VISIBLE)
-  isPinned    Boolean         @default(false)
-  editedAt    DateTime?
-  createdById String?
-  updatedById String?
-  deletedAt   DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  author      User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent      Discussion?     @relation("DiscussionReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     Discussion[]    @relation("DiscussionReplies")
-  problem     Problem         @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  votes       Vote[]
+  id             String              @id @default(cuid())
+  problemId      String?
+  authorId       String
+  parentId       String?
+  title          String?
+  content        String
+  category       DiscussionCategory?
+  containsSpoiler Boolean            @default(false)
+  score          Int                 @default(0)
+  state          DiscussionState     @default(VISIBLE)
+  isPinned       Boolean             @default(false)
+  isLocked       Boolean             @default(false)
+  lockedAt       DateTime?
+  lockedById     String?
+  replyCount     Int                 @default(0)
+  lastActivityAt DateTime            @default(now())
+  editedAt       DateTime?
+  createdById    String?
+  updatedById    String?
+  deletedAt      DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  author         User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent         Discussion?         @relation("DiscussionReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Discussion[]        @relation("DiscussionReplies")
+  problem        Problem?            @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  lockedBy       User?               @relation("DiscussionLockedBy", fields: [lockedById], references: [id])
+  tags           DiscussionTag[]
+  votes          Vote[]
+  reports        DiscussionReport[]
 
   @@index([problemId, parentId])
+  @@index([category, lastActivityAt])
   @@index([problemId, score, createdAt])
+}
+
+model DiscussionTag {
+  discussionId String
+  tagId        String
+  createdAt    DateTime   @default(now())
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  tag          Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([discussionId, tagId])
+}
+
+model DiscussionReport {
+  id           String                 @id @default(cuid())
+  discussionId String
+  reporterId   String
+  reason       DiscussionReportReason
+  status       DiscussionReportStatus @default(OPEN)
+  note         String?
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  discussion   Discussion            @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  reporter     User                  @relation("DiscussionReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver     User?                 @relation("DiscussionResolver", fields: [resolvedById], references: [id])
+
+  @@index([status, createdAt])
 }
 
 model Vote {
@@ -638,6 +694,76 @@ model Vote {
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([discussionId, userId])
+}
+
+model TrailInsight {
+  id          String               @id @default(cuid())
+  problemId   String
+  authorId    String
+  content     String
+  category    TrailInsightCategory @default(IDEA)
+  score       Int                  @default(0)
+  isHidden    Boolean              @default(false)
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  problem     Problem              @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  author      User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  votes       TrailInsightVote[]
+  outgoing    TrailEdge[]          @relation("TrailEdgeFrom")
+  incoming    TrailEdge[]          @relation("TrailEdgeTo")
+  reports     TrailReport[]
+
+  @@index([problemId, score, createdAt])
+}
+
+model TrailEdge {
+  id            String       @id @default(cuid())
+  problemId     String
+  fromInsightId String
+  toInsightId   String
+  weight        Int          @default(1)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  problem       Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  fromInsight   TrailInsight @relation("TrailEdgeFrom", fields: [fromInsightId], references: [id], onDelete: Cascade)
+  toInsight     TrailInsight @relation("TrailEdgeTo", fields: [toInsightId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, fromInsightId, toInsightId])
+  @@index([problemId, fromInsightId, weight])
+}
+
+model TrailInsightVote {
+  id         String        @id @default(cuid())
+  insightId  String
+  userId     String
+  value      Int
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  insight    TrailInsight  @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([insightId, userId])
+}
+
+model TrailReport {
+  id           String             @id @default(cuid())
+  insightId    String
+  reporterId   String
+  reason       TrailReportReason
+  status       TrailReportStatus  @default(OPEN)
+  note         String?
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  insight      TrailInsight       @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  reporter     User               @relation("TrailReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver     User?              @relation("TrailReportResolver", fields: [resolvedById], references: [id])
+
+  @@index([status, createdAt])
 }
 
 model Badge {
@@ -751,6 +877,7 @@ model Contest {
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
   problems           ContestProblem[]
+  editorialReleaseProblems Problem[]        @relation("ContestEditorialRelease")
   registrations      ContestRegistration[]
   submissions        Submission[]
 
@@ -847,6 +974,26 @@ enum DiscussionState {
   REMOVED
 }
 
+enum DiscussionCategory {
+  GENERAL
+  HELP
+  META
+  ANNOUNCEMENT
+}
+
+enum DiscussionReportReason {
+  SPAM
+  ABUSE
+  SPOILER_ABUSE
+  OFF_TOPIC
+}
+
+enum DiscussionReportStatus {
+  OPEN
+  VALID
+  INVALID
+}
+
 enum ProblemProposalStatus {
   SUBMITTED
   PRESCREEN
@@ -882,6 +1029,32 @@ enum BadgeAwardSource {
   SYSTEM
   ADMIN
   CONTEST
+}
+
+enum EditorialReleaseStrategy {
+  ON_PUBLISH
+  OFFSET_DAYS
+  AFTER_CONTEST
+  MANUAL
+}
+
+enum TrailInsightCategory {
+  IDEA
+  PATTERN
+  DATA_STRUCTURE
+  PITFALL
+}
+
+enum TrailReportReason {
+  SPAM
+  SPOILER
+  MISLEADING
+}
+
+enum TrailReportStatus {
+  OPEN
+  VALID
+  INVALID
 }
 
 enum AuthAuditAction {
