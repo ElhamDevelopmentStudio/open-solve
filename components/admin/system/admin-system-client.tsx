@@ -22,7 +22,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { toast } from "sonner";
-import { ToggleLeft, ToggleRight } from "lucide-react";
+import { ToggleLeft, ToggleRight } from "@/components/icons";
 
 type SystemOverview = inferRouterOutputs<AppRouter>["admin"]["system"]["overview"];
 type FlagList = inferRouterOutputs<AppRouter>["admin"]["flags"]["list"];

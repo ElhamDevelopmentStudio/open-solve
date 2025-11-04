@@ -20,7 +20,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { ProblemState, ProblemVisibility } from "@prisma/client";
-import { BookOpenCheck, Search } from "lucide-react";
+import { BookOpenCheck, Search } from "@/components/icons";
 
 type ProblemListResponse = inferRouterOutputs<AppRouter>["admin"]["problems"]["list"];
 

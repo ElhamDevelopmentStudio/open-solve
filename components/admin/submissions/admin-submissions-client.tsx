@@ -21,7 +21,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { SubmissionStatus } from "@prisma/client";
 import { toast } from "sonner";
-import { Gavel, Search } from "lucide-react";
+import { Gavel, Search } from "@/components/icons";
 
 type SubmissionListResponse = inferRouterOutputs<AppRouter>["admin"]["submissions"]["list"];
 

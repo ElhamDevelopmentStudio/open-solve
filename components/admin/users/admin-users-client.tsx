@@ -22,13 +22,22 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, Search, UserCog, RefreshCw, KeyRound, UserPlus } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  UserCog,
+  RefreshCw,
+  KeyRound,
+  UserPlus,
+  Trash2,
+  type IconComponent,
+} from "@/components/icons";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { UserRole, UserStatus } from "@prisma/client";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+ 
  
  type UserListResponse = inferRouterOutputs<AppRouter>["admin"]["users"]["list"];
  type UserDetailResponse = inferRouterOutputs<AppRouter>["admin"]["users"]["detail"];
@@ -98,10 +107,18 @@ import type { LucideIcon } from "lucide-react";
      onError: (error) => toast.error("Failed to reset 2FA", { description: error.message }),
    });
  
-   const revokeSessions = trpc.admin.users.revokeSessions.useMutation({
-     onSuccess: () => toast.success("Sessions revoked"),
-     onError: (error) => toast.error("Failed to revoke sessions", { description: error.message }),
-   });
+  const revokeSessions = trpc.admin.users.revokeSessions.useMutation({
+    onSuccess: () => toast.success("Sessions revoked"),
+    onError: (error) => toast.error("Failed to revoke sessions", { description: error.message }),
+  });
+  const purgeUser = trpc.admin.users.purge.useMutation({
+    onSuccess: () => {
+      toast.success("User purged");
+      setSelectedUserId(null);
+      usersQuery.refetch();
+    },
+    onError: (error) => toast.error("Failed to purge user", { description: error.message }),
+  });
  
    const impersonateMutation = trpc.admin.impersonation.start.useMutation({
      onSuccess: () => toast.success("Impersonation started", { description: "Reload the app to act as the user." }),
@@ -150,6 +167,7 @@ import type { LucideIcon } from "lucide-react";
                  <SelectItem value="ACTIVE">Active</SelectItem>
                  <SelectItem value="SHADOW_BANNED">Shadow banned</SelectItem>
                  <SelectItem value="BANNED">Banned</SelectItem>
+                 <SelectItem value="DELETED">Deleted</SelectItem>
                </SelectContent>
              </Select>
            </div>
@@ -239,43 +257,56 @@ import type { LucideIcon } from "lucide-react";
              revokeSessions.mutate({ userId: detailQuery.data.user.id });
            }
          }}
-         onImpersonate={() => {
-           if (detailQuery.data?.user) {
-             impersonateMutation.mutate({ userId: detailQuery.data.user.id });
-           }
-         }}
-       />
+        onImpersonate={() => {
+          if (detailQuery.data?.user) {
+            impersonateMutation.mutate({ userId: detailQuery.data.user.id });
+          }
+        }}
+        onPurge={() => {
+          if (detailQuery.data?.user) {
+            if (
+              window.confirm(
+                "This will permanently remove this anonymized account. Continue?",
+              )
+            ) {
+              purgeUser.mutate({ userId: detailQuery.data.user.id });
+            }
+          }
+        }}
+      />
      </>
    );
  }
  
- type UserDetailProps = {
-   open: boolean;
-   onOpenChange: (open: boolean) => void;
-   user?: UserDetailResponse["user"];
-   auditLogs: UserDetailResponse["auditLogs"];
-   submissionSummary: UserDetailResponse["submissionSummary"];
-   isLoading: boolean;
-   onRoleChange: (role: UserRole) => void;
-   onStatusChange: (status: UserStatus) => void;
-   onResetTwoFactor: () => void;
-   onRevokeSessions: () => void;
-   onImpersonate: () => void;
- };
- 
- function UserDetailSheet({
-   open,
-   onOpenChange,
-   user,
-   auditLogs,
-   submissionSummary,
-   isLoading,
-   onRoleChange,
-   onStatusChange,
-   onResetTwoFactor,
-   onRevokeSessions,
-   onImpersonate,
- }: UserDetailProps) {
+type UserDetailProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user?: UserDetailResponse["user"];
+  auditLogs: UserDetailResponse["auditLogs"];
+  submissionSummary: UserDetailResponse["submissionSummary"];
+  isLoading: boolean;
+  onRoleChange: (role: UserRole) => void;
+  onStatusChange: (status: UserStatus) => void;
+  onResetTwoFactor: () => void;
+  onRevokeSessions: () => void;
+  onImpersonate: () => void;
+  onPurge: () => void;
+};
+
+function UserDetailSheet({
+  open,
+  onOpenChange,
+  user,
+  auditLogs,
+  submissionSummary,
+  isLoading,
+  onRoleChange,
+  onStatusChange,
+  onResetTwoFactor,
+  onRevokeSessions,
+  onImpersonate,
+  onPurge,
+}: UserDetailProps) {
    return (
      <Sheet open={open} onOpenChange={onOpenChange}>
        <SheetContent className="flex w-full flex-col gap-4 overflow-hidden border-l border-border/40 bg-card/90 sm:max-w-xl">
@@ -318,19 +349,20 @@ import type { LucideIcon } from "lucide-react";
                        </SelectContent>
                      </Select>
                    </div>
-                   <div className="flex items-center justify-between">
-                     <span>Status</span>
-                     <Select defaultValue={user.status} onValueChange={(value) => onStatusChange(value as UserStatus)}>
-                       <SelectTrigger className="w-36">
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="ACTIVE">Active</SelectItem>
-                         <SelectItem value="SHADOW_BANNED">Shadow banned</SelectItem>
-                         <SelectItem value="BANNED">Banned</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
+          <div className="flex items-center justify-between">
+            <span>Status</span>
+            <Select defaultValue={user.status} onValueChange={(value) => onStatusChange(value as UserStatus)}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="SHADOW_BANNED">Shadow banned</SelectItem>
+                <SelectItem value="BANNED">Banned</SelectItem>
+                <SelectItem value="DELETED">Deleted</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
                    <div className="flex items-center justify-between text-xs text-muted-foreground">
                      <span>Created</span>
                      <span>{formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}</span>
@@ -345,10 +377,13 @@ import type { LucideIcon } from "lucide-react";
                    onClick={onResetTwoFactor}
                    subtle
                  />
-                 <ActionButton icon={RefreshCw} label="Revoke sessions" onClick={onRevokeSessions} />
-                 <ActionButton icon={UserCog} label="Impersonate" onClick={onImpersonate} />
-                 <ActionButton icon={UserPlus} label="Promote to staff" onClick={() => onRoleChange("PROBLEM_CURATOR")} subtle />
-               </div>
+                <ActionButton icon={RefreshCw} label="Revoke sessions" onClick={onRevokeSessions} />
+                <ActionButton icon={UserCog} label="Impersonate" onClick={onImpersonate} />
+                <ActionButton icon={UserPlus} label="Promote to staff" onClick={() => onRoleChange("PROBLEM_CURATOR")} subtle />
+                {user.status === "DELETED" ? (
+                  <ActionButton icon={Trash2} label="Purge account" onClick={onPurge} destructive />
+                ) : null}
+              </div>
 
                <Card className="border-border/60 bg-card/80">
                  <CardHeader>
@@ -406,25 +441,29 @@ function ActionButton({
   label,
   onClick,
   subtle,
+  destructive,
 }: {
-  icon: LucideIcon;
+  icon: IconComponent;
   label: string;
   onClick: () => void;
   subtle?: boolean;
+  destructive?: boolean;
 }) {
-   return (
-     <button
-       type="button"
-       onClick={onClick}
-       className={cn(
-         "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition hover:shadow-sm",
-         subtle
-           ? "border-border/40 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:text-primary"
-           : "border-border/60 bg-card text-foreground hover:border-primary/40",
-       )}
-     >
-       <Icon className="h-4 w-4" />
-       {label}
-     </button>
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition hover:shadow-sm",
+        destructive
+          ? "border-destructive/50 bg-destructive/10 text-destructive hover:border-destructive hover:bg-destructive/15"
+          : subtle
+            ? "border-border/40 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:text-primary"
+            : "border-border/60 bg-card text-foreground hover:border-primary/40",
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
    );
  }

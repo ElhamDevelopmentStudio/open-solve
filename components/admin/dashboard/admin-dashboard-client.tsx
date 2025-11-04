@@ -3,7 +3,7 @@
 import { trpc } from "@/lib/trpc/client";
 import type { AppRouter } from "@/lib/trpc/router";
 import type { inferRouterOutputs } from "@trpc/server";
-import { Activity, Cog, ShieldAlert, Users2, Braces, RefreshCw } from "lucide-react";
+import { Activity, Cog, ShieldAlert, Users2, Braces, RefreshCw } from "@/components/icons";
 import { formatDistanceToNow } from "date-fns";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { cn } from "@/lib/utils";

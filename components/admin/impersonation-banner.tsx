@@ -2,7 +2,7 @@
 
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "@/components/icons";
 import { toast } from "sonner";
 
 export function ImpersonationBanner() {
