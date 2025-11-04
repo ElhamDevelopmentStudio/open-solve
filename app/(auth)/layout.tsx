@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth/session";
-import { Code2, Sparkles } from "lucide-react";
+import { Code2, Sparkles } from "@/components/icons";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { PropsWithChildren } from "react";

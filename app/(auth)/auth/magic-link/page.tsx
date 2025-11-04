@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc/client";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "@/components/icons";
 
 export default function MagicLinkPage() {
   const router = useRouter();

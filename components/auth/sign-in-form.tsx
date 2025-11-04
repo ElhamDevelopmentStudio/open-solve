@@ -16,7 +16,7 @@ import { trpc } from "@/lib/trpc/client";
 import { signInSchema, type SignInInput } from "@/lib/validators/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";

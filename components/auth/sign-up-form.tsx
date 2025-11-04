@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, Loader2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { signUpDefaultValues, useSignUpStore } from "@/stores/sign-up-store";
 
