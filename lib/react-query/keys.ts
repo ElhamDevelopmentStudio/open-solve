@@ -99,6 +99,18 @@ export const trpcProcedures = {
     difficulty: "leaderboard.difficulty" as ProcedureName,
     tag: "leaderboard.tag" as ProcedureName,
   },
+  discussions: {
+    listByProblem: "discussions.listByProblem" as ProcedureName,
+    listGlobal: "discussions.listGlobal" as ProcedureName,
+    thread: "discussions.thread" as ProcedureName,
+    replies: "discussions.replies" as ProcedureName,
+  },
+  editorials: {
+    getByProblem: "editorials.getByProblem" as ProcedureName,
+  },
+  trails: {
+    getForProblem: "trails.getForProblem" as ProcedureName,
+  },
 } as const;
 
 export type QueryTag =
@@ -111,7 +123,10 @@ export type QueryTag =
   | "submissions"
   | "submissionDrafts"
   | "profile"
-  | "leaderboard";
+  | "leaderboard"
+  | "discussions"
+  | "editorials"
+  | "trails";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
@@ -134,4 +149,12 @@ export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
     trpcProcedures.leaderboard.difficulty,
     trpcProcedures.leaderboard.tag,
   ],
+  discussions: [
+    trpcProcedures.discussions.listByProblem,
+    trpcProcedures.discussions.listGlobal,
+    trpcProcedures.discussions.thread,
+    trpcProcedures.discussions.replies,
+  ],
+  editorials: [trpcProcedures.editorials.getByProblem],
+  trails: [trpcProcedures.trails.getForProblem],
 };
