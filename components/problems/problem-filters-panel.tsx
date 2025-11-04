@@ -1,86 +1,228 @@
 "use client";
 
-import { Button } from "@/components/ui";
-import { useProblemFilters } from "@/hooks/use-problem-filters";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
-import type { ProblemSearchParams } from "@/lib/problems/search-params";
-import { trpc } from "@/lib/trpc/client";
+import { useMemo, useState, type ReactNode } from "react";
+import type { ProblemFilterMetadata, ProblemFiltersInput } from "@/lib/trpc/router/problems";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PROBLEM_STATUS_FILTERS } from "@/lib/problems/constants";
+import { Check } from "lucide-react";
 
-type ProblemFiltersPanelProps = {
-  initialFilters: ProblemSearchParams;
+const DIFFICULTY_FALLBACK: ProblemFiltersInput["difficulty"] = ["EASY", "MEDIUM", "HARD"];
+
+const STATUS_LABELS: Record<ProblemFiltersInput["status"][number], string> = {
+  SOLVED: "Solved",
+  ATTEMPTED: "Attempted",
+  UNSEEN: "Unseen",
 };
 
-export function ProblemFiltersPanel({ initialFilters }: ProblemFiltersPanelProps) {
-  const [filters, setFilters] = useProblemFilters();
-  const { data: metadata } = trpc.problems.filterMetadata.useQuery(undefined, {
-    ...publicContentQueryOptions,
-  });
+const statusTone: Record<ProblemFiltersInput["status"][number], string> = {
+  SOLVED: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  ATTEMPTED: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  UNSEEN: "bg-muted text-muted-foreground",
+};
 
-  const hasFilters =
-    filters.q ||
+export type ProblemFiltersPanelProps = {
+  filters: ProblemFiltersInput;
+  metadata?: ProblemFilterMetadata;
+  onChange: (patch: Partial<ProblemFiltersInput>) => void;
+  onReset: () => void;
+  isMobile?: boolean;
+};
+
+export function ProblemFiltersPanel({
+  filters,
+  metadata,
+  onChange,
+  onReset,
+}: ProblemFiltersPanelProps) {
+  const [tagQuery, setTagQuery] = useState("");
+  const tags = metadata?.tags ?? [];
+  const filteredTags = useMemo(() => {
+    if (!tagQuery) return tags;
+    return tags.filter((tag) => tag.name.toLowerCase().includes(tagQuery.toLowerCase()));
+  }, [tagQuery, tags]);
+  const difficultyOptions = (metadata?.difficulties ??
+    DIFFICULTY_FALLBACK) as ProblemFiltersInput["difficulty"];
+  const hasActiveFilters =
+    Boolean(filters.q) ||
     filters.difficulty.length > 0 ||
     filters.status.length > 0 ||
-    filters.tags.length > 0;
+    filters.tags.length > 0 ||
+    filters.onlyWithEditorial;
+
+  const toggleDifficulty = (value: ProblemFiltersInput["difficulty"][number] | null) => {
+    onChange({ difficulty: value ? [value] : [] });
+  };
+
+  const toggleStatus = (value: ProblemFiltersInput["status"][number]) => {
+    const set = new Set(filters.status);
+    if (set.has(value)) {
+      set.delete(value);
+    } else {
+      set.add(value);
+    }
+    onChange({ status: Array.from(set) });
+  };
+
+  const toggleTag = (slug: string) => {
+    const set = new Set(filters.tags);
+    if (set.has(slug)) {
+      set.delete(slug);
+    } else {
+      set.add(slug);
+    }
+    onChange({ tags: Array.from(set) });
+  };
+
+  const difficultyValue = filters.difficulty[0] ?? null;
 
   return (
-    <aside className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="font-medium text-foreground">URL Filters</p>
-          <p className="text-xs text-muted-foreground">
-            Powered by tRPC + React Query. State stays in sync via `nuqs`.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Filters</h3>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          disabled={!hasFilters}
-          onClick={() =>
-            setFilters(
-              {
-                ...initialFilters,
-                q: "",
-                difficulty: [],
-                status: [],
-                tags: [],
-                page: 1,
-              },
-              { history: "replace" },
-            )
-          }
+          onClick={onReset}
+          className="text-xs"
+          disabled={!hasActiveFilters}
         >
-          Clear
+          Clear all
         </Button>
       </div>
 
-      {metadata ? (
-        <dl className="mt-4 grid grid-cols-1 gap-3 text-xs text-muted-foreground sm:grid-cols-3">
-          <div>
-            <dt className="font-semibold uppercase tracking-wide text-foreground">Difficulties</dt>
-            <dd>{metadata.difficulties.join(", ") || "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold uppercase tracking-wide text-foreground">Statuses</dt>
-            <dd>{metadata.statuses.join(", ") || "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-semibold uppercase tracking-wide text-foreground">Tags</dt>
-            <dd>
-              {metadata.tags.length
-                ? metadata.tags
-                    .map((tag) =>
-                      tag.problemCount > 0 ? `${tag.name} (${tag.problemCount})` : tag.name,
-                    )
-                    .join(", ")
-                : "Coming soon"}
-            </dd>
-          </div>
-        </dl>
-      ) : null}
+      <FilterCard title="Difficulty" description="Choose the baseline difficulty.">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={difficultyValue ? "outline" : "default"}
+            size="sm"
+            className="justify-start"
+            onClick={() => toggleDifficulty(null)}
+          >
+            Any difficulty
+          </Button>
+          {difficultyOptions.map((difficulty) => (
+            <Button
+              key={difficulty}
+              variant={difficultyValue === difficulty ? "default" : "outline"}
+              size="sm"
+              className="justify-start"
+              onClick={() => toggleDifficulty(difficulty)}
+            >
+              {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()}
+            </Button>
+          ))}
+        </div>
+      </FilterCard>
 
-      <pre className="mt-4 overflow-x-auto rounded bg-muted/40 p-3 text-xs text-foreground">
-        {JSON.stringify(filters, null, 2)}
-      </pre>
-    </aside>
+      <FilterCard title="Status" description="Filter by your personal progress.">
+        <div className="flex flex-wrap gap-2">
+          {PROBLEM_STATUS_FILTERS.map((status) => {
+            const active = filters.status.includes(status);
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() => toggleStatus(status)}
+                className={cn(
+                  "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  active ? statusTone[status] : "border-border bg-background text-muted-foreground",
+                )}
+              >
+                {active && <Check className="mr-1 h-3 w-3" />}
+                {STATUS_LABELS[status]}
+              </button>
+            );
+          })}
+        </div>
+      </FilterCard>
+
+      <FilterCard title="Tags" description="Stack multiple topics together.">
+        <div className="space-y-2">
+          <Input
+            placeholder="Search tags"
+            value={tagQuery}
+            onChange={(event) => setTagQuery(event.target.value)}
+            className="h-9"
+          />
+          <ScrollArea className="h-60 rounded-lg border">
+            <div className="space-y-1 p-2">
+              {filteredTags.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No tags found.</p>
+              ) : (
+                filteredTags.map((tag) => (
+                  <label
+                    key={tag.slug}
+                    className="flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-muted"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={filters.tags.includes(tag.slug)}
+                        onCheckedChange={() => toggleTag(tag.slug)}
+                        id={`tag-${tag.slug}`}
+                      />
+                      <span>{tag.name}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{tag.problemCount}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+          {filters.tags.length > 0 ? (
+            <Badge variant="secondary" className="rounded-full text-[11px]">
+              {filters.tags.length} selected
+            </Badge>
+          ) : null}
+        </div>
+      </FilterCard>
+
+      <FilterCard title="Editorials" description="Show only problems with official editorials.">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-white/10 bg-muted/20 px-3 py-2">
+          <div>
+            <p className="text-sm font-medium">Only problems with editorials</p>
+            <p className="text-xs text-muted-foreground">
+              Great when you want curated solutions to review.
+            </p>
+          </div>
+          <Switch
+            checked={filters.onlyWithEditorial}
+            onCheckedChange={(value) => onChange({ onlyWithEditorial: value })}
+            aria-label="Toggle editorial filter"
+          />
+        </div>
+      </FilterCard>
+
+      <Separator />
+      <Button variant="outline" onClick={onReset} className="w-full" disabled={!hasActiveFilters}>
+        Reset filters
+      </Button>
+    </div>
+  );
+}
+
+function FilterCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-white/5 bg-card/60 p-4 shadow-sm shadow-black/20">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+      </div>
+      <div className="mt-3 space-y-3">{children}</div>
+    </section>
   );
 }

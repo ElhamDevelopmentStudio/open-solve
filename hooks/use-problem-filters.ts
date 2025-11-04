@@ -3,6 +3,7 @@
 import { buildProblemSearchParsers } from "@/lib/problems/parser-factory";
 import {
   parseAsArrayOf,
+  parseAsBoolean,
   parseAsInteger,
   parseAsString,
   parseAsStringEnum,
@@ -15,11 +16,12 @@ const clientParsers = buildProblemSearchParsers({
   parseAsArrayOf,
   parseAsStringEnum,
   parseAsInteger,
+  parseAsBoolean,
 });
 
 export function useProblemFilters(options?: UseQueryStatesOptions<typeof clientParsers>) {
   return useQueryStates(clientParsers, {
-    history: "replace",
+    history: "push",
     ...options,
   });
 }
