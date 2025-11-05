@@ -28,7 +28,7 @@ export const env = createEnv({
       .min(1)
       .default(process.env.NODE_ENV ?? "development"),
     RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().catch(60),
-    RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().catch(30),
+    RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().catch(250),
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),
