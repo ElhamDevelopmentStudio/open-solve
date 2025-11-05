@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "@/components/icons";
 
 type DiscussionDetailShellProps = {
   threadId: string;

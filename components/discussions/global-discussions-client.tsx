@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import { useQueryState, parseAsStringLiteral } from "nuqs";
-import { trpc } from "@/lib/trpc/client";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { DiscussionComposer } from "@/components/discussions/discussion-composer";
+import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,10 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
-import { DiscussionComposer } from "@/components/discussions/discussion-composer";
-import { LoaderCircle, Filter } from "lucide-react";
-import Link from "next/link";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc } from "@/lib/trpc/client";
+import { Filter, LoaderCircle } from "@/components/icons";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useMemo } from "react";
 
 type GlobalDiscussionsClientProps = {
   tagOptions: Array<{ slug: string; name: string }>;

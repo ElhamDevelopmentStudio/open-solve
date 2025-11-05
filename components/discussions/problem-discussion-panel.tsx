@@ -15,7 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useEffect, useMemo } from "react";
 import { useQueryState, parseAsStringLiteral } from "nuqs";
 import Link from "next/link";
-import { LoaderCircle, Plus } from "lucide-react";
+import { LoaderCircle, Plus } from "@/components/icons";
 
 const cuidRegex = /^c[0-9a-z]{24}$/i;
 const isCuidLike = (value?: string | null) => (typeof value === "string" ? cuidRegex.test(value) : false);

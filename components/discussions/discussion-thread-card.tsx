@@ -9,7 +9,7 @@ import type { DiscussionThread } from "@/lib/discussions/types";
 import { DiscussionVoteToggle } from "@/components/discussions/discussion-vote-toggle";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@/components/icons";
 
 type DiscussionThreadCardProps = {
   thread: DiscussionThread;
