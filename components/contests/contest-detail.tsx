@@ -4,11 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ContestDetailPayload } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
-import { Clock, Users, Trophy, Shield, Flame, CheckCircle2, AlertCircle, ArrowLeft, ExternalLink } from "lucide-react";
+import { AlertCircle, ArrowLeft, Clock, ExternalLink, Flame, Shield, Trophy, Users } from "@/components/icons";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -68,7 +67,7 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
         <div className="premium-card rounded-2xl border-destructive/20 p-8 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
           <h2 className="mt-4 text-xl font-semibold">Contest Not Found</h2>
-          <p className="mt-2 text-sm text-muted-foreground">The contest you're looking for doesn't exist.</p>
+          <p className="mt-2 text-sm text-muted-foreground">The contest you&apos;re looking for doesn&apos;t exist.</p>
           <Button asChild className="mt-6 rounded-xl" variant="outline">
             <Link href="/contests">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -320,7 +319,7 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                 <li key={item.label} className="flex items-start gap-4">
                   <div
                     className={cn(
-                      "mt-1 h-3 w-3 flex-shrink-0 rounded-full border-2",
+                      "mt-1 h-3 w-3 shrink-0 rounded-full border-2",
                       item.state === "complete"
                         ? "border-primary bg-primary"
                         : item.state === "active"

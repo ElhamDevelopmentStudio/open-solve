@@ -1,15 +1,15 @@
 "use client";
 
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ContestSummary } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { CellContext } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
-import { Trophy, Clock, Sparkles, Users, ArrowRight } from "lucide-react";
+import { ArrowRight, Clock, Sparkles, Trophy, Users } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";

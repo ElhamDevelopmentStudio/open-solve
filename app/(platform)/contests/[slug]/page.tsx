@@ -31,3 +31,4 @@ export default async function ContestDetailPage({ params }: { params: Params | P
   );
 }
 
+

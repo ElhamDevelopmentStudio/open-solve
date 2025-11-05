@@ -1,15 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ContestStandingProblemCell } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw } from "@/components/icons";
 import Link from "next/link";
 
 type ContestScoreboardProps = {
@@ -212,4 +212,5 @@ const ProblemCell = ({ entry }: { entry?: ContestStandingProblemCell }) => {
     </div>
   );
 };
+
 
