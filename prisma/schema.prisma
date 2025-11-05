@@ -513,6 +513,11 @@ model Submission {
   manualScore          Float?
   requiresManualReview Boolean                @default(false)
   codeHash             String
+  isShareEnabled       Boolean                @default(false)
+  sharePublicId        String?                @unique
+  shareEnabledAt       DateTime?
+  shareRevokedAt       DateTime?
+  hiddenFromProfile    Boolean                @default(false)
   contestId            String?
   createdById          String?
   deletedAt            DateTime?
