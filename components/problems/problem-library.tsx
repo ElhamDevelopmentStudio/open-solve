@@ -1,39 +1,9 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { useProblemFilters } from "@/hooks/use-problem-filters";
 import { ProblemFiltersPanel } from "@/components/problems/problem-filters-panel";
-import type {
-  ProblemFiltersInput,
-  ProblemListItem,
-  ProblemListResponse,
-} from "@/lib/trpc/router/problems";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
-import { trpc } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Drawer,
   DrawerClose,
@@ -43,14 +13,44 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
-import { ArrowUpRight, Clock3, Filter, Search, SlidersHorizontal } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useProblemFilters } from "@/hooks/use-problem-filters";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
+import { trackEvent } from "@/lib/telemetry/client";
+import { trpc } from "@/lib/trpc/client";
+import type {
+  ProblemFiltersInput,
+  ProblemListItem,
+  ProblemListResponse,
+} from "@/lib/trpc/router/problems";
+import { cn } from "@/lib/utils";
+import { stableHash } from "@/lib/utils/stable-hash";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { formatDistanceToNow } from "date-fns";
+import { 
+  ArrowRight01Icon,
+  Search01Icon,
+  FilterIcon,
+  SlidersHorizontalIcon,
+  Clock01Icon,
+  BookmarkCheck01Icon as BookmarkIcon,
+  Cancel01Icon
+} from "hugeicons-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { trackEvent } from "@/lib/telemetry/client";
-import { stableHash } from "@/lib/utils/stable-hash";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
   relevance: "Relevance",
@@ -274,13 +274,13 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
           
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[280px]">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search01Icon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="Search problems by title or description..."
                 aria-label="Search problems"
-                className="h-11 rounded-xl pl-11 pr-24 focus-ring"
+                className="h-12 rounded-xl pl-11 pr-24 text-base transition-all focus:shadow-lg focus:shadow-primary/5"
               />
               <span
                 className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
@@ -313,7 +313,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
               <Drawer open={filtersOpen} onOpenChange={setFiltersOpen} direction="bottom">
                 <DrawerTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 rounded-xl lg:hidden">
-                    <Filter className="h-4 w-4" /> Filters
+                    <FilterIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     {hasActiveFilters && (
                       <Badge variant="secondary" className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold">
                         {activeFilterCount}
@@ -324,7 +324,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                 <DrawerContent className="h-[88vh] rounded-t-3xl border-t bg-background p-1 pb-4">
                   <DrawerHeader className="pb-2">
                     <DrawerTitle className="flex items-center justify-center gap-2 text-base">
-                      <SlidersHorizontal className="h-4 w-4" /> Filters
+                      <SlidersHorizontalIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     </DrawerTitle>
                   </DrawerHeader>
                   <div className="h-[calc(100%-120px)] overflow-y-auto px-5 pb-4">
@@ -551,18 +551,18 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
         <Separator orientation="vertical" className="hidden h-5 lg:block" />
         <div>Submissions: {problem.submissionCount}</div>
         {lastSubmissionLabel ? (
-          <div className="flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" aria-hidden />
+          <div className="flex items-center gap-1.5">
+            <Clock01Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
             Last attempt {lastSubmissionLabel}
           </div>
         ) : null}
         <div className="ml-auto flex items-center gap-1">
           <Link
             href={`/problems/${problem.slug}`}
-            className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
             aria-label={`View ${problem.title}`}
           >
-            View problem <ArrowUpRight className="h-3.5 w-3.5" />
+            View problem <ArrowRight01Icon className="h-4 w-4" strokeWidth={2.5} />
           </Link>
         </div>
       </div>
@@ -588,13 +588,14 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       aria-live="polite"
     >
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-        <Search className="h-8 w-8 text-muted-foreground" />
+        <Search01Icon className="h-8 w-8 text-muted-foreground" strokeWidth={2} />
       </div>
       <p className="text-lg font-semibold text-foreground">No problems found</p>
       <p className="mt-2 text-sm text-muted-foreground">
         Try adjusting your search criteria or clearing some filters to see more results.
       </p>
       <Button className="mt-6" onClick={onReset} variant="default" size="sm">
+        <Cancel01Icon className="mr-2 h-4 w-4" strokeWidth={2} />
         Reset all filters
       </Button>
     </div>

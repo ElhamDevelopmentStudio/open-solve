@@ -20,7 +20,15 @@ import { trackEvent } from "@/lib/telemetry/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2, MessagesSquare } from "lucide-react";
+import { 
+  ArrowUpRight01Icon,
+  Bookmark01Icon,
+  Copy01Icon,
+  Flag02Icon,
+  Link01Icon,
+  Share01Icon,
+  MessageMultiple02Icon
+} from "hugeicons-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -227,7 +235,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="icon">
-                <Bookmark className="h-4 w-4" />
+                <Bookmark01Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button
                 variant="outline"
@@ -235,7 +243,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                 onClick={() => shareProblem(problem.slug, problem.title)}
                 aria-label="Share problem"
               >
-                <Share2 className="h-4 w-4" />
+                <Share01Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button
                 variant="outline"
@@ -243,11 +251,11 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                 onClick={() => reportProblem(problem.slug, problem.title)}
                 aria-label="Report issue"
               >
-                <Flag className="h-4 w-4" />
+                <Flag02Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <Link href={`/problems/${problem.slug}/discuss`}>
-                  <MessagesSquare className="h-4 w-4" /> Discuss
+                  <MessageMultiple02Icon className="h-4 w-4" strokeWidth={2} /> Discuss
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild>
@@ -267,7 +275,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                 }
               >
                 Start solving
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight01Icon className="h-4 w-4" strokeWidth={2.5} />
               </a>
             </Button>
           </div>
@@ -486,7 +494,7 @@ function ProblemSection({
         onClick={copyAnchor}
         aria-label={`Copy link to ${title}`}
       >
-        <Link2 className="h-4 w-4" />
+        <Link01Icon className="h-4 w-4" strokeWidth={2} />
       </button>
       {collapsible ? (
         <CollapsibleTrigger asChild>
@@ -682,7 +690,7 @@ function CopyButton({
       onClick={handleCopy}
       aria-label={label}
     >
-      <Copy className="h-4 w-4" />
+      <Copy01Icon className="h-4 w-4" strokeWidth={2} />
     </Button>
   );
 }

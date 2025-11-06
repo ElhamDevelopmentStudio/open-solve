@@ -1,65 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { useTheme } from "next-themes";
-import { motion } from "framer-motion";
-import {
-  AlertTriangle,
-  BookOpen,
-  Copy,
-  Gavel,
-  History,
-  Play,
-  Save,
-  Send,
-  Settings,
-  Terminal,
-  TimerReset,
-} from "lucide-react";
-import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
-import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { CodeEditor } from "@/components/code/code-editor";
-import { trpc } from "@/lib/trpc/client";
-import {
-  sessionQueryOptions,
-  submissionDraftQueryOptions,
-  submissionHistoryQueryOptions,
-} from "@/lib/react-query/policies";
-import { invalidateTags } from "@/lib/react-query/invalidation";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerContent,
@@ -67,16 +11,72 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { trackEvent } from "@/lib/telemetry/client";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
+import { invalidateTags } from "@/lib/react-query/invalidation";
+import {
+  sessionQueryOptions,
+  submissionDraftQueryOptions,
+  submissionHistoryQueryOptions,
+} from "@/lib/react-query/policies";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
 import type { SampleRunResult, SubmissionDetailPayload, SubmissionHistoryEntry } from "@/lib/submissions/types";
+import { trackEvent } from "@/lib/telemetry/client";
+import { trpc } from "@/lib/trpc/client";
+import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
-import { Spinner } from "@/components/ui/spinner";
-import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
-import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
+import {
+  Alert01Icon,
+  BookOpen01Icon,
+  CircleArrowReload01Icon,
+  Copy01Icon,
+  Legal01Icon,
+  PlayIcon,
+  SaveEnergy01Icon,
+  SentIcon,
+  Settings02Icon,
+  TimeScheduleIcon,
+  Train01Icon,
+} from "hugeicons-react";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type WorkspaceResult =
   | (SampleRunResult & { kind: "sample" })
@@ -469,7 +469,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
               onClick={() => setDrawerOpen(true)}
               className="gap-2"
             >
-              <BookOpen className="h-4 w-4" />
+              <BookOpen01Icon className="h-4 w-4" strokeWidth={2} />
               Statement
             </Button>
             <PreferencesMenu
@@ -481,19 +481,19 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
 
         {presenceWarning ? (
           <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <Alert01Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             Another tab is editing this problem. To avoid overwriting drafts, close other sessions.
           </div>
         ) : null}
         {isOffline ? (
           <div className="mt-4 flex items-center gap-2 rounded-2xl border border-sky-400/40 bg-sky-500/10 px-4 py-3 text-sm text-sky-700 dark:text-sky-200">
-            <TimerReset className="h-4 w-4 shrink-0" />
+            <CircleArrowReload01Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             Offline mode — drafts stay local and sample runs fall back to the local simulator.
           </div>
         ) : null}
         {requiresManualReview ? (
           <div className="mt-4 flex items-center gap-2 rounded-2xl border border-purple-400/40 bg-purple-500/10 px-4 py-3 text-sm text-purple-800 dark:text-purple-200">
-            <Gavel className="h-4 w-4 shrink-0" />
+            <Legal01Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             {manualOnly
               ? "This problem is reviewed manually. Expect longer turnaround while a curator scores your submission."
               : "Hybrid judging enabled — the auto judge runs first, followed by a manual reviewer."}
@@ -646,11 +646,11 @@ function EditorColumn(props: {
               Reset
             </Button>
             <Button variant="ghost" size="sm" onClick={onCopy} className="gap-2">
-              <Copy className="h-4 w-4" />
+              <Copy01Icon className="h-4 w-4" strokeWidth={2} />
               Copy
             </Button>
             <Button variant="ghost" size="sm" onClick={onSave} className="gap-2">
-              <Save className="h-4 w-4" />
+              <SaveEnergy01Icon className="h-4 w-4" strokeWidth={2} />
               Save
             </Button>
           </div>
@@ -680,11 +680,11 @@ function EditorColumn(props: {
           </div>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-end">
             <Button variant="outline" className="gap-2" onClick={onRun} disabled={runInProgress}>
-              {runInProgress ? <Spinner className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {runInProgress ? <Spinner className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" strokeWidth={2} />}
               Run Samples
             </Button>
             <Button className="gap-2" onClick={onSubmit} disabled={submitInProgress}>
-              {submitInProgress ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+              {submitInProgress ? <Spinner className="h-4 w-4" /> : <SentIcon className="h-4 w-4" strokeWidth={2} />}
               Submit
             </Button>
           </div>
@@ -700,7 +700,7 @@ function ConsolePanel({ lines }: { lines: string[] }) {
     return (
       <div className="rounded-2xl border border-white/5 bg-black/20 p-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
-          <Terminal className="h-4 w-4" />
+          <Train01Icon className="h-4 w-4" strokeWidth={2} />
           Console output will appear here.
         </div>
       </div>
@@ -709,7 +709,7 @@ function ConsolePanel({ lines }: { lines: string[] }) {
   return (
     <div className="rounded-2xl border border-white/5 bg-black/30 p-4 font-mono text-sm text-muted-foreground">
       <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground/80">
-        <Terminal className="h-3.5 w-3.5" />
+        <Train01Icon className="h-3.5 w-3.5" strokeWidth={2} />
         Console
       </div>
       <div className="mt-3 space-y-1 overflow-auto">
@@ -833,7 +833,7 @@ function SidePanel(props: {
                     className="mt-2 gap-2"
                     onClick={() => onRestoreDraft(draft.sourceCode)}
                   >
-                    <History className="h-4 w-4" />
+                    <TimeScheduleIcon className="h-4 w-4" strokeWidth={2} />
                     Restore
                   </Button>
                 </div>
@@ -860,7 +860,7 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
   if (!summary) {
     return (
       <div className="rounded-xl border border-dashed border-purple-400/40 bg-purple-500/5 p-4 text-sm text-purple-900 dark:text-purple-100">
-        Manual review pending — we'll update this panel once a reviewer posts a verdict.
+        Manual review pending — we&aspo;ll update this panel once a reviewer posts a verdict.
       </div>
     );
   }
@@ -943,7 +943,7 @@ function PreferencesMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <Settings className="h-4 w-4" />
+          <Settings02Icon className="h-4 w-4" strokeWidth={2} />
           Preferences
         </Button>
       </DropdownMenuTrigger>

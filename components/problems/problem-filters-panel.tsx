@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PROBLEM_STATUS_FILTERS } from "@/lib/problems/constants";
-import { Check } from "lucide-react";
+import { Tick02Icon } from "hugeicons-react";
 
 const DIFFICULTY_FALLBACK: ProblemFiltersInput["difficulty"] = ["EASY", "MEDIUM", "HARD"];
 
@@ -131,11 +131,11 @@ export function ProblemFiltersPanel({
                 type="button"
                 onClick={() => toggleStatus(status)}
                 className={cn(
-                  "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                  active ? statusTone[status] : "border-border bg-background text-muted-foreground",
+                  "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:scale-105",
+                  active ? statusTone[status] : "border-border bg-background text-muted-foreground hover:bg-muted",
                 )}
               >
-                {active && <Check className="mr-1 h-3 w-3" />}
+                {active && <Tick02Icon className="mr-1.5 h-3.5 w-3.5" strokeWidth={2.5} />}
                 {STATUS_LABELS[status]}
               </button>
             );
