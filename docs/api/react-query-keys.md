@@ -11,6 +11,7 @@
 | `auth.getSession`         | `['trpc','auth.getSession']`                    | `10s / 5m`                    | `invalidateAuthSession()` → any auth mutation (sign-in/out, profile/email/password) | No           |
 | `auth.getSessions`        | `['trpc','auth.getSessions']`                   | `5s / 60s`                    | `invalidateAuthSession()` + explicit session revocations                            | No           |
 | `problems.list`           | `['trpc','problems.list', stableHash(filters)]` | `5m / 30m`                    | `invalidateTags(['problems'])` → publish/unpublish, filter edits                    | Yes (future) |
+| `problems.detail`         | `['trpc','problems.detail', slug]`              | `5m / 30m`                    | `invalidateTags(['problems','problemDetail'])` after curator publish or slug change | No           |
 | `problems.filterMetadata` | `['trpc','problems.filterMetadata']`            | `5m / 30m`                    | `invalidateTags(['tags'])` or any curator publish that changes taxonomy             | No           |
 
 ## Mutation → Invalidation Matrix
