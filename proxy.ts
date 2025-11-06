@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const RATE_LIMITED_PATH = /^\/api\//;
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!RATE_LIMITED_PATH.test(pathname)) {

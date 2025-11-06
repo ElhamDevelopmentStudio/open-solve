@@ -1,16 +1,19 @@
 import { env } from "@/lib/env";
 import pino from "pino";
 
-const isProd = process.env.NODE_ENV === "production";
 const isDev = process.env.NODE_ENV === "development";
 
-// In development with Turbopack, use console-based logging to avoid worker thread issues
+// In development, use console transport to avoid worker thread issues
 export const logger = isDev
   ? pino({
       level: env.LOG_LEVEL,
       transport: {
-        target: "pino/file",
-        options: { destination: 1 }, // stdout
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+          translateTime: "SYS:standard",
+          ignore: "pid,hostname",
+        },
       },
       formatters: {
         level(label) {
