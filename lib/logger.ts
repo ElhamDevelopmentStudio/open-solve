@@ -1,32 +1,37 @@
-import pino from "pino";
 import { env } from "@/lib/env";
+import pino from "pino";
 
 const isProd = process.env.NODE_ENV === "production";
+const isDev = process.env.NODE_ENV === "development";
 
-export const logger = pino({
-  level: env.LOG_LEVEL,
-  transport: isProd
-    ? undefined
-    : {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          translateTime: "HH:MM:ss.l",
-          ignore: "pid,hostname",
+// In development with Turbopack, use console-based logging to avoid worker thread issues
+export const logger = isDev
+  ? pino({
+      level: env.LOG_LEVEL,
+      transport: {
+        target: "pino/file",
+        options: { destination: 1 }, // stdout
+      },
+      formatters: {
+        level(label) {
+          return { level: label };
         },
       },
-  formatters: {
-    bindings(bindings) {
-      return {
-        pid: bindings.pid,
-        host: bindings.hostname,
-      };
-    },
-    level(label) {
-      return { level: label };
-    },
-  },
-});
+    })
+  : pino({
+      level: env.LOG_LEVEL,
+      formatters: {
+        bindings(bindings) {
+          return {
+            pid: bindings.pid,
+            host: bindings.hostname,
+          };
+        },
+        level(label) {
+          return { level: label };
+        },
+      },
+    });
 
 export type RequestLogFields = {
   method: string;

@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 enum Difficulty {
@@ -139,6 +138,33 @@ model VerificationToken {
   createdAt  DateTime @default(now())
 
   @@unique([identifier, token])
+}
+
+model EmailMessage {
+  id              String    @id @default(cuid())
+  userId          String?
+  type            String
+  templateVersion String
+  resendMessageId String?
+  to              String
+  status          String    @default("pending")
+  providerReason  String?
+  createdAt       DateTime  @default(now())
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  failureAt       DateTime?
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model RateLimitLedger {
+  key         String   @id
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+
+  @@index([expiresAt])
 }
 
 model TwoFactorSecret {
