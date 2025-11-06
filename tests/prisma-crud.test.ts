@@ -11,7 +11,8 @@ import { randomUUID } from "node:crypto";
 
 const prisma = new PrismaClient();
 
-const unique = (prefix: string) => `${prefix}_${randomUUID().toString().replace(/-/g, "").slice(0, 12)}`;
+const unique = (prefix: string) =>
+  `${prefix}_${randomUUID().toString().replace(/-/g, "").slice(0, 12)}`;
 
 async function createUser(overrides?: Partial<Prisma.UserCreateInput>) {
   const suffix = unique("user");
