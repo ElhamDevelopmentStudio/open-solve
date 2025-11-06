@@ -1,7 +1,7 @@
 import { HydrationBoundary } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";

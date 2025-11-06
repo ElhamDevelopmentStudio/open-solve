@@ -1,14 +1,12 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { HydrationBoundary } from "@tanstack/react-query";
-import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
-import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { GlobalLeaderboardClient } from "@/components/leaderboards/leaderboard-client";
-import type { LeaderboardEntry } from "@/lib/leaderboard/service";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { LeaderboardWindow } from "@/lib/leaderboard/service";
+import type { LeaderboardEntry, LeaderboardWindow } from "@/lib/leaderboard/service";
+import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
+import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { HydrationBoundary } from "@tanstack/react-query";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 const DEFAULT_WINDOW: LeaderboardWindow = "all_time";
 

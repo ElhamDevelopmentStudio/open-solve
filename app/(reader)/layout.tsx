@@ -1,18 +1,17 @@
+import { ThemeToggle } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
+import { CodeIcon, Menu01Icon } from "hugeicons-react";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
-import { ThemeToggle } from "@/components/ui";
-import { Code2, Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { label: "Problems", href: "/problems" },
   { label: "Leaderboards", href: "/leaderboards" },
-  { label: "Easy problems", href: "/difficulty/easy" },
   { label: "Docs", href: siteConfig.links.docs },
-  { label: "GitHub", href: siteConfig.links.github },
+  { label: "GitHub", href: siteConfig.links.github, external: true },
 ];
 
 export default async function ReaderLayout({ children }: PropsWithChildren) {
@@ -47,7 +46,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
             className="group flex items-center gap-2 text-base font-bold tracking-tight transition-all hover:scale-105"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary shadow-lg shadow-primary/20 transition-shadow group-hover:shadow-primary/40">
-              <Code2 className="h-5 w-5 text-primary-foreground" />
+              <CodeIcon className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
             <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               OpenSolve
@@ -60,6 +59,8 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
               <Link
                 key={link.href}
                 href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                   link.href === "/problems"
@@ -85,7 +86,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
               </Button>
             )}
             <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
+              <Menu01Icon className="h-5 w-5" strokeWidth={2} />
               <span className="sr-only">Menu</span>
             </Button>
           </div>

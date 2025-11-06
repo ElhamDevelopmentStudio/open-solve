@@ -1,8 +1,8 @@
-import { HydrationBoundary } from "@tanstack/react-query";
-import { createTRPCCaller } from "@/lib/trpc/server/caller";
-import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { GlobalDiscussionsClient } from "@/components/discussions/global-discussions-client";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
+import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
+import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { HydrationBoundary } from "@tanstack/react-query";
 
 export const dynamic = "force-dynamic";
 
