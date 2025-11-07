@@ -30,6 +30,10 @@ export default function AccountSettingsPage() {
   const router = useRouter();
   const { data: session } = trpc.auth.getSession.useQuery();
   const { data: sessions } = trpc.auth.getSessions.useQuery();
+  const resendVerification = trpc.auth.resendVerificationEmail.useMutation({
+    onSuccess: (data) => toast.success(data.message),
+    onError: (e) => toast.error(e.message),
+  });
   const [deletePassword, setDeletePassword] = useState("");
 
   const signOutAllMutation = trpc.auth.signOutAllDevices.useMutation({
@@ -87,7 +91,17 @@ export default function AccountSettingsPage() {
               {session.user.emailVerified ? (
                 <Badge variant="default">Verified</Badge>
               ) : (
-                <Badge variant="secondary">Not Verified</Badge>
+                <>
+                  <Badge variant="secondary">Not Verified</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => resendVerification.mutate()}
+                    disabled={resendVerification.isPending}
+                  >
+                    {resendVerification.isPending ? "Sending..." : "Resend"}
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -223,4 +237,5 @@ export default function AccountSettingsPage() {
     </div>
   );
 }
+
 

@@ -3,10 +3,16 @@ import { Badge, Separator } from "@/components/ui";
 import { dashboardNav } from "@/config/navigation";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
+import { getSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function PlatformLayout({ children }: PropsWithChildren) {
+export default async function PlatformLayout({ children }: PropsWithChildren) {
+  const session = await getSession();
+  if (!session) {
+    redirect("/sign-in");
+  }
   return (
     <AppShell
       header={
@@ -37,9 +43,7 @@ export default function PlatformLayout({ children }: PropsWithChildren) {
               </li>
             ))}
           </ul>
-          <p className="mt-auto text-xs text-muted-foreground">
-            Hook this layout to auth once session handling is ready.
-          </p>
+          <p className="mt-auto text-xs text-muted-foreground">You are signed in.</p>
         </nav>
       }
     >

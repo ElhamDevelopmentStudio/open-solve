@@ -75,105 +75,103 @@ export function SignInForm() {
     });
   };
 
-  if (requiresTwoFactor) {
-    return (
-      <form onSubmit={handleTwoFactorSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <FormLabel>Two-Factor Code</FormLabel>
-          <Input
-            type="text"
-            placeholder="000000"
-            maxLength={6}
-            value={twoFactorCode}
-            onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
-            autoFocus
-          />
-          <p className="text-sm text-muted-foreground">
-            Enter the 6-digit code from your authenticator app
-          </p>
-        </div>
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={verifyTwoFactorMutation.isPending || twoFactorCode.length !== 6}
-        >
-          {verifyTwoFactorMutation.isPending ? "Verifying..." : "Verify"}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="w-full"
-          onClick={() => setRequiresTwoFactor(false)}
-        >
-          Back to sign in
-        </Button>
-      </form>
-    );
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      {requiresTwoFactor ? (
+        <form onSubmit={handleTwoFactorSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Two-Factor Code</label>
+            <Input
+              type="text"
+              placeholder="000000"
+              maxLength={6}
+              value={twoFactorCode}
+              onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
+              autoFocus
+            />
+            <p className="text-sm text-muted-foreground">
+              Enter the 6-digit code from your authenticator app
+            </p>
+          </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={verifyTwoFactorMutation.isPending || twoFactorCode.length !== 6}
+          >
+            {verifyTwoFactorMutation.isPending ? "Verifying..." : "Verify"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setRequiresTwoFactor(false)}
+          >
+            Back to sign in
+          </Button>
+        </form>
+      ) : (
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="rememberMe"
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2 space-y-0">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel className="cursor-pointer font-normal">
-                Remember me for 30 days
-              </FormLabel>
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="rememberMe"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel className="cursor-pointer font-normal">
+                  Remember me for 30 days
+                </FormLabel>
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" className="w-full" disabled={signInMutation.isPending}>
-          {signInMutation.isPending ? "Signing in..." : "Sign In"}
-        </Button>
-      </form>
+          <Button type="submit" className="w-full" disabled={signInMutation.isPending}>
+            {signInMutation.isPending ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
+      )}
     </Form>
   );
 }

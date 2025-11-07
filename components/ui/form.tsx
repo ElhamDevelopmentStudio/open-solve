@@ -91,17 +91,24 @@ function FormLabel({
   className,
   ...props
 }: React.ComponentProps<typeof LabelPrimitive.Root>) {
-  const { error, formItemId } = useFormField()
-
-  return (
-    <Label
-      data-slot="form-label"
-      data-error={!!error}
-      className={cn("data-[error=true]:text-destructive", className)}
-      htmlFor={formItemId}
-      {...props}
-    />
-  )
+  // Be resilient when used outside of a FormProvider (e.g., conditional UI)
+  try {
+    const { error, formItemId } = useFormField()
+    return (
+      <Label
+        data-slot="form-label"
+        data-error={!!error}
+        className={cn("data-[error=true]:text-destructive", className)}
+        htmlFor={formItemId}
+        {...props}
+      />
+    )
+  } catch {
+    // Fallback: render a plain label without form context binding
+    return (
+      <Label data-slot="form-label" className={className} {...props} />
+    )
+  }
 }
 
 function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {

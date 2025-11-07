@@ -1,7 +1,7 @@
 # Authentication System - Quickstart
 
 ## Overview
-Complete in-house authentication system built with tRPC, Prisma, and Next.js 14+. Includes email/password, 2FA/TOTP, magic links, OAuth foundation, sessions, rate limiting, and email system.
+Complete in-house authentication system built with tRPC, Prisma, and Next.js 16. Includes email/password, 2FA/TOTP, magic links, OAuth foundation, sessions, rate limiting, and email system.
 
 ## Environment Setup
 
@@ -218,4 +218,6 @@ Session is auto-loaded in tRPC context. Use appropriate procedure type:
 - [ ] Review audit logs regularly
 - [ ] Test 2FA enrollment & recovery flows
 - [ ] Test email deliverability across providers
+
+
 

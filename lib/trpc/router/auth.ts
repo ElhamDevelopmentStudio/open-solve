@@ -128,13 +128,14 @@ export const authRouter = router({
         },
       });
 
-      // Send verification email
+      // Send verification email (link verifies account email)
       const { token } = createVerificationToken();
       await prisma.verificationToken.create({
         data: {
           identifier: email,
           token,
           type: "email_verification",
+          userId: user.id,
           expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         },
       });
@@ -475,6 +476,7 @@ export const authRouter = router({
           identifier: email,
           token,
           type: "password_reset",
+          userId: user.id,
           expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         },
       });
@@ -599,6 +601,7 @@ export const authRouter = router({
           identifier: email,
           token,
           type: "magic_link",
+          userId: user.id,
           expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         },
       });
@@ -625,7 +628,7 @@ export const authRouter = router({
         where: { token: input.token },
       });
 
-      if (!verificationToken || verificationToken.type !== "email_verification") {
+      if (!verificationToken) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Invalid verification token",
@@ -640,27 +643,86 @@ export const authRouter = router({
         });
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email: verificationToken.identifier },
-      });
-
-      if (!user) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "User not found",
+      if (verificationToken.type === "email_verification") {
+        const user = await prisma.user.findUnique({
+          where: { email: verificationToken.identifier },
         });
+
+        if (!user) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "User not found",
+          });
+        }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: new Date() },
+        });
+
+        await prisma.verificationToken.delete({ where: { token: input.token } });
+        return { success: true, message: "Email verified successfully" };
       }
 
-      // Update user
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { emailVerified: new Date() },
+      if (verificationToken.type === "email_change") {
+        if (!verificationToken.userId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid token payload" });
+        }
+        const user = await prisma.user.findUnique({ where: { id: verificationToken.userId } });
+        if (!user) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "User not found" });
+        }
+        const oldEmail = user.email;
+        const newEmail = verificationToken.identifier;
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { email: newEmail, emailVerified: new Date() },
+        });
+
+        await prisma.verificationToken.delete({ where: { token: input.token } });
+
+        // Notify both addresses
+        await sendEmailChangedNotification(user.id, newEmail, oldEmail);
+
+        return { success: true, message: "Email changed and verified successfully" };
+      }
+
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported verification type" });
+    }),
+
+  verifyMagicLink: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ input }) => {
+      const { ipAddress, userAgent } = await getClientInfo();
+
+      const record = await prisma.verificationToken.findUnique({ where: { token: input.token } });
+      if (!record || record.type !== "magic_link") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired token" });
+      }
+      if (record.expires < new Date()) {
+        await prisma.verificationToken.delete({ where: { token: input.token } });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This link has expired" });
+      }
+
+      const user = await prisma.user.findUnique({ where: { email: record.identifier } });
+      if (!user) {
+        await prisma.verificationToken.delete({ where: { token: input.token } });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "User not found" });
+      }
+
+      // Consume token and sign the user in
+      await prisma.verificationToken.delete({ where: { token: input.token } });
+      await createSession(user.id, userAgent, ipAddress);
+
+      await createAuditLog({
+        userId: user.id,
+        action: "MAGIC_LINK_CONSUMED",
+        ipAddress,
+        userAgent,
       });
 
-      // Delete the verification token
-      await prisma.verificationToken.delete({ where: { token: input.token } });
-
-      return { success: true, message: "Email verified successfully" };
+      return { success: true };
     }),
 
   resendVerificationEmail: protectedProcedure.mutation(async ({ ctx }) => {
@@ -700,6 +762,7 @@ export const authRouter = router({
         identifier: ctx.user.email,
         token,
         type: "email_verification",
+        userId: ctx.user.id,
         expires: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
@@ -983,40 +1046,29 @@ export const authRouter = router({
         });
       }
 
-      const oldEmail = ctx.user.email;
-
-      // Update email
-      await prisma.user.update({
-        where: { id: ctx.user.id },
-        data: {
-          email: newEmail,
-          emailVerified: null, // Require re-verification
-        },
-      });
-
-      // Send verification email to new address
+      // Create a verification token for email change (do not change yet)
       const { token } = createVerificationToken();
       await prisma.verificationToken.create({
         data: {
           identifier: newEmail,
           token,
-          type: "email_verification",
+          type: "email_change",
+          userId: ctx.user.id,
           expires: new Date(Date.now() + 15 * 60 * 1000),
         },
       });
 
       await sendVerificationEmail(ctx.user.id, newEmail, token);
-      await sendEmailChangedNotification(ctx.user.id, newEmail, oldEmail);
 
       await createAuditLog({
         userId: ctx.user.id,
         action: "EMAIL_CHANGED",
         ipAddress,
         userAgent,
-        metadata: { oldEmail, newEmail },
+        metadata: { newEmail, pending: true },
       });
 
-      return { success: true, message: "Email changed successfully. Please verify your new email." };
+      return { success: true, message: "Please verify your new email to apply the change." };
     }),
 
   updateProfile: protectedProcedure
@@ -1151,4 +1203,3 @@ export const authRouter = router({
   }),
 
 });
-
