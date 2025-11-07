@@ -19,6 +19,13 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
   }
 
   try {
+    // Use a safe default "from" for development or if the env points to a consumer mailbox.
+    // Resend requires verified domains; free webmail domains will be rejected.
+    const fromEnv = env.RESEND_FROM_EMAIL;
+    const domain = fromEnv.split("@")[1]?.toLowerCase() ?? "";
+    const isWebmail = /gmail\.com|yahoo\.com|outlook\.com|hotmail\.com/.test(domain);
+    const from = isWebmail ? `OpenSolve <onboarding@resend.dev>` : `OpenSolve <${fromEnv}>`;
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -26,7 +33,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: env.RESEND_FROM_EMAIL,
+        from,
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -36,7 +43,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
     const data = await response.json();
 
     if (!response.ok) {
-      logger.error({ data }, "Failed to send email via Resend");
+      // Log minimal context to avoid secondary failures in logging
+      logger.error(
+        { status: response.status, error: data?.message ?? data },
+        "Failed to send email via Resend",
+      );
       return {
         success: false,
         error: data.message || "Failed to send email",
@@ -53,4 +64,5 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
     };
   }
 }
+
 
