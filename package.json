@@ -17,8 +17,8 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.926.0",
     "@hookform/resolvers": "^5.2.2",
-    "@next-auth/prisma-adapter": "^1.0.7",
     "@otplib/preset-default": "^12.0.1",
     "@prisma/client": "^6.1.0",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -62,12 +62,12 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.23.24",
     "input-otp": "^1.4.2",
     "lru-cache": "^11.2.2",
     "lucide-react": "^0.552.0",
     "nanoid": "^5.0.0",
     "next": "16.0.1",
-    "next-auth": "^4.24.7",
     "next-themes": "^0.4.6",
     "nodemailer": "^6.9.8",
     "nuqs": "^2.7.2",
