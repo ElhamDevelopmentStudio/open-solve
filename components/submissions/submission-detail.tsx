@@ -21,7 +21,7 @@ import {
   Play,
   RefreshCcw,
   Share2,
-} from "lucide-react";
+} from "@/components/icons";
 import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
 import { cn } from "@/lib/utils";
 

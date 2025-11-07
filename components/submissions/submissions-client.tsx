@@ -42,7 +42,7 @@ import {
   RotateCcw,
   Search,
   Star
-} from "lucide-react";
+} from "@/components/icons";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 

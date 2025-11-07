@@ -28,7 +28,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Trophy,
-} from "lucide-react";
+} from "@/components/icons";
 import Link from "next/link";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
