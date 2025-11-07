@@ -136,6 +136,7 @@ model VerificationToken {
   type       String   @default("magic_link")
   expires    DateTime
   createdAt  DateTime @default(now())
+  userId     String?
 
   @@unique([identifier, token])
 }
@@ -156,6 +157,13 @@ model EmailMessage {
 
   @@index([userId, createdAt])
   @@index([status])
+}
+
+model EmailSuppression {
+  email      String   @id
+  reason     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model RateLimitLedger {
