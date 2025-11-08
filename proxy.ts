@@ -5,11 +5,16 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const RATE_LIMITED_PATH = /^\/api\//;
+const isProduction = process.env.NODE_ENV === "production";
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!RATE_LIMITED_PATH.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (!isProduction) {
     return NextResponse.next();
   }
 
