@@ -8,61 +8,63 @@ datasource db {
 }
 
 model User {
-  id                   String                   @id @default(cuid())
-  email                String                   @unique
-  emailVerified        DateTime?
-  name                 String?
-  handle               String                   @unique
-  hashedPassword       String?
-  avatarUrl            String?
-  bio                  String?
-  country              String?
-  timezone             String?
-  socialGithub         String?
-  socialLinkedin       String?
-  socialTwitter        String?
-  socialWebsite        String?
-  shareAcceptedCode    Boolean                  @default(false)
-  showOnLeaderboard    Boolean                  @default(true)
-  showCountry          Boolean                  @default(true)
-  showSocials          Boolean                  @default(true)
-  role                 UserRole                 @default(USER)
-  twoFactorEnabled     Boolean                  @default(false)
-  lastLoginAt          DateTime?
-  bannedAt             DateTime?
-  passwordUpdatedAt    DateTime?
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
-  deletedAt            DateTime?
-  status               UserStatus               @default(ACTIVE)
-  accounts             Account[]
-  auditLogs            AuthAuditLog[]
-  badgeAwards          BadgeAward[]
-  contestRegistrations ContestRegistration[]
-  discussions          Discussion[]
-  lockedDiscussions    Discussion[]          @relation("DiscussionLockedBy")
-  discussionReportsFiled DiscussionReport[]  @relation("DiscussionReporter")
-  discussionReportsResolved DiscussionReport[] @relation("DiscussionResolver")
-  leaderboardEntries   LeaderboardEntry[]
-  createdProblems      Problem[]                @relation("ProblemAuthor")
-  curatedProblems      ProblemCurator[]
-  proposalsAuthored    ProblemProposal[]        @relation("ProblemProposalAuthor")
-  proposalsReviewed    ProblemProposal[]        @relation("ProblemProposalReviewer")
-  proposalComments     ProblemProposalComment[] @relation("ProblemProposalCommentAuthor")
-  problemReviews       ProblemReview[]          @relation("UserProblemReviews")
-  sessions             Session[]
-  manualReviews        Submission[]             @relation("SubmissionManualReviewer")
-  submissions          Submission[]
-  submissionDrafts     SubmissionDraft[]
-  recoveryCodes        TwoFactorRecoveryCode[]
-  twoFactorSecret      TwoFactorSecret?
-  stats                UserStats?
-  votes                Vote[]
-  trailInsights        TrailInsight[]
-  trailInsightVotes    TrailInsightVote[]
-  trailReportsFiled    TrailReport[]           @relation("TrailReportReporter")
-  trailReportsResolved TrailReport[]           @relation("TrailReportResolver")
+  id                        String                     @id @default(cuid())
+  email                     String                     @unique
+  emailVerified             DateTime?
+  name                      String?
+  handle                    String                     @unique
+  hashedPassword            String?
+  avatarUrl                 String?
+  bio                       String?
+  country                   String?
+  timezone                  String?
+  socialGithub              String?
+  socialLinkedin            String?
+  socialTwitter             String?
+  socialWebsite             String?
+  shareAcceptedCode         Boolean                    @default(false)
+  showOnLeaderboard         Boolean                    @default(true)
+  showCountry               Boolean                    @default(true)
+  showSocials               Boolean                    @default(true)
+  role                      UserRole                   @default(USER)
+  twoFactorEnabled          Boolean                    @default(false)
+  lastLoginAt               DateTime?
+  bannedAt                  DateTime?
+  passwordUpdatedAt         DateTime?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  deletedAt                 DateTime?
+  status                    UserStatus                 @default(ACTIVE)
+  accounts                  Account[]
+  auditLogs                 AuthAuditLog[]
+  badgeAwards               BadgeAward[]
+  contestRegistrations      ContestRegistration[]
+  contestClarifications     ContestClarification[]
+  discussions               Discussion[]
+  lockedDiscussions         Discussion[]               @relation("DiscussionLockedBy")
+  discussionReportsFiled    DiscussionReport[]         @relation("DiscussionReporter")
+  discussionReportsResolved DiscussionReport[]         @relation("DiscussionResolver")
+  leaderboardEntries        LeaderboardEntry[]
+  createdProblems           Problem[]                  @relation("ProblemAuthor")
+  curatedProblems           ProblemCurator[]
+  proposalsAuthored         ProblemProposal[]          @relation("ProblemProposalAuthor")
+  proposalsReviewed         ProblemProposal[]          @relation("ProblemProposalReviewer")
+  proposalComments          ProblemProposalComment[]   @relation("ProblemProposalCommentAuthor")
+  problemReviews            ProblemReview[]            @relation("UserProblemReviews")
+  sessions                  Session[]
+  manualReviews             Submission[]               @relation("SubmissionManualReviewer")
+  submissions               Submission[]
+  submissionDrafts          SubmissionDraft[]
+  recoveryCodes             TwoFactorRecoveryCode[]
+  twoFactorSecret           TwoFactorSecret?
+  stats                     UserStats?
+  votes                     Vote[]
+  trailInsights             TrailInsight[]
+  trailInsightVotes         TrailInsightVote[]
+  trailReportsFiled         TrailReport[]              @relation("TrailReportReporter")
+  trailReportsResolved      TrailReport[]              @relation("TrailReportResolver")
   leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
+  answeredClarifications    ContestClarification[]     @relation("ClarificationAnswerer")
 
   @@index([handle])
   @@index([status, role])
@@ -216,19 +218,19 @@ model Difficulty {
 }
 
 model Tag {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  slug        String       @unique
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  category    String?
-  createdById String?
-  deletedAt   DateTime?
-  isFeatured  Boolean      @default(false)
-  updatedById String?
-  problems    ProblemTag[]
+  id             String          @id @default(cuid())
+  name           String          @unique
+  slug           String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  category       String?
+  createdById    String?
+  deletedAt      DateTime?
+  isFeatured     Boolean         @default(false)
+  updatedById    String?
+  problems       ProblemTag[]
   discussionTags DiscussionTag[]
-  stats       TagStats?
+  stats          TagStats?
 
   @@index([category, isFeatured])
 }
@@ -276,42 +278,43 @@ model CompanyStats {
 }
 
 model Problem {
-  id               String            @id @default(cuid())
-  slug             String            @unique
-  authorId         String
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  judgeMode        ProblemJudgeMode  @default(AUTO)
-  createdById      String?
-  currentVersionId String?           @unique
-  deletedAt        DateTime?
-  difficultyId     String?
-  state            ProblemState      @default(DRAFT)
-  updatedById      String?
-  visibility       ProblemVisibility @default(INTERNAL)
-  editorialReleaseStrategy EditorialReleaseStrategy @default(ON_PUBLISH)
-  editorialReleaseAt DateTime?
-  editorialReleasedAt DateTime?
+  id                         String                     @id @default(cuid())
+  slug                       String                     @unique
+  authorId                   String
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  judgeMode                  ProblemJudgeMode           @default(AUTO)
+  createdById                String?
+  currentVersionId           String?                    @unique
+  deletedAt                  DateTime?
+  difficultyId               String?
+  state                      ProblemState               @default(DRAFT)
+  updatedById                String?
+  visibility                 ProblemVisibility          @default(INTERNAL)
+  editorialReleaseStrategy   EditorialReleaseStrategy   @default(ON_PUBLISH)
+  editorialReleaseAt         DateTime?
+  editorialReleasedAt        DateTime?
   editorialReleaseOffsetDays Int?
-  editorialReleaseContestId String?
-  contestProblems  ContestProblem[]
-  discussions      Discussion[]
-  editorialReleaseContest Contest? @relation("ContestEditorialRelease", fields: [editorialReleaseContestId], references: [id], onDelete: SetNull)
-  author           User              @relation("ProblemAuthor", fields: [authorId], references: [id])
-  currentVersion   ProblemVersion?   @relation("ProblemCurrentVersion", fields: [currentVersionId], references: [id])
-  difficulty       Difficulty?       @relation(fields: [difficultyId], references: [id])
-  companies        ProblemCompany[]
-  curators         ProblemCurator[]
-  languages        ProblemLanguage[]
-  reviews          ProblemReview[]   @relation("ProblemReviews")
-  stats            ProblemStats?
-  tags             ProblemTag[]
-  versions         ProblemVersion[]
-  submissions      Submission[]
-  submissionDrafts SubmissionDraft[]
-  trailInsights    TrailInsight[]
-  trailEdges       TrailEdge[]
-  leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
+  editorialReleaseContestId  String?
+  contestProblems            ContestProblem[]
+  contestClarifications      ContestClarification[]
+  discussions                Discussion[]
+  editorialReleaseContest    Contest?                   @relation("ContestEditorialRelease", fields: [editorialReleaseContestId], references: [id], onDelete: SetNull)
+  author                     User                       @relation("ProblemAuthor", fields: [authorId], references: [id])
+  currentVersion             ProblemVersion?            @relation("ProblemCurrentVersion", fields: [currentVersionId], references: [id])
+  difficulty                 Difficulty?                @relation(fields: [difficultyId], references: [id])
+  companies                  ProblemCompany[]
+  curators                   ProblemCurator[]
+  languages                  ProblemLanguage[]
+  reviews                    ProblemReview[]            @relation("ProblemReviews")
+  stats                      ProblemStats?
+  tags                       ProblemTag[]
+  versions                   ProblemVersion[]
+  submissions                Submission[]
+  submissionDrafts           SubmissionDraft[]
+  trailInsights              TrailInsight[]
+  trailEdges                 TrailEdge[]
+  leaderboardRealtimeSolves  LeaderboardRealtimeSolve[]
 
   @@index([state, visibility, difficultyId, createdAt])
 }
@@ -526,48 +529,49 @@ model Verdict {
 }
 
 model Submission {
-  id                   String                 @id @default(cuid())
-  userId               String
-  problemId            String
-  status               SubmissionStatus       @default(QUEUED)
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  manualDueAt          DateTime?
-  manualNotes          String?
-  manualReviewedAt     DateTime?
-  manualReviewerId     String?
-  manualScore          Float?
-  requiresManualReview Boolean                @default(false)
-  codeHash             String
-  isShareEnabled       Boolean                @default(false)
-  sharePublicId        String?                @unique
-  shareEnabledAt       DateTime?
-  shareRevokedAt       DateTime?
-  hiddenFromProfile    Boolean                @default(false)
-  contestId            String?
-  createdById          String?
-  deletedAt            DateTime?
-  finishedAt           DateTime?
-  judgeNodeId          String?
-  languageCode         String
-  memoryUsedKb         Int?
-  metadata             Json?
-  problemVersionId     String?
-  queuedAt             DateTime               @default(now())
-  score                Float?
-  sourceCodeRef        String
-  startedAt            DateTime?
-  timeUsedMs           Int?
-  updatedById          String?
-  verdictCode          String?
-  contest              Contest?               @relation(fields: [contestId], references: [id])
-  language             Language               @relation(fields: [languageCode], references: [code])
-  manualReviewer       User?                  @relation("SubmissionManualReviewer", fields: [manualReviewerId], references: [id])
-  problem              Problem                @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  problemVersion       ProblemVersion?        @relation(fields: [problemVersionId], references: [id])
-  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verdict              Verdict?               @relation(fields: [verdictCode], references: [code])
-  caseResults          SubmissionCaseResult[]
+  id                        String                     @id @default(cuid())
+  userId                    String
+  problemId                 String
+  status                    SubmissionStatus           @default(QUEUED)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  manualDueAt               DateTime?
+  manualNotes               String?
+  manualReviewedAt          DateTime?
+  manualReviewerId          String?
+  manualScore               Float?
+  requiresManualReview      Boolean                    @default(false)
+  codeHash                  String
+  isShareEnabled            Boolean                    @default(false)
+  sharePublicId             String?                    @unique
+  shareEnabledAt            DateTime?
+  shareRevokedAt            DateTime?
+  hiddenFromProfile         Boolean                    @default(false)
+  contestId                 String?
+  isFrozen                  Boolean                    @default(false)
+  createdById               String?
+  deletedAt                 DateTime?
+  finishedAt                DateTime?
+  judgeNodeId               String?
+  languageCode              String
+  memoryUsedKb              Int?
+  metadata                  Json?
+  problemVersionId          String?
+  queuedAt                  DateTime                   @default(now())
+  score                     Float?
+  sourceCodeRef             String
+  startedAt                 DateTime?
+  timeUsedMs                Int?
+  updatedById               String?
+  verdictCode               String?
+  contest                   Contest?                   @relation(fields: [contestId], references: [id])
+  language                  Language                   @relation(fields: [languageCode], references: [code])
+  manualReviewer            User?                      @relation("SubmissionManualReviewer", fields: [manualReviewerId], references: [id])
+  problem                   Problem                    @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  problemVersion            ProblemVersion?            @relation(fields: [problemVersionId], references: [id])
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verdict                   Verdict?                   @relation(fields: [verdictCode], references: [code])
+  caseResults               SubmissionCaseResult[]
   leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
 
   @@index([userId, problemId, createdAt])
@@ -616,36 +620,36 @@ model SubmissionDraft {
 }
 
 model Discussion {
-  id             String              @id @default(cuid())
-  problemId      String?
-  authorId       String
-  parentId       String?
-  title          String?
-  content        String
-  category       DiscussionCategory?
-  containsSpoiler Boolean            @default(false)
-  score          Int                 @default(0)
-  state          DiscussionState     @default(VISIBLE)
-  isPinned       Boolean             @default(false)
-  isLocked       Boolean             @default(false)
-  lockedAt       DateTime?
-  lockedById     String?
-  replyCount     Int                 @default(0)
-  lastActivityAt DateTime            @default(now())
-  editedAt       DateTime?
-  createdById    String?
-  updatedById    String?
-  deletedAt      DateTime?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  author         User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent         Discussion?         @relation("DiscussionReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies        Discussion[]        @relation("DiscussionReplies")
-  problem        Problem?            @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  lockedBy       User?               @relation("DiscussionLockedBy", fields: [lockedById], references: [id])
-  tags           DiscussionTag[]
-  votes          Vote[]
-  reports        DiscussionReport[]
+  id              String              @id @default(cuid())
+  problemId       String?
+  authorId        String
+  parentId        String?
+  title           String?
+  content         String
+  category        DiscussionCategory?
+  containsSpoiler Boolean             @default(false)
+  score           Int                 @default(0)
+  state           DiscussionState     @default(VISIBLE)
+  isPinned        Boolean             @default(false)
+  isLocked        Boolean             @default(false)
+  lockedAt        DateTime?
+  lockedById      String?
+  replyCount      Int                 @default(0)
+  lastActivityAt  DateTime            @default(now())
+  editedAt        DateTime?
+  createdById     String?
+  updatedById     String?
+  deletedAt       DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  author          User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent          Discussion?         @relation("DiscussionReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies         Discussion[]        @relation("DiscussionReplies")
+  problem         Problem?            @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  lockedBy        User?               @relation("DiscussionLockedBy", fields: [lockedById], references: [id])
+  tags            DiscussionTag[]
+  votes           Vote[]
+  reports         DiscussionReport[]
 
   @@index([problemId, parentId])
   @@index([category, lastActivityAt])
@@ -671,11 +675,11 @@ model DiscussionReport {
   note         String?
   resolvedById String?
   resolvedAt   DateTime?
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  discussion   Discussion            @relation(fields: [discussionId], references: [id], onDelete: Cascade)
-  reporter     User                  @relation("DiscussionReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  resolver     User?                 @relation("DiscussionResolver", fields: [resolvedById], references: [id])
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  discussion   Discussion             @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  reporter     User                   @relation("DiscussionReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver     User?                  @relation("DiscussionResolver", fields: [resolvedById], references: [id])
 
   @@index([status, createdAt])
 }
@@ -736,32 +740,32 @@ model TrailEdge {
 }
 
 model TrailInsightVote {
-  id         String        @id @default(cuid())
-  insightId  String
-  userId     String
-  value      Int
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  insight    TrailInsight  @relation(fields: [insightId], references: [id], onDelete: Cascade)
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String       @id @default(cuid())
+  insightId String
+  userId    String
+  value     Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  insight   TrailInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([insightId, userId])
 }
 
 model TrailReport {
-  id           String             @id @default(cuid())
+  id           String            @id @default(cuid())
   insightId    String
   reporterId   String
   reason       TrailReportReason
-  status       TrailReportStatus  @default(OPEN)
+  status       TrailReportStatus @default(OPEN)
   note         String?
   resolvedById String?
   resolvedAt   DateTime?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  insight      TrailInsight       @relation(fields: [insightId], references: [id], onDelete: Cascade)
-  reporter     User               @relation("TrailReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  resolver     User?              @relation("TrailReportResolver", fields: [resolvedById], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  insight      TrailInsight      @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  reporter     User              @relation("TrailReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver     User?             @relation("TrailReportResolver", fields: [resolvedById], references: [id])
 
   @@index([status, createdAt])
 }
@@ -801,17 +805,17 @@ model BadgeAward {
 }
 
 model LeaderboardSnapshot {
-  id          String             @id @default(cuid())
-  createdAt   DateTime           @default(now())
-  createdById String?
-  deletedAt   DateTime?
-  generatedAt DateTime           @default(now())
-  periodEnd   DateTime?
-  periodStart DateTime
-  updatedAt   DateTime           @updatedAt
-  updatedById String?
-  window      String
-  entries     LeaderboardEntry[]
+  id             String                     @id @default(cuid())
+  createdAt      DateTime                   @default(now())
+  createdById    String?
+  deletedAt      DateTime?
+  generatedAt    DateTime                   @default(now())
+  periodEnd      DateTime?
+  periodStart    DateTime
+  updatedAt      DateTime                   @updatedAt
+  updatedById    String?
+  window         String
+  entries        LeaderboardEntry[]
   realtimeSolves LeaderboardRealtimeSolve[]
 
   @@unique([window, periodStart])
@@ -844,13 +848,13 @@ model LeaderboardRealtimeSolve {
   userId       String
   problemId    String
   submissionId String
-  score        Float              @default(0)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  score        Float               @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   snapshot     LeaderboardSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  problem      Problem            @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  submission   Submission         @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem      Problem             @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  submission   Submission          @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@unique([snapshotId, userId, problemId])
   @@index([snapshotId, window])
@@ -859,27 +863,31 @@ model LeaderboardRealtimeSolve {
 }
 
 model Contest {
-  id                 String                @id @default(cuid())
-  slug               String                @unique
-  name               String
-  description        String?
-  state              ContestState          @default(UPCOMING)
-  visibility         ContestVisibility     @default(PUBLIC)
-  startsAt           DateTime
-  endsAt             DateTime
-  freezeAt           DateTime?
-  rules              ContestRuleset        @default(ICPC)
-  isRated            Boolean               @default(false)
-  editorialReleaseAt DateTime?
-  createdById        String?
-  updatedById        String?
-  deletedAt          DateTime?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  problems           ContestProblem[]
-  editorialReleaseProblems Problem[]        @relation("ContestEditorialRelease")
-  registrations      ContestRegistration[]
-  submissions        Submission[]
+  id                       String                 @id @default(cuid())
+  slug                     String                 @unique
+  name                     String
+  description              String?
+  type                     ContestType            @default(COMPETITIVE)
+  state                    ContestState           @default(UPCOMING)
+  visibility               ContestVisibility      @default(PUBLIC)
+  startsAt                 DateTime
+  endsAt                   DateTime
+  freezeAt                 DateTime?
+  rules                    ContestRuleset         @default(ICPC)
+  isRated                  Boolean                @default(false)
+  editorialReleaseAt       DateTime?
+  settings                 Json                   @default("{}")
+  createdById              String?
+  updatedById              String?
+  deletedAt                DateTime?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  problems                 ContestProblem[]
+  editorialReleaseProblems Problem[]              @relation("ContestEditorialRelease")
+  registrations            ContestRegistration[]
+  submissions              Submission[]
+  clarifications           ContestClarification[]
+  snapshots                ContestSnapshot[]
 
   @@index([state, startsAt])
 }
@@ -892,6 +900,7 @@ model ContestProblem {
   label       String
   order       Int
   points      Int?
+  settings    Json           @default("{}")
   createdById String?
   updatedById String?
   deletedAt   DateTime?
@@ -906,20 +915,61 @@ model ContestProblem {
 }
 
 model ContestRegistration {
-  id           String    @id @default(cuid())
-  contestId    String
-  userId       String
-  registeredAt DateTime  @default(now())
-  isVirtual    Boolean   @default(false)
-  createdById  String?
-  updatedById  String?
-  deletedAt    DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  contest      Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String                    @id @default(cuid())
+  contestId         String
+  userId            String
+  registeredAt      DateTime                  @default(now())
+  isVirtual         Boolean                   @default(false)
+  status            ContestRegistrationStatus @default(REGISTERED)
+  isDisqualified    Boolean                   @default(false)
+  disqualifiedAt    DateTime?
+  dqReason          String?
+  deviceFingerprint String?
+  ipHash            String?
+  inviteCode        String?
+  createdById       String?
+  updatedById       String?
+  deletedAt         DateTime?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  contest           Contest                   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user              User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, userId])
+}
+
+model ContestSnapshot {
+  id        String   @id @default(cuid())
+  contestId String
+  frozenAt  DateTime
+  payload   Json
+  createdAt DateTime @default(now())
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@index([contestId, frozenAt])
+}
+
+model ContestClarification {
+  id           String                  @id @default(cuid())
+  contestId    String
+  userId       String
+  problemId    String?
+  question     String
+  answer       String?
+  visibility   ClarificationVisibility @default(PRIVATE)
+  status       ClarificationStatus     @default(OPEN)
+  isPublic     Boolean                 @default(false)
+  answeredById String?
+  answeredAt   DateTime?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  contest      Contest                 @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem      Problem?                @relation(fields: [problemId], references: [id], onDelete: SetNull)
+  answeredBy   User?                   @relation("ClarificationAnswerer", fields: [answeredById], references: [id], onDelete: SetNull)
+
+  @@index([contestId, status])
+  @@index([userId, createdAt])
 }
 
 enum UserRole {
@@ -1020,9 +1070,38 @@ enum ContestVisibility {
   PRIVATE
 }
 
+enum ContestType {
+  COMPETITIVE
+  EDUCATIONAL
+  PRIVATE
+  CUSTOM
+}
+
 enum ContestRuleset {
   ICPC
   CF
+  ATCODER
+  CUSTOM
+}
+
+enum ContestRegistrationStatus {
+  REGISTERED
+  INVITED
+  WAITLISTED
+  DECLINED
+  REMOVED
+}
+
+enum ClarificationVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ClarificationStatus {
+  OPEN
+  ANSWERED
+  ANNOUNCED
+  CLOSED
 }
 
 enum BadgeAwardSource {
