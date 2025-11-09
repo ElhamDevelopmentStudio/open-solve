@@ -51,6 +51,20 @@ enum DiscussionState {
   REMOVED
 }
 
+enum ProblemProposalStatus {
+  SUBMITTED
+  PRESCREEN
+  IN_REVIEW
+  ACCEPTED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum ProblemReviewDecision {
+  APPROVED
+  CHANGES_REQUESTED
+}
+
 enum ContestState {
   UPCOMING
   RUNNING
@@ -129,6 +143,10 @@ model User {
   leaderboardEntries LeaderboardEntry[]
   contestRegistrations ContestRegistration[]
   stats             UserStats?
+  problemReviews    ProblemReview[]        @relation("UserProblemReviews")
+  proposalsAuthored ProblemProposal[]      @relation("ProblemProposalAuthor")
+  proposalsReviewed ProblemProposal[]      @relation("ProblemProposalReviewer")
+  proposalComments  ProblemProposalComment[] @relation("ProblemProposalCommentAuthor")
 
   @@index([handle])
   @@index([status, role])
@@ -363,6 +381,7 @@ model Problem {
   discussions      Discussion[]
   contestProblems  ContestProblem[]
   stats            ProblemStats?
+  reviews          ProblemReview[]        @relation("ProblemReviews")
 
   @@index([state, visibility, difficultyId, createdAt])
 }
@@ -434,6 +453,56 @@ model ProblemStats {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   problem        Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model ProblemReview {
+  id          String                 @id @default(cuid())
+  problemId   String
+  reviewerId  String
+  decision    ProblemReviewDecision
+  notes       String?                @db.Text
+  createdAt   DateTime               @default(now())
+  problem     Problem                @relation("ProblemReviews", fields: [problemId], references: [id], onDelete: Cascade)
+  reviewer    User                   @relation("UserProblemReviews", fields: [reviewerId], references: [id])
+
+  @@index([problemId])
+  @@index([reviewerId])
+}
+
+model ProblemProposal {
+  id                     String                 @id @default(cuid())
+  slug                   String                 @unique
+  title                  String
+  intendedDifficulty     String?
+  statement              String                 @db.Text
+  samples                Json
+  originalityConfirmed   Boolean                @default(false)
+  status                 ProblemProposalStatus  @default(SUBMITTED)
+  authorId               String
+  reviewerId             String?
+  convertedProblemId     String?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  author                 User                   @relation("ProblemProposalAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewer               User?                  @relation("ProblemProposalReviewer", fields: [reviewerId], references: [id])
+  comments               ProblemProposalComment[]
+
+  @@index([status])
+  @@index([authorId])
+  @@index([reviewerId])
+}
+
+model ProblemProposalComment {
+  id          String          @id @default(cuid())
+  proposalId  String
+  authorId    String
+  body        String          @db.Text
+  createdAt   DateTime        @default(now())
+  proposal    ProblemProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author      User            @relation("ProblemProposalCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@index([authorId])
 }
 
 model TestCase {
