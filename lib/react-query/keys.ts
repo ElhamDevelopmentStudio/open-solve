@@ -84,6 +84,9 @@ export const trpcProcedures = {
     create: "submissions.create" as ProcedureName,
     get: "submissions.get" as ProcedureName,
     listMine: "submissions.listMine" as ProcedureName,
+    listByProblem: "submissions.listByProblem" as ProcedureName,
+    getShare: "submissions.getShare" as ProcedureName,
+    filters: "submissions.filters" as ProcedureName,
     saveDraft: "submissions.saveDraft" as ProcedureName,
     getDrafts: "submissions.getDrafts" as ProcedureName,
   },
@@ -106,6 +109,11 @@ export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   session: [trpcProcedures.auth.getSession, trpcProcedures.auth.getSessions],
   staffProblems: [trpcProcedures.staff.problems.list, trpcProcedures.staff.problems.get],
   proposals: [trpcProcedures.proposals.listMine, trpcProcedures.proposals.staffList],
-  submissions: [trpcProcedures.submissions.listMine, trpcProcedures.submissions.get],
+  submissions: [
+    trpcProcedures.submissions.listMine,
+    trpcProcedures.submissions.listByProblem,
+    trpcProcedures.submissions.get,
+    trpcProcedures.submissions.filters,
+  ],
   submissionDrafts: [trpcProcedures.submissions.getDrafts],
 };
