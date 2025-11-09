@@ -206,6 +206,9 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                 Last attempt {lastSubmissionLabel}
               </span>
             ) : null}
+            <Button size="sm" variant="outline" asChild className="ml-auto">
+              <Link href={`/problems/${problem.slug}/submissions`}>Attempt history</Link>
+            </Button>
           </div>
           <div className="mt-4 flex flex-wrap items-start gap-4">
             <div className="flex-1 space-y-2">

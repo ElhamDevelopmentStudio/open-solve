@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import {
@@ -70,13 +71,11 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/telemetry/client";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
-import type {
-  SampleRunResult,
-  SubmissionDetailPayload,
-  SubmissionHistoryEntry,
-} from "@/lib/submissions/types";
+import type { SampleRunResult, SubmissionDetailPayload, SubmissionHistoryEntry } from "@/lib/submissions/types";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
+import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
+import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
 
 type WorkspaceResult =
   | (SampleRunResult & { kind: "sample" })
@@ -571,167 +570,6 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
   );
 }
 
-type SubmissionRealtimeOptions = {
-  submissionId: string | null;
-  onUpdate: (detail: SubmissionDetailPayload) => void;
-};
-
-type SubmissionServerEvent =
-  | { type: "ready" }
-  | { type: "subscribed"; submissionId: string }
-  | { type: "unsubscribed"; submissionId: string }
-  | { type: "update"; submissionId: string; payload: SubmissionDetailPayload }
-  | { type: "error"; submissionId?: string; message: string };
-
-const ensureRealtimeServerReady = (() => {
-  let bootstrapPromise: Promise<void> | null = null;
-  return () => {
-    if (!bootstrapPromise) {
-      bootstrapPromise = fetch("/api/ws/submissions")
-        .then(() => undefined)
-        .catch((error) => {
-          bootstrapPromise = null;
-          throw error;
-        });
-    }
-    return bootstrapPromise;
-  };
-})();
-
-function useSubmissionRealtime({ submissionId, onUpdate }: SubmissionRealtimeOptions) {
-  const wsRef = useRef<WebSocket | null>(null);
-  const desiredRef = useRef<string | null>(submissionId);
-  const activeRef = useRef<string | null>(null);
-  const onUpdateRef = useRef(onUpdate);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const syncSubscription = useCallback(() => {
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      return;
-    }
-    const desired = desiredRef.current;
-    const active = activeRef.current;
-    if (desired && desired !== active) {
-      if (active) {
-        ws.send(JSON.stringify({ type: "unsubscribe", submissionId: active }));
-      }
-      ws.send(JSON.stringify({ type: "subscribe", submissionId: desired }));
-    } else if (!desired && active) {
-      ws.send(JSON.stringify({ type: "unsubscribe", submissionId: active }));
-    }
-  }, []);
-
-  useEffect(() => {
-    desiredRef.current = submissionId;
-    syncSubscription();
-  }, [submissionId, syncSubscription]);
-
-  useEffect(() => {
-    onUpdateRef.current = onUpdate;
-  }, [onUpdate]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    let cancelled = false;
-    let backoff = 1_000;
-
-    const handleServerMessage = (message: SubmissionServerEvent) => {
-      switch (message.type) {
-        case "subscribed":
-          activeRef.current = message.submissionId;
-          break;
-        case "unsubscribed":
-          if (activeRef.current === message.submissionId) {
-            activeRef.current = null;
-          }
-          break;
-        case "update":
-          onUpdateRef.current?.(message.payload);
-          break;
-        case "ready":
-          syncSubscription();
-          break;
-        case "error":
-        default:
-          break;
-      }
-    };
-
-    const cleanupSocket = () => {
-      if (wsRef.current) {
-        try {
-          wsRef.current.close();
-        } catch {
-          // ignore
-        }
-        wsRef.current = null;
-      }
-    };
-
-    const scheduleReconnect = () => {
-      if (cancelled) return;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      reconnectTimeoutRef.current = setTimeout(() => {
-        backoff = Math.min(backoff * 1.5, 10_000);
-        void connect();
-      }, backoff);
-    };
-
-    const connect = async () => {
-      if (cancelled) return;
-      try {
-        await ensureRealtimeServerReady();
-      } catch {
-        scheduleReconnect();
-        return;
-      }
-      if (cancelled) return;
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const socket = new WebSocket(`${protocol}://${window.location.host}/api/ws/submissions`);
-      wsRef.current = socket;
-
-      socket.addEventListener("open", () => {
-        if (cancelled) return;
-        backoff = 1_000;
-        syncSubscription();
-      });
-
-      socket.addEventListener("message", (event) => {
-        try {
-          const message = JSON.parse(event.data) as SubmissionServerEvent;
-          handleServerMessage(message);
-        } catch (error) {
-          console.error("Failed to parse realtime payload", error);
-        }
-      });
-
-      const handleClose = () => {
-        if (cancelled) return;
-        scheduleReconnect();
-      };
-
-      socket.addEventListener("close", handleClose);
-      socket.addEventListener("error", handleClose);
-    };
-
-    void connect();
-
-    return () => {
-      cancelled = true;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-      cleanupSocket();
-      activeRef.current = null;
-    };
-  }, [syncSubscription]);
-}
 
 function EditorColumn(props: {
   activeLanguage: SupportedLanguage;
@@ -952,7 +790,11 @@ function SidePanel(props: {
                 >
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{new Date(entry.createdAt).toLocaleString()}</span>
-                    <StatusBadge verdict={entry.verdictCode} status={entry.status} />
+                    <SubmissionStatusBadge
+                      verdict={entry.verdictCode}
+                      status={entry.status}
+                      size="sm"
+                    />
                   </div>
                   <p className="mt-1 text-sm font-medium text-foreground">
                     {entry.verdictCode ?? "Pending"} • {entry.languageCode.toUpperCase()}
@@ -960,6 +802,9 @@ function SidePanel(props: {
                 </button>
               ))
             )}
+            <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+              <Link href={`/problems/${problem.slug}/submissions`}>View history</Link>
+            </Button>
           </div>
         </TabsContent>
         <TabsContent value="drafts">
@@ -1026,7 +871,7 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
             <p className="text-xs text-muted-foreground">{variant}</p>
             <p className="text-lg font-semibold text-foreground">{verdict}</p>
           </div>
-          <StatusBadge verdict={summary.verdictCode ?? null} status={statusLabel} />
+          <SubmissionStatusBadge verdict={summary.verdictCode ?? null} status={statusLabel} />
         </div>
         <div className="mt-3 grid grid-cols-3 gap-4 text-xs text-muted-foreground">
           <div>
@@ -1059,7 +904,7 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
               >
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-foreground">Test #{test.ordinal}</p>
-                  <StatusBadge verdict={test.verdictCode} status={test.status} />
+                <SubmissionStatusBadge verdict={test.verdictCode} status={test.status} size="sm" />
                 </div>
                 {test.inputPreview && (
                   <p className="mt-2 text-muted-foreground">
@@ -1081,52 +926,6 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
         )}
       </div>
     </div>
-  );
-}
-
-function StatusBadge({
-  verdict,
-  status,
-}: {
-  verdict: string | null;
-  status: string | null;
-}) {
-  const normalizedVerdict = verdict ?? "";
-  const normalizedStatus = status ?? "";
-  let tone = "bg-muted text-muted-foreground";
-  let label = normalizedVerdict || normalizedStatus || "Pending";
-
-  if (normalizedVerdict === "AC") {
-    tone = "bg-emerald-500/10 text-emerald-500";
-    label = "Accepted";
-  } else if (["WA", "RE", "TLE", "MLE", "CE"].includes(normalizedVerdict)) {
-    tone = "bg-rose-500/10 text-rose-500";
-  } else if (normalizedVerdict === "MANUAL_ACCEPTED") {
-    tone = "bg-purple-500/10 text-purple-500";
-    label = "Manual Accepted";
-  } else if (normalizedVerdict === "MANUAL_PARTIAL") {
-    tone = "bg-purple-500/10 text-purple-500";
-    label = "Manual Partial";
-  } else if (normalizedVerdict === "MANUAL_REJECTED") {
-    tone = "bg-rose-500/10 text-rose-500";
-    label = "Manual Rejected";
-  } else if (normalizedStatus === "RUNNING") {
-    tone = "bg-blue-500/10 text-blue-500";
-    label = "Running";
-  } else if (normalizedStatus === "QUEUED") {
-    tone = "bg-muted text-muted-foreground";
-    label = "Queued";
-  } else if (normalizedStatus === "RETRYING") {
-    tone = "bg-amber-500/10 text-amber-600";
-    label = "Retrying";
-  } else if (normalizedStatus === "MANUAL_PENDING") {
-    tone = "bg-purple-500/10 text-purple-500";
-    label = "Manual Pending";
-  }
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs", tone)}>
-      {label}
-    </span>
   );
 }
 
