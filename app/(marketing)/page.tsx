@@ -1,11 +1,4 @@
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { siteConfig } from "@/config/site";
 import Link from "next/link";
 
@@ -34,9 +27,7 @@ export default function Home() {
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
             Open-source practice platform for interviews, contests, and teams.
           </h1>
-          <p className="text-lg text-muted-foreground">
-            {siteConfig.description}
-          </p>
+          <p className="text-lg text-muted-foreground">{siteConfig.description}</p>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild>
               <Link href="/sign-in">Get started</Link>

@@ -1,15 +1,20 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 const RATE_LIMITED_PATH = /^\/api\//;
+const isProduction = process.env.NODE_ENV === "production";
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!RATE_LIMITED_PATH.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (!isProduction) {
     return NextResponse.next();
   }
 
@@ -86,8 +91,7 @@ function getIdentifier(request: NextRequest) {
     return first.trim();
   }
 
-  const realIp =
-    request.headers.get("x-real-ip") ?? request.headers.get("x-vercel-ip");
+  const realIp = request.headers.get("x-real-ip") ?? request.headers.get("x-vercel-ip");
   if (realIp) {
     return realIp;
   }

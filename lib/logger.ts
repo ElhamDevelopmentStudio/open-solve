@@ -1,20 +1,9 @@
-import pino from "pino";
 import { env } from "@/lib/env";
+import pino from "pino";
 
-const isProd = process.env.NODE_ENV === "production";
-
+// Use a simple stdout logger in all environments to avoid worker thread transports
 export const logger = pino({
   level: env.LOG_LEVEL,
-  transport: isProd
-    ? undefined
-    : {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          translateTime: "HH:MM:ss.l",
-          ignore: "pid,hostname",
-        },
-      },
   formatters: {
     bindings(bindings) {
       return {

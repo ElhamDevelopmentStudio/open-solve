@@ -17,13 +17,8 @@ type AppProvidersProps = {
   initialQueryState?: DehydratedState;
 };
 
-export function AppProviders({
-  children,
-  initialQueryState,
-}: AppProvidersProps) {
-  const [queryClient] = useState(
-    () => new QueryClient(queryClientConfig),
-  );
+export function AppProviders({ children, initialQueryState }: AppProvidersProps) {
+  const [queryClient] = useState(() => new QueryClient(queryClientConfig));
 
   return (
     <ThemeProvider>

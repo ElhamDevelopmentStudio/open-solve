@@ -121,4 +121,28 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    border-radius: var(--radius);
+  }
+
+  .skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    width: auto;
+    height: auto;
+    clip: auto;
+    padding: 0.5rem 1rem;
+    background-color: var(--card);
+    color: var(--foreground);
+    box-shadow: 0 10px 40px rgb(15 23 42 / 0.18);
+    z-index: 9999;
+  }
 }

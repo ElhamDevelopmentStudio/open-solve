@@ -46,6 +46,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   output: "standalone",
+  allowedDevOrigins: ["192.168.0.115"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

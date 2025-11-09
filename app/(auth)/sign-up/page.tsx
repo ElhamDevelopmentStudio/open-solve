@@ -1,23 +1,23 @@
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { SignUpForm } from "@/components/auth/sign-up-form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import Link from "next/link";
 
 export default function SignUpPage() {
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
+        <CardTitle>Create an Account</CardTitle>
+        <CardDescription>Join OpenSolve to start solving problems.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm text-muted-foreground">
-        <p>Implement registration, verification, and onboarding steps here.</p>
-        <Button className="w-full" disabled>
-          Join waitlist
-        </Button>
-        <p className="text-xs">
-          Already have an account?{" "}
-          <Link href="/auth/sign-in" className="font-medium text-foreground">
+      <CardContent className="space-y-4">
+        <SignUpForm />
+
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Already have an account? </span>
+          <Link href="/sign-in" className="text-primary hover:underline">
             Sign in
           </Link>
-        </p>
+        </div>
       </CardContent>
     </Card>
   );
