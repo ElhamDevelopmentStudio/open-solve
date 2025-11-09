@@ -505,7 +505,7 @@ CREATE TABLE "ContestRegistration" (
     CONSTRAINT "ContestRegistration_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
+-- CreateIndextype
 CREATE UNIQUE INDEX "Difficulty_code_key" ON "Difficulty"("code");
 
 -- CreateIndex

@@ -34,7 +34,7 @@ Each record inherits the common audit columns (`createdAt`, `updatedAt`, `create
   - Relations: `testCases`, `submissions`, `contestUsages`.
   - Indexes: unique `(problemId, versionNumber)` + `dataHash` for cache busting.
 - **TestCase** — Version-scoped IO metadata.
-  - Fields: `kind` (`sample|hidden`), `ordinal`, `inputBlobRef`, `outputBlobRef`, `checksum`, `timeLimitMs`, `memoryLimitMb`, `points`.
+  - Fields: `kind` (`sample|hidden`), `ordinal`, `inputBlobRef`, `outputBlobRef`, `checksum`, `timeLimitMs`, `memoryLimitMb`, `strength` (partial scoring weight; samples are always `0`).
   - Index: `(problemVersionId, kind, ordinal)` preserves stable ordering.
 - **ProblemTag / ProblemCompany** — M:N bridges with soft delete for audit (composite PKs `(problemId, tagId)` / `(problemId, companyId)`).
 - **ProblemStats** — Denormalized counters (`acceptedCount`, `submissionCount`, `favoriteCount`, `acceptanceRate`).

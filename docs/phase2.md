@@ -83,7 +83,7 @@
 
 ## 2.3 Test Cases (per version)
 
-- **Fields:** `problemVersionId`, `kind` (`sample|hidden`), `ordinal` (stable order), `inputBlobRef`, `outputBlobRef`, `timeLimitMs`, `memoryLimitMb`, `points` (optional for contest partial scoring).
+- **Fields:** `problemVersionId`, `kind` (`sample|hidden`), `ordinal` (stable order), `inputBlobRef`, `outputBlobRef`, `timeLimitMs`, `memoryLimitMb`, `strength` (hidden-case weight used for partial scoring; samples are always `0`).
 - **Invariants:**
   - At least **one** `sample` test exists before publish.
   - `hidden` cases exist for judging; sealed from normal users.
@@ -304,7 +304,7 @@ All stats are **eventually consistent**; never block user flows on them.
 
 - **Immutable Public Versioning:** Public problem pages display a **content hash** (short) so users can cite exactly which version they solved.
 - **Reproducibility Token:** Store a `runnerImageDigest` and `languageVersion` with each Submission so rejudging is provably consistent.
-- **Partial Scoring Ready:** Include `points` on TestCase and `score` on Submission now; even if you don’t expose it yet, future contests/IOI-style problems become easy.
+- **Partial Scoring Ready:** Include `strength` on TestCase and `score` on Submission now; even if you don’t expose it yet, future contests/IOI-style problems become easy.
 - **Slug Redirects:** Maintain a small `Redirect` table for renamed slugs to preserve SEO and shared links.
 - **Anonymized Analytics:** A tiny `ProblemView` table keyed by **daily bucket** + problemId with a salted anon cookie, so you get traffic insights without PII.
 

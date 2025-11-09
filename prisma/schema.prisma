@@ -111,42 +111,43 @@ enum AuthAuditAction {
 }
 
 model User {
-  id                String                  @id @default(cuid())
-  email             String                  @unique
-  emailVerified     DateTime?
-  name              String?
-  handle            String                  @unique
-  hashedPassword    String?
-  avatarUrl         String?
-  bio               String?
-  country           String?
-  timezone          String?
-  role              UserRole                @default(USER)
-  status            UserStatus              @default(ACTIVE)
-  twoFactorEnabled  Boolean                 @default(false)
-  lastLoginAt       DateTime?
-  bannedAt          DateTime?
-  passwordUpdatedAt DateTime?
-  deletedAt         DateTime?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  accounts          Account[]
-  sessions          Session[]
-  auditLogs         AuthAuditLog[]
-  twoFactorSecret   TwoFactorSecret?
-  recoveryCodes     TwoFactorRecoveryCode[]
-  submissions       Submission[]
-  createdProblems   Problem[]               @relation("ProblemAuthor")
-  discussions       Discussion[]
-  votes             Vote[]
-  badgeAwards       BadgeAward[]
-  leaderboardEntries LeaderboardEntry[]
+  id                   String                   @id @default(cuid())
+  email                String                   @unique
+  emailVerified        DateTime?
+  name                 String?
+  handle               String                   @unique
+  hashedPassword       String?
+  avatarUrl            String?
+  bio                  String?
+  country              String?
+  timezone             String?
+  role                 UserRole                 @default(USER)
+  status               UserStatus               @default(ACTIVE)
+  twoFactorEnabled     Boolean                  @default(false)
+  lastLoginAt          DateTime?
+  bannedAt             DateTime?
+  passwordUpdatedAt    DateTime?
+  deletedAt            DateTime?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  accounts             Account[]
+  sessions             Session[]
+  auditLogs            AuthAuditLog[]
+  twoFactorSecret      TwoFactorSecret?
+  recoveryCodes        TwoFactorRecoveryCode[]
+  submissions          Submission[]
+  createdProblems      Problem[]                @relation("ProblemAuthor")
+  curatedProblems      ProblemCurator[]
+  discussions          Discussion[]
+  votes                Vote[]
+  badgeAwards          BadgeAward[]
+  leaderboardEntries   LeaderboardEntry[]
   contestRegistrations ContestRegistration[]
-  stats             UserStats?
-  problemReviews    ProblemReview[]        @relation("UserProblemReviews")
-  proposalsAuthored ProblemProposal[]      @relation("ProblemProposalAuthor")
-  proposalsReviewed ProblemProposal[]      @relation("ProblemProposalReviewer")
-  proposalComments  ProblemProposalComment[] @relation("ProblemProposalCommentAuthor")
+  stats                UserStats?
+  problemReviews       ProblemReview[]          @relation("UserProblemReviews")
+  proposalsAuthored    ProblemProposal[]        @relation("ProblemProposalAuthor")
+  proposalsReviewed    ProblemProposal[]        @relation("ProblemProposalReviewer")
+  proposalComments     ProblemProposalComment[] @relation("ProblemProposalCommentAuthor")
 
   @@index([handle])
   @@index([status, role])
@@ -268,12 +269,12 @@ model AuthAuditLog {
 }
 
 model UserStats {
-  userId        String   @id
-  totalSolved   Int      @default(0)
-  solvedEasy    Int      @default(0)
-  solvedMedium  Int      @default(0)
-  solvedHard    Int      @default(0)
-  streakCount   Int      @default(0)
+  userId        String    @id
+  totalSolved   Int       @default(0)
+  solvedEasy    Int       @default(0)
+  solvedMedium  Int       @default(0)
+  solvedHard    Int       @default(0)
+  streakCount   Int       @default(0)
   firstAcAt     DateTime?
   lastAcAt      DateTime?
   languagesUsed String[]  @default([])
@@ -286,8 +287,8 @@ model UserStats {
 }
 
 model Difficulty {
-  id          String   @id @default(cuid())
-  code        String   @unique
+  id          String    @id @default(cuid())
+  code        String    @unique
   name        String
   weight      Int
   description String?
@@ -317,29 +318,29 @@ model Tag {
 }
 
 model TagStats {
-  id            String   @id @default(cuid())
-  tagId         String   @unique
-  problemCount  Int      @default(0)
-  solvedByCount Int      @default(0)
+  id            String    @id @default(cuid())
+  tagId         String    @unique
+  problemCount  Int       @default(0)
+  solvedByCount Int       @default(0)
   createdById   String?
   updatedById   String?
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  tag           Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag           Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
 }
 
 model Company {
-  id          String          @id @default(cuid())
-  name        String          @unique
-  slug        String          @unique
-  isHidden    Boolean         @default(false)
+  id          String           @id @default(cuid())
+  name        String           @unique
+  slug        String           @unique
+  isHidden    Boolean          @default(false)
   logoUrl     String?
   createdById String?
   updatedById String?
   deletedAt   DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   problems    ProblemCompany[]
   stats       CompanyStats?
 
@@ -347,33 +348,33 @@ model Company {
 }
 
 model CompanyStats {
-  id          String   @id @default(cuid())
-  companyId   String   @unique
-  problemCount Int     @default(0)
-  createdById String?
-  updatedById String?
-  deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  companyId    String    @unique
+  problemCount Int       @default(0)
+  createdById  String?
+  updatedById  String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 model Problem {
-  id               String             @id @default(cuid())
-  slug             String             @unique
-  state            ProblemState       @default(DRAFT)
-  visibility       ProblemVisibility  @default(INTERNAL)
+  id               String            @id @default(cuid())
+  slug             String            @unique
+  state            ProblemState      @default(DRAFT)
+  visibility       ProblemVisibility @default(INTERNAL)
   authorId         String
   difficultyId     String?
   currentVersionId String?           @unique
   createdById      String?
   updatedById      String?
   deletedAt        DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  author           User               @relation("ProblemAuthor", fields: [authorId], references: [id])
-  difficulty       Difficulty?        @relation(fields: [difficultyId], references: [id], onDelete: SetNull)
-  currentVersion   ProblemVersion?    @relation("ProblemCurrentVersion", fields: [currentVersionId], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  author           User              @relation("ProblemAuthor", fields: [authorId], references: [id])
+  difficulty       Difficulty?       @relation(fields: [difficultyId], references: [id], onDelete: SetNull)
+  currentVersion   ProblemVersion?   @relation("ProblemCurrentVersion", fields: [currentVersionId], references: [id])
   versions         ProblemVersion[]
   tags             ProblemTag[]
   companies        ProblemCompany[]
@@ -381,32 +382,34 @@ model Problem {
   discussions      Discussion[]
   contestProblems  ContestProblem[]
   stats            ProblemStats?
-  reviews          ProblemReview[]        @relation("ProblemReviews")
+  reviews          ProblemReview[]   @relation("ProblemReviews")
+  curators         ProblemCurator[]
+  languages        ProblemLanguage[]
 
   @@index([state, visibility, difficultyId, createdAt])
 }
 
 model ProblemVersion {
-  id            String          @id @default(cuid())
-  problemId     String
-  versionNumber Int
-  title         String
-  statement     String          @db.Text
-  constraints   String          @db.Text
-  hints         String?         @db.Text
-  editorial     String?         @db.Text
-  samples       Json
-  dataHash      String?
-  createdById   String?
-  updatedById   String?
-  deletedAt     DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  problem       Problem         @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  testCases     TestCase[]
-  contestUsages ContestProblem[]
-  submissions   Submission[]
-  currentForProblem Problem? @relation("ProblemCurrentVersion")
+  id                String           @id @default(cuid())
+  problemId         String
+  versionNumber     Int
+  title             String
+  statement         String           @db.Text
+  constraints       String           @db.Text
+  hints             String?          @db.Text
+  editorial         String?          @db.Text
+  samples           Json
+  dataHash          String?
+  createdById       String?
+  updatedById       String?
+  deletedAt         DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  problem           Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  testCases         TestCase[]
+  contestUsages     ContestProblem[]
+  submissions       Submission[]
+  currentForProblem Problem?         @relation("ProblemCurrentVersion")
 
   @@unique([problemId, versionNumber])
   @@index([dataHash])
@@ -418,10 +421,10 @@ model ProblemTag {
   createdById String?
   updatedById String?
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  problem     Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  tag         Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  problem     Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([problemId, tagId])
 }
@@ -432,60 +435,91 @@ model ProblemCompany {
   createdById String?
   updatedById String?
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  problem     Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  problem     Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@id([problemId, companyId])
 }
 
+model ProblemCurator {
+  id          String    @id @default(cuid())
+  problemId   String
+  userId      String
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  problem     Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, userId])
+}
+
+model ProblemLanguage {
+  id           String    @id @default(cuid())
+  problemId    String
+  languageCode String
+  codeStub     String?   @db.Text
+  createdById  String?
+  updatedById  String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  problem      Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  language     Language  @relation(fields: [languageCode], references: [code], onDelete: Restrict)
+
+  @@unique([problemId, languageCode])
+}
+
 model ProblemStats {
-  id             String   @id @default(cuid())
-  problemId      String   @unique
-  acceptedCount  Int      @default(0)
-  submissionCount Int     @default(0)
-  favoriteCount  Int      @default(0)
-  acceptanceRate Float    @default(0)
-  createdById    String?
-  updatedById    String?
-  deletedAt      DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  problem        Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  problemId       String    @unique
+  acceptedCount   Int       @default(0)
+  submissionCount Int       @default(0)
+  favoriteCount   Int       @default(0)
+  acceptanceRate  Float     @default(0)
+  createdById     String?
+  updatedById     String?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  problem         Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
 }
 
 model ProblemReview {
-  id          String                 @id @default(cuid())
-  problemId   String
-  reviewerId  String
-  decision    ProblemReviewDecision
-  notes       String?                @db.Text
-  createdAt   DateTime               @default(now())
-  problem     Problem                @relation("ProblemReviews", fields: [problemId], references: [id], onDelete: Cascade)
-  reviewer    User                   @relation("UserProblemReviews", fields: [reviewerId], references: [id])
+  id         String                @id @default(cuid())
+  problemId  String
+  reviewerId String
+  decision   ProblemReviewDecision
+  notes      String?               @db.Text
+  createdAt  DateTime              @default(now())
+  problem    Problem               @relation("ProblemReviews", fields: [problemId], references: [id], onDelete: Cascade)
+  reviewer   User                  @relation("UserProblemReviews", fields: [reviewerId], references: [id])
 
   @@index([problemId])
   @@index([reviewerId])
 }
 
 model ProblemProposal {
-  id                     String                 @id @default(cuid())
-  slug                   String                 @unique
-  title                  String
-  intendedDifficulty     String?
-  statement              String                 @db.Text
-  samples                Json
-  originalityConfirmed   Boolean                @default(false)
-  status                 ProblemProposalStatus  @default(SUBMITTED)
-  authorId               String
-  reviewerId             String?
-  convertedProblemId     String?
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  author                 User                   @relation("ProblemProposalAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  reviewer               User?                  @relation("ProblemProposalReviewer", fields: [reviewerId], references: [id])
-  comments               ProblemProposalComment[]
+  id                   String                   @id @default(cuid())
+  slug                 String                   @unique
+  title                String
+  intendedDifficulty   String?
+  statement            String                   @db.Text
+  samples              Json
+  originalityConfirmed Boolean                  @default(false)
+  status               ProblemProposalStatus    @default(SUBMITTED)
+  authorId             String
+  reviewerId           String?
+  convertedProblemId   String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  author               User                     @relation("ProblemProposalAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewer             User?                    @relation("ProblemProposalReviewer", fields: [reviewerId], references: [id])
+  comments             ProblemProposalComment[]
 
   @@index([status])
   @@index([authorId])
@@ -493,85 +527,86 @@ model ProblemProposal {
 }
 
 model ProblemProposalComment {
-  id          String          @id @default(cuid())
-  proposalId  String
-  authorId    String
-  body        String          @db.Text
-  createdAt   DateTime        @default(now())
-  proposal    ProblemProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  author      User            @relation("ProblemProposalCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  proposalId String
+  authorId   String
+  body       String          @db.Text
+  createdAt  DateTime        @default(now())
+  proposal   ProblemProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author     User            @relation("ProblemProposalCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([proposalId])
   @@index([authorId])
 }
 
 model TestCase {
-  id              String       @id @default(cuid())
+  id               String         @id @default(cuid())
   problemVersionId String
-  kind            TestCaseKind @default(HIDDEN)
-  ordinal         Int
-  inputBlobRef    String
-  outputBlobRef   String
-  checksum        String?
-  timeLimitMs     Int
-  memoryLimitMb   Int
-  points          Int?
-  createdById     String?
-  updatedById     String?
-  deletedAt       DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  problemVersion  ProblemVersion @relation(fields: [problemVersionId], references: [id], onDelete: Cascade)
+  kind             TestCaseKind   @default(HIDDEN)
+  ordinal          Int
+  inputBlobRef     String
+  outputBlobRef    String
+  checksum         String?
+  timeLimitMs      Int
+  memoryLimitMb    Int
+  strength         Int      @default(0)
+  createdById      String?
+  updatedById      String?
+  deletedAt        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  problemVersion   ProblemVersion @relation(fields: [problemVersionId], references: [id], onDelete: Cascade)
 
   @@index([problemVersionId, kind, ordinal])
 }
 
 model Language {
-  code             String        @id
-  displayName      String
-  compileCmd       String
-  runCmd           String
-  timeMultiplier   Float         @default(1)
-  memoryCeilingMb  Int
-  fileExtension    String
-  isEnabled        Boolean       @default(true)
-  sandboxProfile   String?
-  createdById      String?
-  updatedById      String?
-  deletedAt        DateTime?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  submissions      Submission[]
+  code               String            @id
+  displayName        String
+  compileCmd         String
+  runCmd             String
+  timeMultiplier     Float             @default(1)
+  memoryCeilingMb    Int
+  fileExtension      String
+  isEnabled          Boolean           @default(true)
+  sandboxProfile     String?
+  createdById        String?
+  updatedById        String?
+  deletedAt          DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  submissions        Submission[]
+  problemAssignments ProblemLanguage[]
 
   @@index([isEnabled])
 }
 
 model Verdict {
-  code        String   @id
+  code        String                 @id
   label       String
   rank        Int
-  isTerminal  Boolean  @default(true)
+  isTerminal  Boolean                @default(true)
   createdById String?
   updatedById String?
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
   submissions Submission[]
   caseResults SubmissionCaseResult[]
 }
 
 model Submission {
-  id               String           @id @default(cuid())
+  id               String                 @id @default(cuid())
   userId           String
   problemId        String
   problemVersionId String?
   contestId        String?
   languageCode     String
-  status           SubmissionStatus @default(PENDING)
+  status           SubmissionStatus       @default(PENDING)
   verdictCode      String?
   sourceCodeRef    String
   codeHash         String
-  queuedAt         DateTime         @default(now())
+  queuedAt         DateTime               @default(now())
   startedAt        DateTime?
   finishedAt       DateTime?
   score            Float?
@@ -582,14 +617,14 @@ model Submission {
   createdById      String?
   updatedById      String?
   deletedAt        DateTime?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  problem          Problem         @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  problemVersion   ProblemVersion? @relation(fields: [problemVersionId], references: [id], onDelete: SetNull)
-  contest          Contest?        @relation(fields: [contestId], references: [id], onDelete: SetNull)
-  language         Language        @relation(fields: [languageCode], references: [code], onDelete: Restrict)
-  verdict          Verdict?        @relation(fields: [verdictCode], references: [code], onDelete: SetNull)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem          Problem                @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  problemVersion   ProblemVersion?        @relation(fields: [problemVersionId], references: [id], onDelete: SetNull)
+  contest          Contest?               @relation(fields: [contestId], references: [id], onDelete: SetNull)
+  language         Language               @relation(fields: [languageCode], references: [code], onDelete: Restrict)
+  verdict          Verdict?               @relation(fields: [verdictCode], references: [code], onDelete: SetNull)
   caseResults      SubmissionCaseResult[]
 
   @@index([userId, problemId, createdAt])
@@ -598,7 +633,7 @@ model Submission {
 }
 
 model SubmissionCaseResult {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   submissionId String
   testOrdinal  Int
   verdictCode  String?
@@ -608,8 +643,8 @@ model SubmissionCaseResult {
   createdById  String?
   updatedById  String?
   deletedAt    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   verdict      Verdict?   @relation(fields: [verdictCode], references: [code], onDelete: SetNull)
 
@@ -642,15 +677,15 @@ model Discussion {
 }
 
 model Vote {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   discussionId String
   userId       String
   value        Int
   createdById  String?
   updatedById  String?
   deletedAt    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -658,93 +693,93 @@ model Vote {
 }
 
 model Badge {
-  id           String   @id @default(cuid())
-  slug         String   @unique
-  name         String
-  description  String?
-  icon         String?
-  criteria     Json
-  isHidden     Boolean  @default(false)
-  createdById  String?
-  updatedById  String?
-  deletedAt    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  awards       BadgeAward[]
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  description String?
+  icon        String?
+  criteria    Json
+  isHidden    Boolean      @default(false)
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  awards      BadgeAward[]
 }
 
 model BadgeAward {
-  id           String          @id @default(cuid())
-  badgeId      String
-  userId       String
-  awardedAt    DateTime        @default(now())
-  source       BadgeAwardSource @default(SYSTEM)
-  metadata     Json?
-  createdById  String?
-  updatedById  String?
-  deletedAt    DateTime?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  badge        Badge           @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  badgeId     String
+  userId      String
+  awardedAt   DateTime         @default(now())
+  source      BadgeAwardSource @default(SYSTEM)
+  metadata    Json?
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  badge       Badge            @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([badgeId, userId])
 }
 
 model LeaderboardSnapshot {
-  id          String   @id @default(cuid())
+  id          String             @id @default(cuid())
   window      String
   periodStart DateTime
   periodEnd   DateTime?
-  generatedAt DateTime @default(now())
+  generatedAt DateTime           @default(now())
   createdById String?
   updatedById String?
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
   entries     LeaderboardEntry[]
 
   @@unique([window, periodStart])
 }
 
 model LeaderboardEntry {
-  id           String   @id @default(cuid())
-  snapshotId   String
-  rank         Int
-  userId       String
-  score        Float
-  solved       Int
-  timePenalty  Int?
-  createdById  String?
-  updatedById  String?
-  deletedAt    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  snapshot     LeaderboardSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String              @id @default(cuid())
+  snapshotId  String
+  rank        Int
+  userId      String
+  score       Float
+  solved      Int
+  timePenalty Int?
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  snapshot    LeaderboardSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([snapshotId, rank])
   @@unique([snapshotId, userId])
 }
 
 model Contest {
-  id                 String           @id @default(cuid())
-  slug               String           @unique
+  id                 String                @id @default(cuid())
+  slug               String                @unique
   name               String
-  description        String?          @db.Text
-  state              ContestState     @default(UPCOMING)
-  visibility         ContestVisibility @default(PUBLIC)
+  description        String?               @db.Text
+  state              ContestState          @default(UPCOMING)
+  visibility         ContestVisibility     @default(PUBLIC)
   startsAt           DateTime
   endsAt             DateTime
   freezeAt           DateTime?
-  rules              ContestRuleset   @default(ICPC)
-  isRated            Boolean          @default(false)
+  rules              ContestRuleset        @default(ICPC)
+  isRated            Boolean               @default(false)
   editorialReleaseAt DateTime?
   createdById        String?
   updatedById        String?
   deletedAt          DateTime?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
   problems           ContestProblem[]
   registrations      ContestRegistration[]
   submissions        Submission[]
@@ -753,7 +788,7 @@ model Contest {
 }
 
 model ContestProblem {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   contestId   String
   problemId   String
   versionId   String
@@ -763,10 +798,10 @@ model ContestProblem {
   createdById String?
   updatedById String?
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  contest     Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  problem     Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  contest     Contest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem     Problem        @relation(fields: [problemId], references: [id], onDelete: Cascade)
   version     ProblemVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
 
   @@unique([contestId, order])
@@ -774,18 +809,18 @@ model ContestProblem {
 }
 
 model ContestRegistration {
-  id            String   @id @default(cuid())
-  contestId     String
-  userId        String
-  registeredAt  DateTime @default(now())
-  isVirtual     Boolean  @default(false)
-  createdById   String?
-  updatedById   String?
-  deletedAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  contest       Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  contestId    String
+  userId       String
+  registeredAt DateTime  @default(now())
+  isVirtual    Boolean   @default(false)
+  createdById  String?
+  updatedById  String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  contest      Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, userId])
 }

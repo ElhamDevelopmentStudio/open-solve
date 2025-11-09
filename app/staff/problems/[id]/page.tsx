@@ -15,6 +15,9 @@ export default async function StaffProblemEditorPage({
       input: { id: resolved.id },
     }),
     prefetchTrpcQuery("problems.filterMetadata", () => caller.problems.filterMetadata()),
+    prefetchTrpcQuery("staff.problems.languagesCatalog", () =>
+      caller.staff.problems.languagesCatalog(),
+    ),
   ]);
 
   return (

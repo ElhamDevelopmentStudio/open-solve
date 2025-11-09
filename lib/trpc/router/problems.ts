@@ -1,4 +1,5 @@
 import { DEFAULT_PAGINATION_LIMIT } from "@/lib/constants";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import {
   DIFFICULTIES,
   PROBLEM_SORT_OPTIONS,
@@ -53,6 +54,12 @@ export type ProblemDetailPayload = {
   slug: string;
   title: string;
   difficulty: string | null;
+  languages: Array<{
+    code: string;
+    displayName: string;
+    codeStub: string;
+    fileExtension: string | null;
+  }>;
   status: (typeof PROBLEM_STATUS_FILTERS)[number];
   lastSubmissionAt: Date | null;
   tags: Array<{ slug: string; name: string }>;
@@ -80,7 +87,7 @@ export type ProblemDetailPayload = {
       ordinal: number;
       input: string;
       output: string;
-      points: number | null;
+      strength: number | null;
       kind: "SAMPLE" | "HIDDEN";
     }>;
   };
@@ -446,6 +453,14 @@ export const problemsRouter = router({
             avatarUrl: true,
           },
         },
+        languages: {
+          where: { deletedAt: null },
+          include: {
+            language: {
+              select: { code: true, displayName: true, fileExtension: true, isEnabled: true },
+            },
+          },
+        },
         currentVersion: {
           include: {
             testCases: {
@@ -455,7 +470,7 @@ export const problemsRouter = router({
                 ordinal: true,
                 inputBlobRef: true,
                 outputBlobRef: true,
-                points: true,
+                strength: true,
                 kind: true,
               },
             },
@@ -532,16 +547,40 @@ export const problemsRouter = router({
           ordinal: test.ordinal,
           input,
           output,
-          points: test.points,
+          strength: test.strength,
           kind: test.kind,
         };
       });
+
+    let languagesForResponse = problem.languages
+      .filter((entry) => entry.language?.isEnabled ?? true)
+      .map((entry) => ({
+        code: entry.languageCode,
+        displayName: entry.language.displayName,
+        codeStub: entry.codeStub ?? getDefaultCodeStub(entry.languageCode),
+        fileExtension: entry.language.fileExtension,
+      }));
+
+    if (languagesForResponse.length === 0) {
+      const fallbackLanguages = await prisma.language.findMany({
+        where: { deletedAt: null, isEnabled: true },
+        orderBy: { displayName: "asc" },
+        select: { code: true, displayName: true, fileExtension: true },
+      });
+      languagesForResponse = fallbackLanguages.map((language) => ({
+        code: language.code,
+        displayName: language.displayName,
+        codeStub: getDefaultCodeStub(language.code),
+        fileExtension: language.fileExtension,
+      }));
+    }
 
     const payload: ProblemDetailPayload = {
       id: problem.id,
       slug: problem.slug,
       title: problem.currentVersion.title,
       difficulty: problem.difficulty?.code ?? null,
+      languages: languagesForResponse,
       status,
       lastSubmissionAt,
       tags: problem.tags.map(({ tag }) => ({ slug: tag.slug, name: tag.name })),
@@ -567,7 +606,7 @@ export const problemsRouter = router({
             : problem.currentVersion.testCases.map((test) => ({
                 input: test.inputBlobRef,
                 output: test.outputBlobRef,
-                explanation: test.points ? `${test.points} pts` : undefined,
+                explanation: test.strength ? `${test.strength} pts` : undefined,
               })),
         editorial: problem.currentVersion.editorial,
         sampleTestCases: sampleTestCasesForDisplay,

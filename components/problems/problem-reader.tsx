@@ -14,13 +14,16 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackEvent } from "@/lib/telemetry/client";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2 } from "lucide-react";
+import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -28,6 +31,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { toast } from "sonner";
+import { CodeEditor } from "@/components/code/code-editor";
 
 const sectionsOrder = [
   { id: "statement", label: "Statement" },
@@ -39,6 +43,10 @@ const sectionsOrder = [
 
 const formatDifficulty = (value?: string | null) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase() : "Unrated";
+
+const SUPPORTED_LANGUAGE_SET = new Set<SupportedLanguage>(SUPPORTED_LANGUAGES);
+const isWorkspaceLanguage = (code: string): code is SupportedLanguage =>
+  SUPPORTED_LANGUAGE_SET.has(code as SupportedLanguage);
 
 export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
   const prefersReducedMotion = useReducedMotion();
@@ -439,16 +447,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </div>
           </aside>
         </div>
-        <section
-          id="editor"
-          className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
-        >
-          <h2 className="text-xl font-semibold">Editor</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            The in-browser code editor experience is landing soon. Until then, copy the samples
-            above into your favorite IDE to experiment locally.
-          </p>
-        </section>
+        <ProblemWorkspace problem={problem} />
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>
@@ -466,6 +465,171 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
         </Button>
       </div>
     </TooltipProvider>
+  );
+}
+
+function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload }) {
+  const languageOptions = useMemo(() => {
+    if (problem.languages.length > 0) {
+      return problem.languages.filter((language) => isWorkspaceLanguage(language.code));
+    }
+    return SUPPORTED_LANGUAGES.map((code) => ({
+      code,
+      displayName: code.toUpperCase(),
+      codeStub: getDefaultCodeStub(code),
+      fileExtension: null,
+    }));
+  }, [problem.id]);
+
+  const defaultLanguage = useMemo(
+    () => languageOptions[0]?.code as SupportedLanguage | undefined,
+    [languageOptions],
+  );
+  const defaultMap = useMemo(
+    () =>
+      languageOptions.reduce<Record<string, string>>((acc, language) => {
+        if (!isWorkspaceLanguage(language.code)) {
+          return acc;
+        }
+        acc[language.code] = language.codeStub ?? getDefaultCodeStub(language.code);
+        return acc;
+      }, {}),
+    [languageOptions, problem.id],
+  );
+
+  const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage | null>(
+    defaultLanguage ?? null,
+  );
+  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(defaultMap);
+
+  useEffect(() => {
+    setCodeByLanguage(defaultMap);
+    setActiveLanguage(defaultLanguage ?? null);
+  }, [defaultLanguage, defaultMap]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem(`opensolve:workspace:${problem.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, string>;
+        setCodeByLanguage((state) => ({ ...state, ...parsed }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [problem.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(`opensolve:workspace:${problem.id}`, JSON.stringify(codeByLanguage));
+    } catch {
+      // ignore write errors
+    }
+  }, [codeByLanguage, problem.id]);
+
+  if (!activeLanguage) {
+    return (
+      <section
+        id="editor"
+        className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
+      >
+        <h2 className="text-xl font-semibold">Workspace</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          No languages are available yet. Check back once this problem has runtime support.
+        </p>
+      </section>
+    );
+  }
+
+  const activeCode = codeByLanguage[activeLanguage] ?? defaultMap[activeLanguage] ?? "";
+  const activeLanguageMeta = languageOptions.find((lang) => lang.code === activeLanguage);
+
+  const handleReset = () => {
+    setCodeByLanguage((state) => ({
+      ...state,
+      [activeLanguage]: defaultMap[activeLanguage] ?? getDefaultCodeStub(activeLanguage),
+    }));
+    toast.success("Stub restored");
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(activeCode);
+      toast.success("Copied code to clipboard");
+    } catch {
+      toast.error("Unable to copy");
+    }
+  };
+
+  return (
+    <section
+      id="editor"
+      className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Workspace</h2>
+          <p className="text-sm text-muted-foreground">
+            Pick a language, tweak the stub, and code right in your browser. Drafts auto-save per
+            language on this device.
+          </p>
+        </div>
+        <Select
+          value={activeLanguage ?? undefined}
+          onValueChange={(value) => setActiveLanguage(value as SupportedLanguage)}
+        >
+          <SelectTrigger className="w-full md:w-56">
+            <SelectValue placeholder="Select language" />
+          </SelectTrigger>
+          <SelectContent>
+            {languageOptions.map((language) => (
+              <SelectItem key={language.code} value={language.code}>
+                {language.displayName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="mt-6 space-y-3 rounded-2xl border border-white/5 bg-background/60 p-4">
+        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
+          <span>{activeLanguageMeta?.displayName ?? activeLanguage}</span>
+          {activeLanguageMeta?.fileExtension ? (
+            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px]">
+              .{activeLanguageMeta.fileExtension}
+            </span>
+          ) : null}
+        </div>
+        <CodeEditor
+          value={activeCode}
+          language={activeLanguage}
+          minHeight={400}
+          onChange={(value) =>
+            setCodeByLanguage((state) => ({
+              ...state,
+              [activeLanguage]: value,
+            }))
+          }
+          ariaLabel="Problem workspace editor"
+        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Autosaved locally · {activeLanguageMeta?.displayName ?? activeLanguage}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={handleReset}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset stub
+            </Button>
+            <Button type="button" size="sm" onClick={handleCopy}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy code
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
