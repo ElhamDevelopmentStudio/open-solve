@@ -50,3 +50,21 @@ const hasRole = (role: UserRole) =>
 export const protectedProcedure = t.procedure.use(isAuthed);
 export const adminProcedure = t.procedure.use(hasRole("ADMIN"));
 export const curatorProcedure = t.procedure.use(hasRole("PROBLEM_CURATOR"));
+const staffRoles: UserRole[] = ["PROBLEM_CURATOR", "MODERATOR", "ADMIN"];
+const isStaff = t.middleware(({ ctx, next }) => {
+  if (!ctx.user || !ctx.session) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  if (!staffRoles.includes(ctx.user.role)) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      session: ctx.session,
+    },
+  });
+});
+
+export const staffProcedure = t.procedure.use(isStaff);
