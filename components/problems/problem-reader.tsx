@@ -15,7 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackEvent } from "@/lib/telemetry/client";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
@@ -65,9 +64,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
 
   const defaultSectionId = sectionEntries[0]?.id ?? "statement";
   const [activeSection, setActiveSection] = useState<string>(defaultSectionId);
-  const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
-  const scrollMilestones = useRef(new Set<number>());
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -93,37 +90,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
     };
   }, [sectionEntries]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleScroll = () => {
-      if (!contentRef.current) return;
-      const element = contentRef.current;
-      const elementTop = element.offsetTop;
-      const elementHeight = element.offsetHeight;
-      const viewportHeight = window.innerHeight;
-      const scrollY = window.scrollY;
-      const progress =
-        ((scrollY + viewportHeight - elementTop) / Math.max(elementHeight, viewportHeight)) * 100;
-      const clamped = Math.min(100, Math.max(0, progress));
-      setReadingProgress(clamped);
-    };
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    [25, 50, 75, 100].forEach((threshold) => {
-      if (readingProgress >= threshold && !scrollMilestones.current.has(threshold)) {
-        scrollMilestones.current.add(threshold);
-        trackEvent("problemDetail.scrollDepth", {
-          slug: problem.slug,
-          value: threshold,
-        });
-      }
-    });
-  }, [problem.slug, readingProgress]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof performance === "undefined") return;
@@ -185,17 +152,8 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
       <a href="#problem-reader-content" className="skip-link sr-only focus:not-sr-only">
         Skip to statement
       </a>
-      <div className="pointer-events-none fixed inset-x-0 top-16 z-30 hidden h-1.5 bg-transparent lg:block">
-        <div
-          className="h-full rounded-r-full bg-linear-to-r from-primary/80 to-emerald-400/70 transition-[width] duration-300"
-          style={{
-            width: `${readingProgress}%`,
-            transitionDuration: prefersReducedMotion ? "0ms" : undefined,
-          }}
-        />
-      </div>
       <div ref={contentRef} id="problem-reader-content" className="space-y-10">
-        <div className="rounded-4xl border border-white/10 bg-linear-to-b from-primary/10 via-card/90 to-card/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
+        <div className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <Breadcrumb>
             <BreadcrumbList className="text-sm text-muted-foreground motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
               <BreadcrumbItem>
@@ -220,7 +178,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <header className="rounded-4xl border border-white/10 bg-card/90 p-6 shadow-[0_30px_100px_rgba(5,5,5,0.65)] backdrop-blur">
+        <header className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
@@ -280,14 +238,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
               </a>
             </Button>
           </div>
-          <div className="mt-6 grid gap-4 rounded-2xl border border-white/5 bg-background/40 p-4 md:grid-cols-3">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Progress</p>
-              <div className="mt-2 flex items-center gap-3">
-                <Progress value={progressValue} className="h-2" />
-                <span className="text-sm font-medium text-muted-foreground">{progressValue}%</span>
-              </div>
-            </div>
+          <div className="mt-6 grid gap-4 rounded-xl border border-border/50 bg-muted/30 p-4 md:grid-cols-2">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Acceptance</p>
               <p className="mt-1 text-lg font-semibold">

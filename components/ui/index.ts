@@ -15,5 +15,6 @@ export * from "./sheet";
 export * from "./sidebar";
 export * from "./skeleton";
 export * from "./sonner";
+export * from "./theme-toggle";
 export * from "./textarea";
 export * from "./tooltip";
