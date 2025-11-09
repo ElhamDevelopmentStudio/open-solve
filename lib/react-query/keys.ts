@@ -65,13 +65,35 @@ export const trpcProcedures = {
     detail: "problems.detail" as ProcedureName,
     filterMetadata: "problems.filterMetadata" as ProcedureName,
   },
+  proposals: {
+    listMine: "proposals.listMine" as ProcedureName,
+    staffList: "proposals.staffList" as ProcedureName,
+    get: "proposals.get" as ProcedureName,
+  },
+  staff: {
+    problems: {
+      list: "staff.problems.list" as ProcedureName,
+      get: "staff.problems.get" as ProcedureName,
+    },
+    proposals: {
+      list: "proposals.staffList" as ProcedureName,
+    },
+  },
 } as const;
 
-export type QueryTag = "problems" | "problemDetail" | "tags" | "session";
+export type QueryTag =
+  | "problems"
+  | "problemDetail"
+  | "tags"
+  | "session"
+  | "staffProblems"
+  | "proposals";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
   problemDetail: [trpcProcedures.problems.detail],
   tags: [trpcProcedures.problems.filterMetadata],
   session: [trpcProcedures.auth.getSession, trpcProcedures.auth.getSessions],
+  staffProblems: [trpcProcedures.staff.problems.list, trpcProcedures.staff.problems.get],
+  proposals: [trpcProcedures.proposals.listMine, trpcProcedures.proposals.staffList],
 };
