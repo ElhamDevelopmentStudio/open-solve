@@ -11,6 +11,7 @@ import { publicProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus, TestCaseKind, ProblemJudgeMode } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { resolveEditorialRelease } from "@/lib/editorials/release";
 
 const problemFiltersInput = z.object({
   q: z.string().default(""),
@@ -78,7 +79,7 @@ export type ProblemDetailPayload = {
   hasEditorial: boolean;
   version: {
     number: number;
-  };
+  }; 
   content: {
     statement: string;
     constraints: string;
@@ -93,6 +94,8 @@ export type ProblemDetailPayload = {
       kind: "SAMPLE" | "HIDDEN";
     }>;
   };
+  editorialReleaseAt: Date | null;
+  editorialIsReleased: boolean;
   relatedProblems: Array<{
     slug: string;
     title: string;
@@ -442,6 +445,12 @@ export const problemsRouter = router({
             },
           },
         },
+        contestProblems: {
+          take: 1,
+          include: {
+            contest: { select: { endsAt: true } },
+          },
+        },
         currentVersion: {
           include: {
             testCases: {
@@ -556,6 +565,8 @@ export const problemsRouter = router({
       }));
     }
 
+    const editorialState = resolveEditorialRelease(problem);
+
     const payload: ProblemDetailPayload = {
       id: problem.id,
       slug: problem.slug,
@@ -590,9 +601,11 @@ export const problemsRouter = router({
                 output: test.outputBlobRef,
                 explanation: test.strength ? `${test.strength} pts` : undefined,
               })),
-        editorial: problem.currentVersion.editorial,
+        editorial: editorialState.isReleased ? problem.currentVersion.editorial : null,
         sampleTestCases: sampleTestCasesForDisplay,
       },
+      editorialReleaseAt: editorialState.releaseAt,
+      editorialIsReleased: editorialState.isReleased,
       relatedProblems,
       createdAt: problem.createdAt,
     };
