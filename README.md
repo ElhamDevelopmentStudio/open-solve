@@ -124,3 +124,24 @@ npm run test
 ```
 
 Vitest will clone the schema into `test_<worker>` automatically, apply migrations, and run the CRUD suites without touching your development data. Use `npm run test:watch` during development for faster feedback.
+
+---
+
+## 🛡️ Creating an admin account
+
+Roles gate problem authoring, publishing, and moderation tools. To promote one of your users to `ADMIN`:
+
+1. Seed or sign up the user as usual so they exist in the `User` table.
+2. Run Prisma Studio (or any SQL client) and update the `role` column to `ADMIN`.
+
+```bash
+npx prisma studio
+```
+
+Open the **User** table, locate the account, and change the `role` dropdown to `ADMIN`. The change takes effect immediately—sign back in and you’ll see the staff console plus every curator tool. For scripted environments you can run:
+
+```bash
+npx prisma db execute --script "UPDATE \"User\" SET role = 'ADMIN' WHERE email = 'you@example.com';"
+```
+
+Remember: admins can publish/archive problems, edit roles, and bypass reviewer restrictions, so keep these accounts limited.
