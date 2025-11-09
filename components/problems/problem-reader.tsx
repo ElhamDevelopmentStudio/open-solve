@@ -20,7 +20,7 @@ import { trackEvent } from "@/lib/telemetry/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2 } from "lucide-react";
+import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2, MessagesSquare } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -225,7 +225,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                 ))}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="icon">
                 <Bookmark className="h-4 w-4" />
               </Button>
@@ -245,6 +245,19 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
               >
                 <Flag className="h-4 w-4" />
               </Button>
+              <Button variant="outline" size="sm" className="gap-2" asChild>
+                <Link href={`/problems/${problem.slug}/discuss`}>
+                  <MessagesSquare className="h-4 w-4" /> Discuss
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/problems/${problem.slug}/trails`}>Trails</Link>
+              </Button>
+              {problem.editorialIsReleased ? (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/problems/${problem.slug}/editorial`}>Editorial</Link>
+                </Button>
+              ) : null}
             </div>
             <Button className="flex items-center gap-2" asChild>
               <a

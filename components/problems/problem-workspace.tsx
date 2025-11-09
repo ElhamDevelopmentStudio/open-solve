@@ -76,6 +76,7 @@ import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
+import { format } from "date-fns";
 
 type WorkspaceResult =
   | (SampleRunResult & { kind: "sample" })
@@ -756,7 +757,7 @@ function SidePanel(props: {
       <Tabs defaultValue="description" className="flex-1">
         <TabsList className="w-full justify-around">
           <TabsTrigger value="description">Description</TabsTrigger>
-          <TabsTrigger value="editorial" disabled={!problem.content.editorial}>
+          <TabsTrigger value="editorial" disabled={!problem.editorialIsReleased}>
             Editorial
           </TabsTrigger>
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
@@ -768,12 +769,14 @@ function SidePanel(props: {
           </ScrollArea>
         </TabsContent>
         <TabsContent value="editorial" className="rounded-2xl border border-white/5 bg-background/60 p-4">
-          {problem.content.editorial ? (
+          {problem.editorialIsReleased && problem.content.editorial ? (
             <ScrollArea className="h-64 text-sm text-foreground">
               <p className="whitespace-pre-line">{problem.content.editorial}</p>
             </ScrollArea>
           ) : (
-            <p className="text-sm text-muted-foreground">Editorial locked until release.</p>
+            <p className="text-sm text-muted-foreground">
+              Editorial locked{problem.editorialReleaseAt ? ` until ${format(new Date(problem.editorialReleaseAt), "PPP p")}` : ""}. View the full write-up once it is released.
+            </p>
           )}
         </TabsContent>
         <TabsContent value="submissions">
