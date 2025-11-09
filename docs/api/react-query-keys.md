@@ -13,6 +13,10 @@
 | `problems.list`           | `['trpc','problems.list', stableHash(filters)]` | `5m / 30m`                    | `invalidateTags(['problems'])` → publish/unpublish, filter edits                    | Yes (future) |
 | `problems.detail`         | `['trpc','problems.detail', slug]`              | `5m / 30m`                    | `invalidateTags(['problems','problemDetail'])` after curator publish or slug change | No           |
 | `problems.filterMetadata` | `['trpc','problems.filterMetadata']`            | `5m / 30m`                    | `invalidateTags(['tags'])` or any curator publish that changes taxonomy             | No           |
+| `staff.problems.list`     | `['trpc','staff.problems.list']`                | `30s / 5m`                    | `invalidateTags(['staffProblems'])` whenever drafts change                          | No           |
+| `staff.problems.get`      | `['trpc','staff.problems.get', problemId]`      | `30s / 5m`                    | `invalidateTags(['staffProblems'])` on any save/transition                          | No           |
+| `proposals.listMine`      | `['trpc','proposals.listMine']`                 | `30s / 5m`                    | `invalidateTags(['proposals'])` on submit/update                                    | No           |
+| `proposals.staffList`     | `['trpc','proposals.staffList', status?]`       | `30s / 5m`                    | `invalidateTags(['proposals'])` whenever staff updates statuses or comments         | No           |
 
 ## Mutation → Invalidation Matrix
 
@@ -21,7 +25,11 @@
 | `auth.updateProfile`, `auth.changeEmail`, `auth.changePassword`, 2FA enable/disable | `invalidateAuthSession()` (flush `auth.getSession` + `auth.getSessions`)       |
 | `auth.signIn`, `auth.verifyTwoFactor`, `auth.signUp`                                | `invalidateAuthSession()` (ensures UI picks up the fresh session)              |
 | `auth.signOutAllDevices`, `auth.revokeSession`                                      | `invalidateAuthSession()` (refetch session + device roster)                    |
-| Future curator publish (`problems.publish`)                                         | `invalidateTags(['problems','tags'])` (will fan out to list + metadata caches) |
+| Future curator publish (`problems.publish`)                                         | `invalidateTags(['problems','tags','staffProblems'])` (list + metadata caches) |
+| `staff.problems.saveContent`, `saveMetadata`, `updateTests`                         | `invalidateTags(['staffProblems'])`                                            |
+| `staff.problems.submitForReview`, `approve`, `publish`, `archive`                   | `invalidateTags(['staffProblems','problems'])`                                 |
+| `proposals.submit`, `proposals.comment`                                             | `invalidateTags(['proposals'])`                                                |
+| `proposals.staffUpdateStatus`, `proposals.convertToDraft`                           | `invalidateTags(['proposals','staffProblems'])`                                |
 
 ## Notes
 
