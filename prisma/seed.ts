@@ -5,6 +5,7 @@ import {
   ContestRuleset,
   ContestState,
   ContestVisibility,
+  ProblemProposalStatus,
   ProblemState,
   ProblemVisibility,
   SubmissionStatus,
@@ -70,6 +71,17 @@ type ProblemSeed = {
       points?: number;
     }>;
   };
+};
+
+type ProposalSeed = {
+  slug: string;
+  title: string;
+  intendedDifficulty: string;
+  statement: string;
+  samples: Prisma.InputJsonValue;
+  status: ProblemProposalStatus;
+  authorKey: string;
+  reviewerKey?: string;
 };
 
 type SubmissionSeed = {
@@ -597,6 +609,40 @@ const problemSeeds: ProblemSeed[] = [
   },
 ];
 
+const proposalSeeds: ProposalSeed[] = [
+  {
+    slug: "balanced-array-proposal",
+    title: "Balanced Array",
+    intendedDifficulty: "Medium",
+    statement:
+      "Given an array of integers nums, split it into two subsequences A and B such that the sum of A equals the sum of B, or report that it is impossible.",
+    samples: json([
+      {
+        input: "4\n1 5 3 3",
+        output: "Possible",
+      },
+    ]),
+    status: ProblemProposalStatus.IN_REVIEW,
+    authorKey: "lena",
+    reviewerKey: "curatorOne",
+  },
+  {
+    slug: "grid-harvest",
+    title: "Grid Harvest",
+    intendedDifficulty: "Hard",
+    statement:
+      "You are given an n x n grid of crop values. Starting from (0,0) you must reach (n-1,n-1) collecting cells along the way, moving only right or down, but with the constraint that exactly k direction changes are allowed.",
+    samples: json([
+      {
+        input: "3 1\n1 2 3\n4 5 6\n7 8 9",
+        output: "29",
+      },
+    ]),
+    status: ProblemProposalStatus.SUBMITTED,
+    authorKey: "kai",
+  },
+];
+
 const discussionSeeds: DiscussionSeed[] = [
   {
     id: "seed-discussion-two-sum",
@@ -1088,6 +1134,38 @@ async function main() {
   }
 
   console.info("✅ Problems, versions, test cases, and stats ready");
+
+  for (const seed of proposalSeeds) {
+    const author = userMap.get(seed.authorKey);
+    if (!author) {
+      continue;
+    }
+    const reviewer = seed.reviewerKey ? userMap.get(seed.reviewerKey ?? "") : null;
+    await prisma.problemProposal.upsert({
+      where: { slug: seed.slug },
+      update: {
+        title: seed.title,
+        intendedDifficulty: seed.intendedDifficulty,
+        statement: seed.statement,
+        samples: seed.samples,
+        status: seed.status,
+        reviewerId: reviewer?.id ?? null,
+      },
+      create: {
+        slug: seed.slug,
+        title: seed.title,
+        intendedDifficulty: seed.intendedDifficulty,
+        statement: seed.statement,
+        samples: seed.samples,
+        status: seed.status,
+        authorId: author.id,
+        reviewerId: reviewer?.id ?? null,
+        originalityConfirmed: true,
+      },
+    });
+  }
+
+  console.info("✅ Proposal seeds ready");
 
   for (const [slug, tagRecord] of tagMap.entries()) {
     await prisma.tagStats.upsert({
