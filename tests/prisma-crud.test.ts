@@ -2,9 +2,12 @@ import {
   BadgeAwardSource,
   DiscussionState,
   PrismaClient,
+  ProblemProposalStatus,
+  ProblemReviewDecision,
   ProblemState,
   ProblemVisibility,
   SubmissionStatus,
+  UserRole,
 } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
@@ -327,5 +330,72 @@ describe("Badges & awards", () => {
       where: { id: award.id, deletedAt: null },
     });
     expect(activeAwards).toHaveLength(0);
+  });
+});
+
+describe("Problem proposals workflow", () => {
+  test("proposals support review lifecycle", async () => {
+    const author = await createUser();
+    const reviewer = await createUser({ role: UserRole.PROBLEM_CURATOR });
+
+    const proposal = await prisma.problemProposal.create({
+      data: {
+        slug: unique("proposal"),
+        title: "Grid Escape",
+        intendedDifficulty: "Medium",
+        statement: "Detailed statement".repeat(20),
+        samples: [],
+        authorId: author.id,
+      },
+    });
+    expect(proposal.status).toBe(ProblemProposalStatus.SUBMITTED);
+
+    await prisma.problemProposalComment.create({
+      data: {
+        proposalId: proposal.id,
+        authorId: reviewer.id,
+        body: "Needs stronger constraints.",
+      },
+    });
+
+    const accepted = await prisma.problemProposal.update({
+      where: { id: proposal.id },
+      data: {
+        status: ProblemProposalStatus.ACCEPTED,
+        reviewerId: reviewer.id,
+      },
+    });
+    expect(accepted.status).toBe(ProblemProposalStatus.ACCEPTED);
+
+    const problem = await prisma.problem.create({
+      data: {
+        slug: unique("accepted-problem"),
+        state: ProblemState.DRAFT,
+        visibility: ProblemVisibility.INTERNAL,
+        authorId: reviewer.id,
+        versions: {
+          create: {
+            versionNumber: 1,
+            title: accepted.title,
+            statement: accepted.statement,
+            constraints: "TBD",
+            samples: accepted.samples as Prisma.InputJsonValue,
+          },
+        },
+      },
+      include: { versions: true },
+    });
+    await prisma.problemReview.create({
+      data: {
+        problemId: problem.id,
+        reviewerId: reviewer.id,
+        decision: ProblemReviewDecision.APPROVED,
+        notes: "Looks good.",
+      },
+    });
+
+    const reviews = await prisma.problemReview.findMany({ where: { problemId: problem.id } });
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]?.decision).toBe(ProblemReviewDecision.APPROVED);
   });
 });
