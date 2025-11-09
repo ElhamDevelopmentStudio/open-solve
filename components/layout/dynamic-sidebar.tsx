@@ -15,7 +15,7 @@ import {
   Trophy,
   User,
   Users,
-} from "lucide-react";
+} from "@/components/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";

@@ -1,8 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Fragment, type ComponentType, type ReactNode, type SVGProps, useMemo } from "react";
+import { ThemeToggle } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -21,26 +30,17 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/ui";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Target01Icon } from "hugeicons-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Fragment, useMemo, type ComponentType, type ReactNode, type SVGProps } from "react";
 import { resolveNavIcon } from "./nav-icons";
 
 export type SidebarNavItem = {
   href: string;
   label: string;
-  icon?: string;
+  icon?: string | ComponentType<SVGProps<SVGSVGElement>>;
   badge?: string;
 };
 
@@ -199,7 +199,7 @@ function SidebarBrand({ brand }: { brand: BrandConfig }) {
 function SidebarNavLink({ item, isActive }: { item: SidebarNavItem; isActive: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const Icon = resolveNavIcon(item.icon);
+  const Icon = typeof item.icon === "string" || !item.icon ? resolveNavIcon(item.icon) : item.icon;
 
   return (
     <SidebarMenuItem>
@@ -261,10 +261,10 @@ function UserMenu({ user }: { user: UserIdentity }) {
           <Link href="/dashboard">Back to dashboard</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/profile">Profile</Link>
+          <Link href="/settings/profile">Profile</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/settings">Settings</Link>
+          <Link href="/settings/account">Settings</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
