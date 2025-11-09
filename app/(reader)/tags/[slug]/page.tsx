@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ProblemsPage from "@/app/(reader)/problems/page";
+import { renderProblemLibrary } from "@/app/(reader)/problems/page";
 
 export async function generateMetadata({
   params,
@@ -32,10 +32,8 @@ export default async function TagProblemsPage({
       : [];
   const tags = Array.from(new Set([...existingArray, slug]));
 
-  return ProblemsPage({
-    searchParams: {
-      ...resolvedSearchParams,
-      tags,
-    },
+  return renderProblemLibrary({
+    ...resolvedSearchParams,
+    tags,
   });
 }

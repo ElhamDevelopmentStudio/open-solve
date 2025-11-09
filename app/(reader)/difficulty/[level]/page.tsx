@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ProblemsPage from "@/app/(reader)/problems/page";
+import { renderProblemLibrary } from "@/app/(reader)/problems/page";
 import { DIFFICULTIES } from "@/lib/problems/constants";
 import { notFound } from "next/navigation";
 
@@ -50,10 +50,8 @@ export default async function DifficultyProblemsPage({
       ? [existing]
       : [];
 
-  return ProblemsPage({
-    searchParams: {
-      ...resolvedSearchParams,
-      difficulty: [level, ...existingArray.filter((item) => item !== level)],
-    },
+  return renderProblemLibrary({
+    ...resolvedSearchParams,
+    difficulty: [level, ...existingArray.filter((item) => item !== level)],
   });
 }

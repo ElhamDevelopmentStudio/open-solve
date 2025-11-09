@@ -12,18 +12,9 @@ export const metadata: Metadata = {
   description: "Browse public problems with tags, difficulty filters, and fast search.",
 };
 
-export default async function ProblemsPage({
-  searchParams,
-}: {
-  searchParams:
-    | Record<string, string | string[] | undefined>
-    | Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const resolvedSearchParams = await searchParams;
+export async function renderProblemLibrary(resolvedSearchParams: Record<string, string | string[] | undefined>) {
   const filters = (await problemSearchParams.parse(resolvedSearchParams)) as ProblemFiltersInput;
-
   const caller = await createTRPCCaller();
-
   const dehydration = await buildHydrationState([
     prefetchTrpcQuery("problems.list", () => caller.problems.list(filters), {
       input: filters,
@@ -33,10 +24,20 @@ export default async function ProblemsPage({
       staleTime: publicContentQueryOptions.staleTime,
     }),
   ]);
-
   return (
     <HydrationBoundary state={dehydration}>
       <ProblemLibraryShell initialFilters={filters} />
     </HydrationBoundary>
   );
+}
+
+export default async function ProblemsPage({
+  searchParams,
+}: {
+  searchParams:
+    | Record<string, string | string[] | undefined>
+    | Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  return renderProblemLibrary(resolvedSearchParams);
 }
