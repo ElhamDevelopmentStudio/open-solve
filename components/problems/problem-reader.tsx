@@ -195,6 +195,11 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
             </Badge>
+            {problem.judgeMode !== "AUTO" ? (
+              <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-200">
+                Manual Review
+              </Badge>
+            ) : null}
             <ProblemStatusBadge status={problem.status} />
             {lastSubmissionLabel ? (
               <span className="text-xs text-muted-foreground">

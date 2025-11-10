@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   BookOpen,
   Copy,
+  Gavel,
   History,
   Play,
   Save,
@@ -21,7 +22,6 @@ import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { CodeEditor } from "@/components/code/code-editor";
 import { trpc } from "@/lib/trpc/client";
 import {
-  judgeStatusQueryOptions,
   sessionQueryOptions,
   submissionDraftQueryOptions,
   submissionHistoryQueryOptions,
@@ -52,12 +52,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -113,8 +108,11 @@ const PREFERENCE_KEY = "workspace:prefs";
 export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload }) {
   const { resolvedTheme } = useTheme();
   const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const { data: session } = trpc.auth.getSession.useQuery(undefined, sessionQueryOptions);
   const userId = session?.user?.id ?? null;
+  const manualOnly = problem.judgeMode === "MANUAL";
+  const requiresManualReview = problem.judgeMode !== "AUTO";
 
   const languageOptions = useMemo(() => {
     if (problem.languages.length > 0) {
@@ -155,13 +153,22 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
   const [viewMode, setViewMode] = useState<"run" | "submission">("run");
   const [sampleResult, setSampleResult] = useState<WorkspaceResult | null>(null);
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null);
-  const [pollingSubmissionId, setPollingSubmissionId] = useState<string | null>(null);
   const [lastSubmission, setLastSubmission] = useState<WorkspaceResult | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [presenceWarning, setPresenceWarning] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const clientId = useMemo(() => createClientId(), []);
   const autosaveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const realtimeHandler = useCallback(
+    (detail: SubmissionDetailPayload) => {
+      utils.submissions.get.setData({ submissionId: detail.id }, detail);
+    },
+    [utils],
+  );
+  useSubmissionRealtime({
+    submissionId: currentSubmissionId,
+    onUpdate: realtimeHandler,
+  });
 
   const activeCode = codeByLanguage[activeLanguage] ?? getDefaultCodeStub(activeLanguage);
   const editorTheme =
@@ -288,10 +295,14 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     { submissionId: currentSubmissionId ?? "" },
     {
       enabled: Boolean(currentSubmissionId),
-      refetchInterval: pollingSubmissionId ? judgeStatusQueryOptions.refetchInterval : false,
+      refetchInterval: false,
       refetchOnWindowFocus: false,
     },
   );
+
+  const currentSubmissionResult = submissionDetailQuery.data
+    ? ({ ...submissionDetailQuery.data, kind: "submission" } as WorkspaceResult)
+    : null;
 
   const runSample = trpc.submissions.runSample.useMutation({
     onSuccess: (data) => {
@@ -309,9 +320,14 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
   const createSubmission = trpc.submissions.create.useMutation({
     onSuccess: ({ submissionId }) => {
       setCurrentSubmissionId(submissionId);
-      setPollingSubmissionId(submissionId);
       setViewMode("submission");
-      setConsoleLines(["Submission queued…", "Judge will update shortly."]);
+      const intro =
+        manualOnly
+          ? ["Submission queued for manual review.", "A curator will respond once it is scored."]
+          : requiresManualReview
+            ? ["Auto judge running…", "Manual review will follow once auto checks finish."]
+            : ["Submission queued…", "Judge will update shortly."];
+      setConsoleLines(intro);
       trackEvent("submission.create", { problemId: problem.id, language: activeLanguage });
       invalidateTags(queryClient, ["submissions"]);
     },
@@ -336,14 +352,15 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     if (!submissionDetailQuery.data) return;
     const payload: WorkspaceResult = { ...submissionDetailQuery.data, kind: "submission" };
     setConsoleLines(payload.console);
-    if (payload.summary?.verdictCode === "AC") {
+    const finalVerdict = payload.verdictCode ?? payload.summary?.verdictCode;
+    if (finalVerdict === "AC" || finalVerdict === "MANUAL_ACCEPTED") {
       maybeCelebrate(userId, problem.id, historyQuery.data?.entries ?? []);
     }
-    if (pollingSubmissionId && payload.status !== "PENDING" && payload.status !== "RUNNING") {
-      setPollingSubmissionId(null);
+    const pendingStatuses = ["QUEUED", "RUNNING", "RETRYING", "MANUAL_PENDING"];
+    if (!pendingStatuses.includes(payload.status)) {
       setLastSubmission(payload);
     }
-  }, [submissionDetailQuery.data, pollingSubmissionId, historyQuery.data, problem.id, userId]);
+  }, [submissionDetailQuery.data, historyQuery.data, problem.id, userId]);
 
   const handleRun = useCallback(() => {
     if (!activeLanguage) return;
@@ -409,26 +426,27 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     }
   };
 
-  const handleSaveDraft = (savedVia: "autosave" | "manual") => {
-    if (!session?.user) {
-      toast.info("Sign in to sync drafts");
-      return;
-    }
-    saveDraftMutation.mutate({
-      problemId: problem.id,
-      languageCode: activeLanguage,
-      sourceCode: activeCode,
-      cursorOffset: 0,
-      savedVia,
-    });
-  };
+  const handleSaveDraft = useCallback(
+    (savedVia: "autosave" | "manual") => {
+      if (!session?.user) {
+        toast.info("Sign in to sync drafts");
+        return;
+      }
+      saveDraftMutation.mutate({
+        problemId: problem.id,
+        languageCode: activeLanguage,
+        sourceCode: activeCode,
+        cursorOffset: 0,
+        savedVia,
+      });
+    },
+    [session?.user, saveDraftMutation, problem.id, activeLanguage, activeCode],
+  );
 
   const activeResult =
     viewMode === "run"
       ? sampleResult
-      : submissionDetailQuery.data
-        ? { ...submissionDetailQuery.data, kind: "submission" }
-        : lastSubmission;
+      : currentSubmissionResult ?? lastSubmission;
 
   return (
     <TooltipProvider>
@@ -473,6 +491,14 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
             Offline mode — drafts stay local and sample runs fall back to the local simulator.
           </div>
         ) : null}
+        {requiresManualReview ? (
+          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-purple-400/40 bg-purple-500/10 px-4 py-3 text-sm text-purple-800 dark:text-purple-200">
+            <Gavel className="h-4 w-4 shrink-0" />
+            {manualOnly
+              ? "This problem is reviewed manually. Expect longer turnaround while a curator scores your submission."
+              : "Hybrid judging enabled — the auto judge runs first, followed by a manual reviewer."}
+          </div>
+        ) : null}
 
         <div className="mt-6">
           <ResizablePanelGroup direction="horizontal" className="h-full min-h-[560px]">
@@ -514,7 +540,6 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
                     submissionId,
                   });
                   setCurrentSubmissionId(submissionId);
-                  setPollingSubmissionId(null);
                   setViewMode("submission");
                 }}
                 drafts={draftsQuery.data ?? []}
@@ -544,6 +569,168 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
       </Drawer>
     </TooltipProvider>
   );
+}
+
+type SubmissionRealtimeOptions = {
+  submissionId: string | null;
+  onUpdate: (detail: SubmissionDetailPayload) => void;
+};
+
+type SubmissionServerEvent =
+  | { type: "ready" }
+  | { type: "subscribed"; submissionId: string }
+  | { type: "unsubscribed"; submissionId: string }
+  | { type: "update"; submissionId: string; payload: SubmissionDetailPayload }
+  | { type: "error"; submissionId?: string; message: string };
+
+const ensureRealtimeServerReady = (() => {
+  let bootstrapPromise: Promise<void> | null = null;
+  return () => {
+    if (!bootstrapPromise) {
+      bootstrapPromise = fetch("/api/ws/submissions")
+        .then(() => undefined)
+        .catch((error) => {
+          bootstrapPromise = null;
+          throw error;
+        });
+    }
+    return bootstrapPromise;
+  };
+})();
+
+function useSubmissionRealtime({ submissionId, onUpdate }: SubmissionRealtimeOptions) {
+  const wsRef = useRef<WebSocket | null>(null);
+  const desiredRef = useRef<string | null>(submissionId);
+  const activeRef = useRef<string | null>(null);
+  const onUpdateRef = useRef(onUpdate);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const syncSubscription = useCallback(() => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    const desired = desiredRef.current;
+    const active = activeRef.current;
+    if (desired && desired !== active) {
+      if (active) {
+        ws.send(JSON.stringify({ type: "unsubscribe", submissionId: active }));
+      }
+      ws.send(JSON.stringify({ type: "subscribe", submissionId: desired }));
+    } else if (!desired && active) {
+      ws.send(JSON.stringify({ type: "unsubscribe", submissionId: active }));
+    }
+  }, []);
+
+  useEffect(() => {
+    desiredRef.current = submissionId;
+    syncSubscription();
+  }, [submissionId, syncSubscription]);
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    let cancelled = false;
+    let backoff = 1_000;
+
+    const handleServerMessage = (message: SubmissionServerEvent) => {
+      switch (message.type) {
+        case "subscribed":
+          activeRef.current = message.submissionId;
+          break;
+        case "unsubscribed":
+          if (activeRef.current === message.submissionId) {
+            activeRef.current = null;
+          }
+          break;
+        case "update":
+          onUpdateRef.current?.(message.payload);
+          break;
+        case "ready":
+          syncSubscription();
+          break;
+        case "error":
+        default:
+          break;
+      }
+    };
+
+    const cleanupSocket = () => {
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {
+          // ignore
+        }
+        wsRef.current = null;
+      }
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled) return;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      reconnectTimeoutRef.current = setTimeout(() => {
+        backoff = Math.min(backoff * 1.5, 10_000);
+        void connect();
+      }, backoff);
+    };
+
+    const connect = async () => {
+      if (cancelled) return;
+      try {
+        await ensureRealtimeServerReady();
+      } catch {
+        scheduleReconnect();
+        return;
+      }
+      if (cancelled) return;
+      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const socket = new WebSocket(`${protocol}://${window.location.host}/api/ws/submissions`);
+      wsRef.current = socket;
+
+      socket.addEventListener("open", () => {
+        if (cancelled) return;
+        backoff = 1_000;
+        syncSubscription();
+      });
+
+      socket.addEventListener("message", (event) => {
+        try {
+          const message = JSON.parse(event.data) as SubmissionServerEvent;
+          handleServerMessage(message);
+        } catch (error) {
+          console.error("Failed to parse realtime payload", error);
+        }
+      });
+
+      const handleClose = () => {
+        if (cancelled) return;
+        scheduleReconnect();
+      };
+
+      socket.addEventListener("close", handleClose);
+      socket.addEventListener("error", handleClose);
+    };
+
+    void connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      cleanupSocket();
+      activeRef.current = null;
+    };
+  }, [syncSubscription]);
 }
 
 function EditorColumn(props: {
@@ -822,7 +1009,15 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
 
   const summary = result.summary;
   const variant = result.kind === "sample" ? "Samples" : "Judge";
-  const verdict = summary?.verdictCode ?? "WA";
+  if (!summary) {
+    return (
+      <div className="rounded-xl border border-dashed border-purple-400/40 bg-purple-500/5 p-4 text-sm text-purple-900 dark:text-purple-100">
+        Manual review pending — we'll update this panel once a reviewer posts a verdict.
+      </div>
+    );
+  }
+  const verdict = summary.verdictCode ?? "WA";
+  const statusLabel = result.kind === "sample" ? "SUCCEEDED" : result.status;
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-white/10 bg-card/80 p-4">
@@ -831,7 +1026,7 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
             <p className="text-xs text-muted-foreground">{variant}</p>
             <p className="text-lg font-semibold text-foreground">{verdict}</p>
           </div>
-          <StatusBadge verdict={summary?.verdictCode ?? null} status="COMPLETED" />
+          <StatusBadge verdict={summary.verdictCode ?? null} status={statusLabel} />
         </div>
         <div className="mt-3 grid grid-cols-3 gap-4 text-xs text-muted-foreground">
           <div>
@@ -896,17 +1091,41 @@ function StatusBadge({
   verdict: string | null;
   status: string | null;
 }) {
+  const normalizedVerdict = verdict ?? "";
+  const normalizedStatus = status ?? "";
   let tone = "bg-muted text-muted-foreground";
-  if (verdict === "AC") {
+  let label = normalizedVerdict || normalizedStatus || "Pending";
+
+  if (normalizedVerdict === "AC") {
     tone = "bg-emerald-500/10 text-emerald-500";
-  } else if (verdict === "WA" || verdict === "RE") {
+    label = "Accepted";
+  } else if (["WA", "RE", "TLE", "MLE", "CE"].includes(normalizedVerdict)) {
     tone = "bg-rose-500/10 text-rose-500";
-  } else if (status === "RUNNING") {
+  } else if (normalizedVerdict === "MANUAL_ACCEPTED") {
+    tone = "bg-purple-500/10 text-purple-500";
+    label = "Manual Accepted";
+  } else if (normalizedVerdict === "MANUAL_PARTIAL") {
+    tone = "bg-purple-500/10 text-purple-500";
+    label = "Manual Partial";
+  } else if (normalizedVerdict === "MANUAL_REJECTED") {
+    tone = "bg-rose-500/10 text-rose-500";
+    label = "Manual Rejected";
+  } else if (normalizedStatus === "RUNNING") {
     tone = "bg-blue-500/10 text-blue-500";
+    label = "Running";
+  } else if (normalizedStatus === "QUEUED") {
+    tone = "bg-muted text-muted-foreground";
+    label = "Queued";
+  } else if (normalizedStatus === "RETRYING") {
+    tone = "bg-amber-500/10 text-amber-600";
+    label = "Retrying";
+  } else if (normalizedStatus === "MANUAL_PENDING") {
+    tone = "bg-purple-500/10 text-purple-500";
+    label = "Manual Pending";
   }
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs", tone)}>
-      {verdict ?? status}
+      {label}
     </span>
   );
 }
