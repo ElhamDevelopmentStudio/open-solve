@@ -1,17 +1,17 @@
-import { parseProblemSamples, type ProblemSample } from "@/lib/problems/samples";
+import { parseProblemSamples } from "@/lib/problems/samples";
 import { hashSourceCode } from "@/lib/submissions/hash";
-import { enqueueJudgeSimulation } from "@/lib/submissions/judge-runner";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
-import type {
-  SampleRunResult,
-  SubmissionDetailPayload,
-  SubmissionHistoryEntry,
-} from "@/lib/submissions/types";
+import type { SampleRunResult, SubmissionHistoryEntry } from "@/lib/submissions/types";
 import { prisma } from "@/lib/prisma";
 import { protectedProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus, TestCaseKind } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import {
+  dispatchSubmissionToJudge,
+  publishManualReviewMessage,
+} from "@/lib/judge/dispatcher";
+import { getSubmissionDetailForUser, mapTestCases } from "@/lib/submissions/detail";
 
 const codeInputSchema = z.object({
   problemId: z.string().cuid(),
@@ -70,6 +70,8 @@ export const submissionsRouter = router({
       ensureLanguage(input.languageCode),
     ]);
 
+    const requiresManualReview = problem.judgeMode !== "AUTO";
+    const manualOnly = problem.judgeMode === "MANUAL";
     const codeHash = hashSourceCode(input.sourceCode);
     const submission = await prisma.submission.create({
       data: {
@@ -77,7 +79,9 @@ export const submissionsRouter = router({
         problemId: problem.id,
         problemVersionId: problem.currentVersionId,
         languageCode: language.code,
-        status: SubmissionStatus.PENDING,
+        status: manualOnly ? SubmissionStatus.MANUAL_PENDING : SubmissionStatus.QUEUED,
+        verdictCode: manualOnly ? "MANUAL_PENDING" : null,
+        requiresManualReview,
         sourceCodeRef: `inline://submissions/${ctx.user.id}/${Date.now()}`,
         codeHash,
         metadata: {
@@ -93,108 +97,37 @@ export const submissionsRouter = router({
         problemId: true,
         problemVersionId: true,
         languageCode: true,
+        userId: true,
       },
     });
 
-    enqueueJudgeSimulation({
-      submissionId: submission.id,
-      problemId: submission.problemId,
-      problemVersionId: submission.problemVersionId!,
-      languageCode: submission.languageCode,
-      sourceCode: input.sourceCode,
-      stdin: input.stdin,
-    });
+    if (manualOnly) {
+      await publishManualReviewMessage({
+        submissionId: submission.id,
+        problemId: submission.problemId,
+        userId: submission.userId,
+        reason: "MANUAL_ONLY",
+      });
+    } else {
+      await dispatchSubmissionToJudge({
+        submissionId: submission.id,
+        problemId: submission.problemId,
+        problemVersionId: submission.problemVersionId!,
+        languageCode: submission.languageCode,
+        requiresManualReview,
+        manualOnly: false,
+        userId: submission.userId,
+      });
+    }
 
     return { submissionId: submission.id };
   }),
 
   get: protectedProcedure.input(submissionIdSchema).query(async ({ ctx, input }) => {
-    const submission = await prisma.submission.findFirst({
-      where: { id: input.submissionId, userId: ctx.user.id, deletedAt: null },
-      include: {
-        caseResults: {
-          orderBy: { testOrdinal: "asc" },
-          select: {
-            testOrdinal: true,
-            verdictCode: true,
-            timeMs: true,
-            memoryKb: true,
-            stderrRef: true,
-          },
-        },
-        problemVersion: {
-          select: {
-            testCases: {
-              orderBy: { ordinal: "asc" },
-              select: { ordinal: true, kind: true },
-            },
-            samples: true,
-          },
-        },
-      },
-    });
-
-    if (!submission) {
+    const payload = await getSubmissionDetailForUser(input.submissionId, ctx.user.id);
+    if (!payload) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
     }
-
-    const metadata = (submission.metadata ?? {}) as Record<string, unknown>;
-    const samples = parseProblemSamples(submission.problemVersion?.samples ?? null);
-    const testCases = mapTestCases(submission.problemVersion?.testCases ?? [], samples);
-    const attachmentCases = Array.isArray(metadata.cases)
-      ? ((metadata.cases ?? []) as Array<{
-          ordinal: number;
-          actualOutput?: string | null;
-          inputPreview?: string | null;
-          expectedOutput?: string | null;
-          stderr?: string | null;
-        }>)
-      : [];
-
-    const caseResults = submission.caseResults.map((result) => {
-      const testCase = testCases.find((test) => test.ordinal === result.testOrdinal);
-      const attachment = attachmentCases.find((entry) => entry.ordinal === result.testOrdinal);
-      return {
-        ordinal: result.testOrdinal,
-        verdictCode: result.verdictCode ?? "WA",
-        status:
-          result.verdictCode === "AC"
-            ? "PASSED"
-            : result.verdictCode === "CE" || result.verdictCode === "RE"
-              ? "ERROR"
-              : "FAILED",
-        runtimeMs: result.timeMs ?? 0,
-        memoryKb: result.memoryKb ?? 0,
-        inputPreview: attachment?.inputPreview ?? testCase?.input ?? null,
-        expectedOutput: attachment?.expectedOutput ?? testCase?.output ?? null,
-        actualOutput: attachment?.actualOutput ?? null,
-        stderr: attachment?.stderr ?? result.stderrRef ?? null,
-        hidden: testCase?.kind === "HIDDEN",
-      };
-    });
-
-    const summary = buildSummary(caseResults, submission);
-
-    const consoleMessages = Array.isArray(metadata.console)
-      ? ((metadata.console as string[]) ?? [])
-      : [];
-
-    const payload: SubmissionDetailPayload = {
-      id: submission.id,
-      problemId: submission.problemId,
-      languageCode: submission.languageCode,
-      sourceCode: typeof metadata.sourceCode === "string" ? (metadata.sourceCode as string) : "",
-      stdin: typeof metadata.stdin === "string" ? (metadata.stdin as string) : undefined,
-      status: submission.status as SubmissionDetailPayload["status"],
-      verdictCode: submission.verdictCode as SubmissionDetailPayload["verdictCode"],
-      summary,
-      cases: caseResults,
-      console: consoleMessages,
-      createdAt: submission.createdAt,
-      startedAt: submission.startedAt,
-      finishedAt: submission.finishedAt,
-    };
-
     return payload;
   }),
 
@@ -268,6 +201,7 @@ type RunnableProblem = {
   id: string;
   slug: string;
   currentVersionId: string;
+  judgeMode: "AUTO" | "MANUAL" | "HYBRID";
   currentVersion: {
     id: string;
     samples: Prisma.JsonValue | null;
@@ -286,6 +220,7 @@ async function getRunnableProblem(problemId: string): Promise<RunnableProblem> {
     select: {
       id: true,
       slug: true,
+      judgeMode: true,
       currentVersionId: true,
       currentVersion: {
         select: {
@@ -322,62 +257,6 @@ async function ensureLanguage(languageCode: string) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported language" });
   }
   return language;
-}
-
-function mapTestCases(
-  tests: Array<{ ordinal: number; kind: TestCaseKind }> = [],
-  samples: ProblemSample[],
-) {
-  const mapped: Array<{ ordinal: number; input: string; output: string; kind: TestCaseKind }> = [];
-  let sampleCursor = 0;
-
-  for (const test of tests) {
-    if (test.kind === TestCaseKind.SAMPLE) {
-      const sample = samples[sampleCursor];
-      mapped.push({
-        ordinal: test.ordinal,
-        input: sample?.input ?? `Sample #${test.ordinal}`,
-        output: sample?.output ?? "",
-        kind: test.kind,
-      });
-      sampleCursor += 1;
-    } else {
-      mapped.push({
-        ordinal: test.ordinal,
-        input: `Hidden test #${test.ordinal}`,
-        output: `Hidden test #${test.ordinal}`,
-        kind: test.kind,
-      });
-    }
-  }
-  return mapped;
-}
-
-function buildSummary(
-  cases: SubmissionDetailPayload["cases"],
-  submission: Prisma.SubmissionGetPayload<{
-    include: { caseResults: true };
-  }>,
-) {
-  if (cases.length === 0 && submission.status !== SubmissionStatus.COMPLETED) {
-    return null;
-  }
-  const passed = cases.filter((item) => item.status === "PASSED").length;
-  const failed = cases.filter((item) => item.status === "FAILED").length;
-  const errored = cases.filter((item) => item.status === "ERROR").length;
-  return {
-    verdictCode: submission.verdictCode ?? (cases.length && cases.every((c) => c.verdictCode === "AC") ? "AC" : "WA"),
-    passed,
-    failed,
-    errored,
-    total: cases.length,
-    runtimeMs: submission.timeUsedMs ?? cases.reduce((sum, item) => sum + item.runtimeMs, 0),
-    memoryKb:
-      submission.memoryUsedKb ??
-      (cases.length ? Math.round(cases.reduce((sum, item) => sum + item.memoryKb, 0) / cases.length) : 0),
-    startedAt: submission.startedAt ?? submission.createdAt,
-    finishedAt: submission.finishedAt ?? submission.updatedAt,
-  };
 }
 
 async function pruneDrafts(userId: string, problemId: string, languageCode: string) {

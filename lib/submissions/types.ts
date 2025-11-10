@@ -1,4 +1,14 @@
-export type JudgeVerdictCode = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
+export type JudgeVerdictCode =
+  | "AC"
+  | "WA"
+  | "TLE"
+  | "MLE"
+  | "RE"
+  | "CE"
+  | "MANUAL_PENDING"
+  | "MANUAL_ACCEPTED"
+  | "MANUAL_REJECTED"
+  | "MANUAL_PARTIAL";
 
 export type JudgeCaseVisibility = "SAMPLE" | "HIDDEN";
 
@@ -52,7 +62,13 @@ export type JudgeSimulationResult = {
   failureMode?: "COMPILE" | "RUNTIME" | "TIME" | "MEMORY";
 };
 
-export type SubmissionLifecycleStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+export type SubmissionLifecycleStatus =
+  | "QUEUED"
+  | "RUNNING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "RETRYING"
+  | "MANUAL_PENDING";
 
 export type SubmissionDetailPayload = {
   id: string;

@@ -28,6 +28,10 @@ const VERDICT_LABELS: Record<JudgeVerdictCode, string> = {
   MLE: "Memory Limit Exceeded",
   RE: "Runtime Error",
   CE: "Compile Error",
+  MANUAL_PENDING: "Manual Pending",
+  MANUAL_ACCEPTED: "Manual Accepted",
+  MANUAL_REJECTED: "Manual Rejected",
+  MANUAL_PARTIAL: "Manual Partial",
 };
 
 const KEYWORD_HINTS = [
