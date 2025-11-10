@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  useEffect,
   useMemo,
   useState,
   type ComponentType,
@@ -89,15 +88,9 @@ export function StaffContestDashboard() {
   const [responseVisibility, setResponseVisibility] = useState<ClarificationVisibility>("PRIVATE");
   const [responseStatus, setResponseStatus] = useState<ClarificationStatus>("ANSWERED");
 
-  const contests = contestQuery.data ?? [];
+  const contests = useMemo(() => contestQuery.data ?? [], [contestQuery.data]);
   const filteredContests =
     stateFilter === "ALL" ? contests : contests.filter((contest) => contest.state === stateFilter);
-
-  useEffect(() => {
-    if (!activeContestId && contests.length > 0) {
-      setActiveContestId(contests[0].id);
-    }
-  }, [activeContestId, contests]);
 
   const contestIdForQuery = activeContestId ?? contests[0]?.id;
   const selectedContest = contests.find((contest) => contest.id === contestIdForQuery);
@@ -105,12 +98,12 @@ export function StaffContestDashboard() {
     { contestId: contestIdForQuery ?? "" },
     { enabled: Boolean(contestIdForQuery) },
   );
-  const clarificationList = clarificationsQuery.data ?? [];
-  const openClarifications = clarificationList.filter((entry) => entry.status !== "CLOSED");
-  const metrics = useMemo(
-    () => buildContestMetrics(contests, clarificationList),
-    [contests, clarificationList],
+  const clarificationList = useMemo(
+    () => clarificationsQuery.data ?? [],
+    [clarificationsQuery.data],
   );
+  const openClarifications = clarificationList.filter((entry) => entry.status !== "CLOSED");
+  const metrics = useMemo(() => buildContestMetrics(contests, clarificationList), [contests, clarificationList]);
 
   const answerMutation = trpc.staff.contests.answerClarification.useMutation({
     onSuccess: () => {

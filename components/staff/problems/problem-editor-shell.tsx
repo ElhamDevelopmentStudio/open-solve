@@ -40,7 +40,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CodeEditor } from "@/components/code/code-editor";
 import { RichTextEditor } from "@/components/editor/rich-text-editor";
-import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert, UserPlus, Trash2, RotateCcw, Info, Eye, FileText } from "lucide-react";
+import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert, UserPlus, Trash2, RotateCcw, Info, Eye, FileText } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";

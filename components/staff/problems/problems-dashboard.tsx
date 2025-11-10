@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "@/components/icons";
 import { formatDistanceToNow } from "date-fns";
 
 export function StaffProblemsDashboard() {

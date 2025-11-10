@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { toast } from "sonner";
 
 export function StaffProposalDetail({ proposalId }: { proposalId: string }) {
