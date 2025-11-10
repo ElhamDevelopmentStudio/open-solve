@@ -204,7 +204,7 @@ Only the client consumption layer changes, detailed below.
 
 **Goals:** Smooth editor + run/submit UX.
 
-- **Editor:** Monaco, language dropdown, boilerplate per language, stdin/out preview.
+- **Editor:** Codemirror, language dropdown, boilerplate per language, stdin/out preview.
 - **Actions:** Run against samples (fast path), Submit to judge (queued).
 - **State:** show pending/running/finished; per-test feedback (optional), memory/time used.
 - **Persistence:** autosave code drafts per problem+language.
@@ -212,18 +212,33 @@ Only the client consumption layer changes, detailed below.
 
 ---
 
+
 ## 7) Judge System (Backend Worker + Sandbox)
 
-**Goals:** Deterministic, secure, language-agnostic judging.
+**Goals:** Deterministic, secure, flexible judging with **Autonomic (automatic)** and **Manual (human)**  
+modes.
 
-- **Queue:** Redis + BullMQ (or equivalent): `submissions` queue.
-- **Isolation:** Docker per run; CPU/memory/time limits per language.
-- **Languages (phase 1):** Python, C++, Java, JavaScript/Node.
-- **Runners:** standardized contract (compile, run, capture stdout/stderr, exit code).
-- **Verdicts:** AC, WA, TLE, MLE, RE, CE; per-test results stored.
-- **Security:** no network, no filesystem write outside sandbox; timeouts enforced.
-- **Telemetry:** run duration, queue latency, container failures.
-  **DoD:** 1K submissions/hour stable on a single node; no cross-tenant leaks; reproducible verdicts.
+_Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and a staff console for manual verdicts._
+-   **Queue:** **RabbitMQ** (durable **quorum queues**), exchanges: `judge.submissions`, `judge.rejudge`, `judge.manual`, DLX: `judge.DLX`.
+    
+-   **Modes:**
+    
+    -   **Autonomic Judge** — automated via sandbox runners.
+        
+    -   **Manual Judge** — routed to staff for review.
+        
+-   **Isolation:** Docker-per-run; strict CPU/memory/time caps per language; **no network**.
+    
+-   **Languages (phase 1):** Python, C++, Java, JavaScript/Node.
+    
+-   **Runners:** unified contract: compile → run → capture stdout/stderr → compare (or checker script).
+    
+-   **Verdicts:** AC, WA, TLE, MLE, RE, CE, **MANUAL_PENDING**, **MANUAL_ACCEPTED**, **MANUAL_REJECTED**, **MANUAL_PARTIAL**.
+    
+-   **Retries:** TTL + **DLX** backoff tiers, **idempotency by `submissionId`**.
+    
+-   **Telemetry:** queue depth/latency, container failures, node health.  
+    **DoD:** ≥ **1K submissions/hour per node**, reproducible verdicts, no cross-tenant leaks.
 
 ---
 
@@ -260,7 +275,7 @@ Only the client consumption layer changes, detailed below.
 
 ---
 
-## 11) Contests (Phase 2)
+## 11) Contests
 
 **Goals:** Timed sets with fair scoring.
 

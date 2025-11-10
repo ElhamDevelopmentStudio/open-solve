@@ -109,6 +109,28 @@ Uploads (avatars, attachments, future problem assets) use the S3 API via `lib/st
 
 If the storage variables are omitted the upload endpoints throw a descriptive error, so you can disable attachments entirely if desired.
 
+## 🧑‍⚖️ Judge Worker & RabbitMQ
+
+Phase 7 introduces a standalone judge worker that consumes RabbitMQ queues and runs submissions inside Docker sandboxes.
+
+1. **Configure env vars**
+
+   ```env
+   JUDGE_RABBIT_URL=amqp://opensolve:opensolve@localhost:5672
+   JUDGE_RABBIT_PREFETCH=2
+   JUDGE_SANDBOX_DRIVER=docker   # or mock for simulator mode
+   JUDGE_SANDBOX_WORKDIR=/tmp/opensolve-judge
+   ```
+
+2. **Start RabbitMQ + worker**
+
+   - Dev mode: `docker compose --profile judge up rabbitmq judge-worker`
+   - Bare metal: run `npm run judge:worker` alongside `npm run dev`
+
+3. **Manual review tools** — staff can review hybrid/manual submissions at `/staff/judge/manual`, posting `MANUAL_ACCEPTED`, `MANUAL_PARTIAL`, or `MANUAL_REJECTED` verdicts with notes/score.
+
+When RabbitMQ is unavailable (or the worker is down) the app falls back to the inline simulator so basic flows keep working.
+
 ---
 
 ## ✅ Testing
