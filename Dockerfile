@@ -37,3 +37,10 @@ EXPOSE 3000
 ENV PORT=3000
 
 CMD ["dumb-init", "node", "server.js"]
+
+FROM base AS judge-worker
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+CMD ["npm", "run", "judge:worker"]

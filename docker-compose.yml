@@ -10,11 +10,14 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/opensolve?schema=public
       DIRECT_URL: postgresql://postgres:postgres@db:5432/opensolve?schema=public
+      JUDGE_RABBIT_URL: amqp://opensolve:opensolve@rabbitmq:5672
       NEXTAUTH_URL: http://localhost:3000
       NODE_ENV: production
     ports:
@@ -79,14 +82,42 @@ services:
         exit 0;
       "
 
-  runner:
-    image: node:20-alpine
-    command: ["tail", "-f", "/dev/null"]
+  judge-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: judge-worker
+    command: ["npm", "run", "judge:worker"]
     profiles:
       - judge
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/opensolve?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/opensolve?schema=public
+      JUDGE_RABBIT_URL: amqp://opensolve:opensolve@rabbitmq:5672
       LOG_LEVEL: info
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: opensolve
+      RABBITMQ_DEFAULT_PASS: opensolve
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres-data:
