@@ -20,7 +20,7 @@ import {
   ImageIcon,
   Link2,
   Loader2,
-} from "lucide-react";
+} from "@/components/icons";
 import { useState, useCallback, useEffect } from "react";
 import {
   Dialog,

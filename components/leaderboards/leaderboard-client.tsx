@@ -1,18 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { trpc } from "@/lib/trpc/client";
-import type { LeaderboardEntry, LeaderboardWindow } from "@/lib/leaderboard/service";
-import { cn } from "@/lib/utils";
-import { useLeaderboardRealtime } from "@/hooks/use-leaderboard-realtime";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Medal, Trophy } from "lucide-react";
+import { useLeaderboardRealtime } from "@/hooks/use-leaderboard-realtime";
+import type { LeaderboardEntry, LeaderboardWindow } from "@/lib/leaderboard/service";
+import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { Award01Icon, Loading03Icon, Medal01Icon } from "hugeicons-react";
+import Link from "next/link";
+import { useState } from "react";
 
 const WINDOW_TABS: Array<{ value: LeaderboardWindow; label: string }> = [
   { value: "all_time", label: "All time" },
@@ -77,7 +76,7 @@ export function DifficultyLeaderboardClient({ initialWindow, title, subtitle, di
   const [window, setWindow] = useState<LeaderboardWindow>(initialWindow);
   const utils = trpc.useUtils();
   const query = trpc.leaderboard.difficulty.useInfiniteQuery(
-    { window, difficulty: difficulty as any, limit: PAGE_SIZE },
+    { window, difficulty: difficulty as "EASY" | "MEDIUM" | "HARD", limit: PAGE_SIZE },
     {
       getNextPageParam: (last) => last.nextCursor,
     },
@@ -85,7 +84,7 @@ export function DifficultyLeaderboardClient({ initialWindow, title, subtitle, di
 
   useLeaderboardRealtime((updatedWindow) => {
     if (updatedWindow === window) {
-      void utils.leaderboard.difficulty.invalidate({ window, difficulty: difficulty as any, limit: PAGE_SIZE });
+      void utils.leaderboard.difficulty.invalidate({ window, difficulty: difficulty as "EASY" | "MEDIUM" | "HARD", limit: PAGE_SIZE });
     }
   });
 
@@ -222,7 +221,7 @@ function LeaderboardSection({
         <Button onClick={loadMore} disabled={isFetchingMore} variant="outline" className="w-full rounded-xl">
           {isFetchingMore ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading more
+              <Loading03Icon className="mr-2 h-4 w-4 animate-spin" strokeWidth={2} /> Loading more
             </>
           ) : (
             "Load more"
@@ -253,7 +252,7 @@ function LeaderboardHero({ hero, meta }: { hero: LeaderboardEntry[]; meta?: { pe
               "flex h-12 w-12 items-center justify-center rounded-xl",
               index === 0 ? "bg-primary/10" : "bg-muted"
             )}>
-              <Medal className={cn("h-6 w-6", index === 0 ? "text-primary" : "text-muted-foreground")} />
+              <Award01Icon className={cn("h-6 w-6", index === 0 ? "text-primary" : "text-muted-foreground")} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-lg font-bold">
@@ -286,9 +285,9 @@ type ViewerBadgeProps = {
 function ViewerBadge({ entry }: ViewerBadgeProps) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-6 py-4 text-sm">
-      <Trophy className="h-5 w-5 text-primary" />
+      <Medal01Icon className="h-5 w-5 text-primary" strokeWidth={2} />
       <p className="font-medium text-primary">
-        You're currently ranked <span className="font-bold">#{entry.rank}</span> with <span className="font-bold">{Math.round(entry.score)}</span> points
+        You&apos;re currently ranked <span className="font-bold">#{entry.rank}</span> with <span className="font-bold">{Math.round(entry.score)}</span> points
       </p>
     </div>
   );
@@ -308,7 +307,7 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
     return (
       <div className="premium-card rounded-2xl p-12">
         <div className="flex items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading leaderboard…
+          <Loading03Icon className="mr-2 h-5 w-5 animate-spin" strokeWidth={2} /> Loading leaderboard…
         </div>
       </div>
     );

@@ -3,7 +3,7 @@
 import type { TrailInsightPayload } from "@/lib/trails/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowBigUp, ArrowBigDown, Flag } from "lucide-react";
+import { ArrowBigUp, ArrowBigDown, Flag } from "@/components/icons";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
