@@ -184,11 +184,11 @@ export function ProblemFiltersPanel({
       </FilterCard>
 
       <FilterCard title="Editorials" description="Show only problems with official editorials.">
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-white/10 bg-muted/20 px-3 py-2">
-          <div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3">
+          <div className="flex-1">
             <p className="text-sm font-medium">Only problems with editorials</p>
             <p className="text-xs text-muted-foreground">
-              Great when you want curated solutions to review.
+              Curated solutions included
             </p>
           </div>
           <Switch
@@ -217,12 +217,12 @@ function FilterCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/5 bg-card/60 p-4 shadow-sm shadow-black/20">
+    <section className="space-y-3">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">{title}</p>
-        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+        {description ? <p className="text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
-      <div className="mt-3 space-y-3">{children}</div>
+      <div className="space-y-2">{children}</div>
     </section>
   );
 }

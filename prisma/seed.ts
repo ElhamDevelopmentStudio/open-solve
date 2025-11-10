@@ -15,6 +15,7 @@ import {
 } from "@prisma/client";
 import { hashPassword } from "../lib/auth/password";
 import { prisma } from "../lib/prisma";
+import { getDefaultCodeStub } from "../lib/problems/editor-presets";
 
 type UserSeed = {
   key: string;
@@ -45,8 +46,13 @@ type ProblemSeed = {
   difficulty: string;
   authorKey: string;
   createdByKey: string;
+  extraCurators?: string[];
   tags: string[];
   companies: string[];
+  languages?: Array<{
+    code: string;
+    stub?: string;
+  }>;
   stats: {
     acceptedCount: number;
     submissionCount: number;
@@ -68,7 +74,7 @@ type ProblemSeed = {
       output: string;
       timeLimitMs: number;
       memoryLimitMb: number;
-      points?: number;
+      strength?: number;
     }>;
   };
 };
@@ -429,8 +435,13 @@ const problemSeeds: ProblemSeed[] = [
     difficulty: "EASY",
     authorKey: "curatorOne",
     createdByKey: "curatorOne",
+    extraCurators: ["curatorTwo"],
     tags: ["arrays", "hashing", "two-pointers"],
     companies: ["google", "uber"],
+    languages: [
+      { code: "cpp17" },
+      { code: "python3" },
+    ],
     stats: {
       acceptedCount: 1,
       submissionCount: 2,
@@ -459,7 +470,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "0 1",
           timeLimitMs: 2000,
           memoryLimitMb: 256,
-          points: 100,
+          strength: 0,
         },
         {
           kind: TestCaseKind.SAMPLE,
@@ -468,7 +479,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "1 2",
           timeLimitMs: 2000,
           memoryLimitMb: 256,
-          points: 100,
+          strength: 0,
         },
         {
           kind: TestCaseKind.HIDDEN,
@@ -477,7 +488,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "0 1",
           timeLimitMs: 1500,
           memoryLimitMb: 256,
-          points: 120,
+          strength: 120,
         },
         {
           kind: TestCaseKind.HIDDEN,
@@ -486,7 +497,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "1 3",
           timeLimitMs: 1500,
           memoryLimitMb: 256,
-          points: 120,
+          strength: 120,
         },
       ],
     },
@@ -498,6 +509,11 @@ const problemSeeds: ProblemSeed[] = [
     difficulty: "MEDIUM",
     authorKey: "curatorTwo",
     createdByKey: "curatorTwo",
+    languages: [
+      { code: "cpp17" },
+      { code: "python3" },
+      { code: "node20" },
+    ],
     tags: ["prefix-sum", "binary-search", "greedy"],
     companies: ["amazon", "meta"],
     stats: {
@@ -529,7 +545,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "2",
           timeLimitMs: 2500,
           memoryLimitMb: 512,
-          points: 150,
+          strength: 0,
         },
         {
           kind: TestCaseKind.HIDDEN,
@@ -538,7 +554,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "4",
           timeLimitMs: 2500,
           memoryLimitMb: 512,
-          points: 180,
+          strength: 180,
         },
       ],
     },
@@ -583,7 +599,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "12",
           timeLimitMs: 5000,
           memoryLimitMb: 2048,
-          points: 300,
+          strength: 0,
         },
         {
           kind: TestCaseKind.HIDDEN,
@@ -592,7 +608,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "28",
           timeLimitMs: 6000,
           memoryLimitMb: 2048,
-          points: 320,
+          strength: 320,
         },
         {
           kind: TestCaseKind.HIDDEN,
@@ -602,7 +618,7 @@ const problemSeeds: ProblemSeed[] = [
           output: "31",
           timeLimitMs: 6500,
           memoryLimitMb: 2048,
-          points: 340,
+          strength: 340,
         },
       ],
     },
@@ -888,8 +904,9 @@ async function main() {
     difficultyMap.set(diff.code, { id: difficulty.id });
   }
 
+  const languageMap = new Map<string, { code: string; displayName: string }>();
   for (const language of languageSeeds) {
-    await prisma.language.upsert({
+    const record = await prisma.language.upsert({
       where: { code: language.code },
       update: {
         displayName: language.displayName,
@@ -907,6 +924,7 @@ async function main() {
         updatedById: adminUser.id,
       },
     });
+    languageMap.set(language.code, { code: record.code, displayName: record.displayName });
   }
 
   for (const verdict of verdictSeeds) {
@@ -1062,7 +1080,8 @@ async function main() {
           checksum: contentHash(seed.slug, testCase.ordinal, testCase.input, testCase.output),
           timeLimitMs: testCase.timeLimitMs,
           memoryLimitMb: testCase.memoryLimitMb,
-          points: testCase.points,
+          strength:
+            testCase.kind === TestCaseKind.SAMPLE ? 0 : Math.max(testCase.strength ?? 0, 0),
           createdById: createdBy.id,
           updatedById: createdBy.id,
         })),
@@ -1112,6 +1131,57 @@ async function main() {
       const current = companyUsage.get(record.companyId) ?? 0;
       companyUsage.set(record.companyId, current + 1);
     });
+
+    await prisma.problemCurator.deleteMany({ where: { problemId: problem.id } });
+    if (seed.extraCurators && seed.extraCurators.length > 0) {
+      const curatorData: Array<{ problemId: string; userId: string; createdById: string; updatedById: string }> =
+        [];
+      for (const key of new Set(seed.extraCurators)) {
+        const curator = userMap.get(key);
+        if (!curator || curator.id === author.id) {
+          continue;
+        }
+        curatorData.push({
+          problemId: problem.id,
+          userId: curator.id,
+          createdById: createdBy.id,
+          updatedById: createdBy.id,
+        });
+      }
+      if (curatorData.length > 0) {
+        await prisma.problemCurator.createMany({ data: curatorData, skipDuplicates: true });
+      }
+    }
+
+    await prisma.problemLanguage.deleteMany({ where: { problemId: problem.id } });
+    const languageConfig: Array<{ code: string; stub?: string }> =
+      seed.languages && seed.languages.length > 0
+        ? seed.languages
+        : languageSeeds.map((entry) => ({ code: entry.code }));
+    const languageData = languageConfig
+      .map((config) => {
+        if (!languageMap.has(config.code)) {
+          return null;
+        }
+        return {
+          problemId: problem.id,
+          languageCode: config.code,
+          codeStub: config.stub ?? getDefaultCodeStub(config.code),
+          createdById: createdBy.id,
+          updatedById: createdBy.id,
+        };
+      })
+      .filter(Boolean) as Array<{
+      problemId: string;
+      languageCode: string;
+      codeStub: string;
+      createdById: string;
+      updatedById: string;
+    }>;
+    if (languageData.length === 0) {
+      throw new Error(`No language assignments resolved for ${seed.slug}`);
+    }
+    await prisma.problemLanguage.createMany({ data: languageData });
 
     await prisma.problemStats.upsert({
       where: { problemId: problem.id },

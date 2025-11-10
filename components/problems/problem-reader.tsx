@@ -14,13 +14,15 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackEvent } from "@/lib/telemetry/client";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2 } from "lucide-react";
+import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -28,6 +30,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { toast } from "sonner";
+import { CodeEditor } from "@/components/code/code-editor";
 
 const sectionsOrder = [
   { id: "statement", label: "Statement" },
@@ -39,6 +42,10 @@ const sectionsOrder = [
 
 const formatDifficulty = (value?: string | null) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase() : "Unrated";
+
+const SUPPORTED_LANGUAGE_SET = new Set<SupportedLanguage>(SUPPORTED_LANGUAGES);
+const isWorkspaceLanguage = (code: string): code is SupportedLanguage =>
+  SUPPORTED_LANGUAGE_SET.has(code as SupportedLanguage);
 
 export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
   const prefersReducedMotion = useReducedMotion();
@@ -57,9 +64,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
 
   const defaultSectionId = sectionEntries[0]?.id ?? "statement";
   const [activeSection, setActiveSection] = useState<string>(defaultSectionId);
-  const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
-  const scrollMilestones = useRef(new Set<number>());
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -85,37 +90,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
     };
   }, [sectionEntries]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleScroll = () => {
-      if (!contentRef.current) return;
-      const element = contentRef.current;
-      const elementTop = element.offsetTop;
-      const elementHeight = element.offsetHeight;
-      const viewportHeight = window.innerHeight;
-      const scrollY = window.scrollY;
-      const progress =
-        ((scrollY + viewportHeight - elementTop) / Math.max(elementHeight, viewportHeight)) * 100;
-      const clamped = Math.min(100, Math.max(0, progress));
-      setReadingProgress(clamped);
-    };
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    [25, 50, 75, 100].forEach((threshold) => {
-      if (readingProgress >= threshold && !scrollMilestones.current.has(threshold)) {
-        scrollMilestones.current.add(threshold);
-        trackEvent("problemDetail.scrollDepth", {
-          slug: problem.slug,
-          value: threshold,
-        });
-      }
-    });
-  }, [problem.slug, readingProgress]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof performance === "undefined") return;
@@ -177,17 +152,8 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
       <a href="#problem-reader-content" className="skip-link sr-only focus:not-sr-only">
         Skip to statement
       </a>
-      <div className="pointer-events-none fixed inset-x-0 top-16 z-30 hidden h-1.5 bg-transparent lg:block">
-        <div
-          className="h-full rounded-r-full bg-linear-to-r from-primary/80 to-emerald-400/70 transition-[width] duration-300"
-          style={{
-            width: `${readingProgress}%`,
-            transitionDuration: prefersReducedMotion ? "0ms" : undefined,
-          }}
-        />
-      </div>
       <div ref={contentRef} id="problem-reader-content" className="space-y-10">
-        <div className="rounded-4xl border border-white/10 bg-linear-to-b from-primary/10 via-card/90 to-card/90 p-6 shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
+        <div className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <Breadcrumb>
             <BreadcrumbList className="text-sm text-muted-foreground motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
               <BreadcrumbItem>
@@ -212,7 +178,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <header className="rounded-4xl border border-white/10 bg-card/90 p-6 shadow-[0_30px_100px_rgba(5,5,5,0.65)] backdrop-blur">
+        <header className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
@@ -272,14 +238,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
               </a>
             </Button>
           </div>
-          <div className="mt-6 grid gap-4 rounded-2xl border border-white/5 bg-background/40 p-4 md:grid-cols-3">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Progress</p>
-              <div className="mt-2 flex items-center gap-3">
-                <Progress value={progressValue} className="h-2" />
-                <span className="text-sm font-medium text-muted-foreground">{progressValue}%</span>
-              </div>
-            </div>
+          <div className="mt-6 grid gap-4 rounded-xl border border-border/50 bg-muted/30 p-4 md:grid-cols-2">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Acceptance</p>
               <p className="mt-1 text-lg font-semibold">
@@ -439,16 +398,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </div>
           </aside>
         </div>
-        <section
-          id="editor"
-          className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
-        >
-          <h2 className="text-xl font-semibold">Editor</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            The in-browser code editor experience is landing soon. Until then, copy the samples
-            above into your favorite IDE to experiment locally.
-          </p>
-        </section>
+        <ProblemWorkspace problem={problem} />
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>
@@ -466,6 +416,171 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
         </Button>
       </div>
     </TooltipProvider>
+  );
+}
+
+function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload }) {
+  const languageOptions = useMemo(() => {
+    if (problem.languages.length > 0) {
+      return problem.languages.filter((language) => isWorkspaceLanguage(language.code));
+    }
+    return SUPPORTED_LANGUAGES.map((code) => ({
+      code,
+      displayName: code.toUpperCase(),
+      codeStub: getDefaultCodeStub(code),
+      fileExtension: null,
+    }));
+  }, [problem.id]);
+
+  const defaultLanguage = useMemo(
+    () => languageOptions[0]?.code as SupportedLanguage | undefined,
+    [languageOptions],
+  );
+  const defaultMap = useMemo(
+    () =>
+      languageOptions.reduce<Record<string, string>>((acc, language) => {
+        if (!isWorkspaceLanguage(language.code)) {
+          return acc;
+        }
+        acc[language.code] = language.codeStub ?? getDefaultCodeStub(language.code);
+        return acc;
+      }, {}),
+    [languageOptions, problem.id],
+  );
+
+  const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage | null>(
+    defaultLanguage ?? null,
+  );
+  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(defaultMap);
+
+  useEffect(() => {
+    setCodeByLanguage(defaultMap);
+    setActiveLanguage(defaultLanguage ?? null);
+  }, [defaultLanguage, defaultMap]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem(`opensolve:workspace:${problem.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, string>;
+        setCodeByLanguage((state) => ({ ...state, ...parsed }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [problem.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(`opensolve:workspace:${problem.id}`, JSON.stringify(codeByLanguage));
+    } catch {
+      // ignore write errors
+    }
+  }, [codeByLanguage, problem.id]);
+
+  if (!activeLanguage) {
+    return (
+      <section
+        id="editor"
+        className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
+      >
+        <h2 className="text-xl font-semibold">Workspace</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          No languages are available yet. Check back once this problem has runtime support.
+        </p>
+      </section>
+    );
+  }
+
+  const activeCode = codeByLanguage[activeLanguage] ?? defaultMap[activeLanguage] ?? "";
+  const activeLanguageMeta = languageOptions.find((lang) => lang.code === activeLanguage);
+
+  const handleReset = () => {
+    setCodeByLanguage((state) => ({
+      ...state,
+      [activeLanguage]: defaultMap[activeLanguage] ?? getDefaultCodeStub(activeLanguage),
+    }));
+    toast.success("Stub restored");
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(activeCode);
+      toast.success("Copied code to clipboard");
+    } catch {
+      toast.error("Unable to copy");
+    }
+  };
+
+  return (
+    <section
+      id="editor"
+      className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Workspace</h2>
+          <p className="text-sm text-muted-foreground">
+            Pick a language, tweak the stub, and code right in your browser. Drafts auto-save per
+            language on this device.
+          </p>
+        </div>
+        <Select
+          value={activeLanguage ?? undefined}
+          onValueChange={(value) => setActiveLanguage(value as SupportedLanguage)}
+        >
+          <SelectTrigger className="w-full md:w-56">
+            <SelectValue placeholder="Select language" />
+          </SelectTrigger>
+          <SelectContent>
+            {languageOptions.map((language) => (
+              <SelectItem key={language.code} value={language.code}>
+                {language.displayName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="mt-6 space-y-3 rounded-2xl border border-white/5 bg-background/60 p-4">
+        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
+          <span>{activeLanguageMeta?.displayName ?? activeLanguage}</span>
+          {activeLanguageMeta?.fileExtension ? (
+            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px]">
+              .{activeLanguageMeta.fileExtension}
+            </span>
+          ) : null}
+        </div>
+        <CodeEditor
+          value={activeCode}
+          language={activeLanguage}
+          minHeight={400}
+          onChange={(value) =>
+            setCodeByLanguage((state) => ({
+              ...state,
+              [activeLanguage]: value,
+            }))
+          }
+          ariaLabel="Problem workspace editor"
+        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Autosaved locally · {activeLanguageMeta?.displayName ?? activeLanguage}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={handleReset}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset stub
+            </Button>
+            <Button type="button" size="sm" onClick={handleCopy}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy code
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 

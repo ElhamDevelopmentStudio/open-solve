@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -24,8 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { CodeEditor } from "@/components/code/code-editor";
+import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert, UserPlus, Trash2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
+import type { Tag } from "@prisma/client";
 
 type SampleRow = {
   id?: string;
@@ -34,13 +40,18 @@ type SampleRow = {
   output: string;
   timeLimitMs: number;
   memoryLimitMb: number;
-  points?: number | null;
+  strength?: number | null;
 };
+
+const SUPPORTED_LANGUAGE_SET = new Set<SupportedLanguage>(SUPPORTED_LANGUAGES);
+const isSupportedLanguage = (code: string): code is SupportedLanguage =>
+  SUPPORTED_LANGUAGE_SET.has(code as SupportedLanguage);
 
 export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.staff.problems.get.useQuery({ id: problemId });
   const { data: metadata } = trpc.problems.filterMetadata.useQuery();
+  const { data: languageCatalog } = trpc.staff.problems.languagesCatalog.useQuery();
 
   const saveContent = trpc.staff.problems.saveContent.useMutation({
     onSuccess: () => {
@@ -84,6 +95,24 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
       toast.success("Published");
     },
   });
+  const updateLanguagesMutation = trpc.staff.problems.updateLanguages.useMutation({
+    onSuccess: () => {
+      utils.staff.problems.get.invalidate({ id: problemId });
+      toast.success("Languages saved");
+    },
+  });
+  const addCurator = trpc.staff.problems.addCurator.useMutation({
+    onSuccess: () => {
+      utils.staff.problems.get.invalidate({ id: problemId });
+      toast.success("Curator added");
+    },
+  });
+  const removeCurator = trpc.staff.problems.removeCurator.useMutation({
+    onSuccess: () => {
+      utils.staff.problems.get.invalidate({ id: problemId });
+      toast.success("Curator removed");
+    },
+  });
 
   const [contentState, setContentState] = useState({
     title: "",
@@ -101,6 +130,10 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   });
   const [samples, setSamples] = useState<SampleRow[]>([]);
   const [hidden, setHidden] = useState<SampleRow[]>([]);
+  const [languageState, setLanguageState] = useState<
+    Record<string, { enabled: boolean; codeStub: string }>
+  >({});
+  const [newCuratorHandle, setNewCuratorHandle] = useState("");
 
   useEffect(() => {
     if (data) {
@@ -121,11 +154,19 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
         slug: data.slug,
         visibility: data.visibility,
         difficultyCode: data.difficulty ?? "",
-        tagsInput: data.tags.map((tag) => tag.slug).join(","),
+        tagsInput: data.tags.map((tag: Tag) => tag.slug).join(","),
       });
       setSamples(
         data.tests.samples.length > 0
-          ? data.tests.samples
+          ? data.tests.samples.map((sample) => ({
+              id: sample.id,
+              ordinal: sample.ordinal,
+              input: sample.input,
+              output: sample.output,
+              timeLimitMs: sample.timeLimitMs,
+              memoryLimitMb: sample.memoryLimitMb,
+              strength: 0,
+            }))
           : [
               {
                 ordinal: 1,
@@ -133,12 +174,21 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 output: "",
                 timeLimitMs: 2000,
                 memoryLimitMb: 256,
+                strength: 0,
               },
             ],
       );
       setHidden(
         data.tests.hidden.length > 0
-          ? data.tests.hidden
+          ? data.tests.hidden.map((test) => ({
+              id: test.id,
+              ordinal: test.ordinal,
+              input: test.input,
+              output: test.output,
+              timeLimitMs: test.timeLimitMs,
+              memoryLimitMb: test.memoryLimitMb,
+              strength: test.strength ?? 100,
+            }))
           : [
               {
                 ordinal: 1,
@@ -146,11 +196,30 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 output: "",
                 timeLimitMs: 2000,
                 memoryLimitMb: 256,
+                strength: 100,
               },
             ],
       );
     }
   }, [data]);
+
+  useEffect(() => {
+    if (!data || !languageCatalog) {
+      return;
+    }
+    const nextState: Record<string, { enabled: boolean; codeStub: string }> = {};
+    languageCatalog.forEach((language) => {
+      if (!isSupportedLanguage(language.code)) {
+        return;
+      }
+      const assignment = data.languages.find((entry) => entry.code === language.code);
+      nextState[language.code] = {
+        enabled: Boolean(assignment),
+        codeStub: assignment?.codeStub ?? getDefaultCodeStub(language.code),
+      };
+    });
+    setLanguageState(nextState);
+  }, [data, languageCatalog]);
 
   const lintIssues = useMemo(() => {
     const issues: string[] = [];
@@ -165,6 +234,11 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
     }
     return issues;
   }, [contentState.statement.length, contentState.samples.length, metadataState.tagsInput]);
+
+  const hiddenStrengthTotal = hidden.reduce((sum, row) => sum + (row.strength ?? 0), 0);
+  const enabledLanguageCount = Object.values(languageState).filter((entry) => entry.enabled).length;
+  const languageEntries =
+    languageCatalog?.filter((language) => isSupportedLanguage(language.code)) ?? [];
 
   if (isLoading || !data) {
     return (
@@ -202,8 +276,8 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const handleSaveTests = () => {
     saveTests.mutate({
       problemId,
-      samples,
-      hidden,
+      samples: samples.map((sample) => ({ ...sample, strength: 0 })),
+      hidden: hidden.map((test) => ({ ...test, strength: test.strength ?? 0 })),
     });
   };
 
@@ -217,6 +291,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
         output: "",
         timeLimitMs: 2000,
         memoryLimitMb: 256,
+        strength: kind === "sample" ? 0 : 100,
       },
     ]);
   };
@@ -238,13 +313,78 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 field === "ordinal" ||
                 field === "timeLimitMs" ||
                 field === "memoryLimitMb" ||
-                field === "points"
+                field === "strength"
                   ? Number(value)
                   : value,
             }
           : row,
       ),
     );
+  };
+
+  const toggleLanguage = (code: SupportedLanguage, enabled: boolean) => {
+    setLanguageState((state) => ({
+      ...state,
+      [code]: {
+        enabled,
+        codeStub: state[code]?.codeStub ?? getDefaultCodeStub(code),
+      },
+    }));
+  };
+
+  const updateLanguageStub = (code: SupportedLanguage, value: string) => {
+    setLanguageState((state) => ({
+      ...state,
+      [code]: {
+        enabled: state[code]?.enabled ?? true,
+        codeStub: value,
+      },
+    }));
+  };
+
+  const resetLanguageStub = (code: SupportedLanguage) => {
+    setLanguageState((state) => ({
+      ...state,
+      [code]: {
+        enabled: state[code]?.enabled ?? true,
+        codeStub: getDefaultCodeStub(code),
+      },
+    }));
+  };
+
+  const handleSaveLanguages = () => {
+    const payload = Object.entries(languageState)
+      .filter(([code, config]) => config.enabled && isSupportedLanguage(code))
+      .map(([code, config]) => ({
+        code,
+        codeStub: config.codeStub ?? getDefaultCodeStub(code as SupportedLanguage),
+      }));
+    if (payload.length === 0) {
+      toast.error("Select at least one language.");
+      return;
+    }
+    updateLanguagesMutation.mutate({
+      problemId,
+      languages: payload,
+    });
+  };
+
+  const handleAddCurator = () => {
+    const trimmed = newCuratorHandle.trim();
+    if (!trimmed) {
+      toast.error("Enter a handle.");
+      return;
+    }
+    addCurator.mutate(
+      { problemId, handle: trimmed },
+      {
+        onSuccess: () => setNewCuratorHandle(""),
+      },
+    );
+  };
+
+  const handleRemoveCurator = (userId: string) => {
+    removeCurator.mutate({ problemId, userId });
   };
 
   return (
@@ -265,6 +405,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
           <TabsTrigger value="tests">Tests</TabsTrigger>
+          <TabsTrigger value="access">Access</TabsTrigger>
           <TabsTrigger value="review">Review</TabsTrigger>
         </TabsList>
 
@@ -382,6 +523,163 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 </Button>
               </div>
             </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="access" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Collaborators</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Only the author or an admin can manage curator access.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                {data.curators.map((curator) => (
+                  <div
+                    key={curator.userId}
+                    className="flex items-center justify-between rounded-xl border border-white/5 bg-muted/30 px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {curator.handle ?? curator.name ?? curator.userId.slice(0, 6)}
+                      </p>
+                      <p className="text-xs uppercase text-muted-foreground">
+                        {curator.isOwner ? "Owner" : "Curator"}
+                      </p>
+                    </div>
+                    {!curator.isOwner ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveCurator(curator.userId)}
+                        disabled={removeCurator.isPending}
+                      >
+                        {removeCurator.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">Remove curator</span>
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col gap-3 md:flex-row">
+                <Input
+                  value={newCuratorHandle}
+                  onChange={(event) => setNewCuratorHandle(event.target.value)}
+                  placeholder="Enter curator handle"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleAddCurator();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddCurator}
+                  disabled={addCurator.isPending}
+                  className="md:w-40"
+                >
+                  {addCurator.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="mr-2 h-4 w-4" />
+                  )}
+                  Add curator
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Languages & code stubs</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Control which runtimes appear in the solver and ship curated boilerplate for each.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {!languageCatalog ? (
+                <p className="text-sm text-muted-foreground">Loading languages…</p>
+              ) : languageEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No runtimes configured.</p>
+              ) : (
+                languageEntries.map((language) => {
+                  const state = languageState[language.code] ?? {
+                    enabled: false,
+                    codeStub: getDefaultCodeStub(language.code as SupportedLanguage),
+                  };
+                  const typedCode = language.code as SupportedLanguage;
+                  return (
+                    <div
+                      key={language.code}
+                      className="rounded-2xl border border-white/5 bg-card/50 p-4 shadow-inner shadow-black/10"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium">{language.displayName}</p>
+                          <p className="text-xs uppercase text-muted-foreground">
+                            {language.code}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`language-${language.code}`} className="text-xs">
+                            Enabled
+                          </Label>
+                          <Switch
+                            id={`language-${language.code}`}
+                            checked={state.enabled}
+                            onCheckedChange={(checked) => toggleLanguage(typedCode, checked)}
+                          />
+                        </div>
+                      </div>
+                      {state.enabled ? (
+                        <div className="mt-4 space-y-3">
+                          <CodeEditor
+                            value={state.codeStub}
+                            language={typedCode}
+                            minHeight={260}
+                            ariaLabel={`${language.displayName} stub`}
+                            onChange={(value) => updateLanguageStub(typedCode, value)}
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => resetLanguageStub(typedCode)}
+                            >
+                              <RotateCcw className="mr-2 h-4 w-4" />
+                              Reset stub
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col gap-2 border-t border-white/5 pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+              <span>{enabledLanguageCount} language(s) selected</span>
+              <Button
+                type="button"
+                onClick={handleSaveLanguages}
+                disabled={updateLanguagesMutation.isPending || enabledLanguageCount === 0}
+              >
+                {updateLanguagesMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save workspace
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
 

@@ -60,10 +60,10 @@ const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
 };
 
 const difficultyTone: Record<string, string> = {
-  EASY: "text-emerald-700 bg-emerald-50 border-emerald-100 dark:text-emerald-300 dark:bg-emerald-400/10 dark:border-emerald-400/20",
+  EASY: "text-emerald-700 bg-emerald-50/80 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/50 dark:border-emerald-800/50",
   MEDIUM:
-    "text-amber-700 bg-amber-50 border-amber-100 dark:text-amber-300 dark:bg-amber-400/10 dark:border-amber-400/20",
-  HARD: "text-rose-700 bg-rose-50 border-rose-100 dark:text-rose-300 dark:bg-rose-400/10 dark:border-rose-400/20",
+    "text-amber-700 bg-amber-50/80 border-amber-200 dark:text-amber-300 dark:bg-amber-950/50 dark:border-amber-800/50",
+  HARD: "text-rose-700 bg-rose-50/80 border-rose-200 dark:text-rose-300 dark:bg-rose-950/50 dark:border-rose-800/50",
 };
 
 const DEFAULT_FILTERS: ProblemFiltersInput = {
@@ -263,19 +263,19 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
         Skip to results
       </a>
       <div className="space-y-6">
-        <header className="space-y-3">
+        <header className="space-y-4">
           <Breadcrumb>
             <BreadcrumbList className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/problems">Problems</Link>
+                  <Link href="/problems" className="font-medium">Problems</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               {mergedFilters.tags[0] ? (
                 <>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>#{mergedFilters.tags[0]}</BreadcrumbPage>
+                    <BreadcrumbPage className="font-medium">#{mergedFilters.tags[0]}</BreadcrumbPage>
                   </BreadcrumbItem>
                 </>
               ) : null}
@@ -361,7 +361,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside
-            className="hidden rounded-2xl border bg-card/60 p-4 lg:block"
+            className="hidden rounded-2xl border border-border/50 bg-card/80 p-4 shadow-sm backdrop-blur-sm lg:block"
             aria-label="Filter panel"
           >
             <ProblemFiltersPanel
@@ -489,9 +489,9 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
       aria-labelledby={titleId}
       onKeyDown={handleKeyDown}
       className={cn(
-        "group rounded-2xl border bg-card/80 p-4 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/30",
+        "group rounded-2xl border border-border/50 bg-card/90 p-5 shadow-sm backdrop-blur-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
         "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200",
-        "hover:-translate-y-0.5 hover:bg-primary/5 hover:shadow-[0px_12px_30px_rgba(15,23,42,0.08)] dark:hover:bg-primary/10",
+        "hover:-translate-y-1 hover:border-primary/30 hover:bg-card hover:shadow-lg hover:shadow-primary/5",
         isFetching && "opacity-75",
       )}
       style={{ animationDelay: `${animationDelay}ms` }}
@@ -502,9 +502,9 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
             <Link
               href={`/problems/${problem.slug}`}
               id={titleId}
-              className="text-base font-semibold leading-tight"
+              className="text-base font-semibold leading-tight transition-colors group-hover:text-primary"
             >
-              <span className="transition-colors group-hover:text-primary">{problem.title}</span>
+              {problem.title}
             </Link>
             {problem.version ? (
               <span className="text-xs text-muted-foreground">v{problem.version}</span>
@@ -524,14 +524,14 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
               <Badge
                 key={tag.slug}
                 variant="secondary"
-                className="rounded-full px-2 py-0 text-[11px]"
+                className="rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors hover:bg-secondary/80"
               >
                 {tag.name}
               </Badge>
             ))}
             {showRestTags ? <span>+{problem.tags.length - visibleTags.length} more</span> : null}
             {problem.hasEditorial ? (
-              <span className="rounded-full bg-primary/5 px-2 py-0.5 text-[11px] text-primary">
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary ring-1 ring-primary/20">
                 Editorial
               </span>
             ) : null}
@@ -565,10 +565,10 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
             Last attempt {lastSubmissionLabel}
           </div>
         ) : null}
-        <div className="ml-auto flex items-center gap-1 text-foreground">
+        <div className="ml-auto flex items-center gap-1">
           <Link
             href={`/problems/${problem.slug}`}
-            className="inline-flex items-center gap-1 text-sm font-medium"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
             aria-label={`View ${problem.title}`}
           >
             View problem <ArrowUpRight className="h-3.5 w-3.5" />
@@ -592,16 +592,19 @@ function ProblemListSkeleton() {
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
     <div
-      className="rounded-2xl border border-dashed bg-muted/30 p-8 text-center"
+      className="rounded-2xl border-2 border-dashed border-border bg-card/50 p-12 text-center backdrop-blur-sm"
       role="status"
       aria-live="polite"
     >
-      <p className="text-lg font-semibold text-foreground">No problems match these filters</p>
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+        <Search className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <p className="text-lg font-semibold text-foreground">No problems found</p>
       <p className="mt-2 text-sm text-muted-foreground">
-        Try adjusting your search or clearing some filters.
+        Try adjusting your search criteria or clearing some filters to see more results.
       </p>
-      <Button className="mt-4" onClick={onReset} variant="outline">
-        Reset filters
+      <Button className="mt-6" onClick={onReset} variant="default" size="sm">
+        Reset all filters
       </Button>
     </div>
   );
