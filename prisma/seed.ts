@@ -8,6 +8,7 @@ import {
   ProblemProposalStatus,
   ProblemState,
   ProblemVisibility,
+  ProblemJudgeMode,
   SubmissionStatus,
   TestCaseKind,
   UserRole,
@@ -43,6 +44,7 @@ type ProblemSeed = {
   slug: string;
   state: ProblemState;
   visibility: ProblemVisibility;
+  judgeMode?: ProblemJudgeMode;
   difficulty: string;
   authorKey: string;
   createdByKey: string;
@@ -98,6 +100,12 @@ type SubmissionSeed = {
   languageCode: string;
   verdictCode: string | null;
   status: SubmissionStatus;
+  requiresManualReview?: boolean;
+  manualReviewerKey?: string;
+  manualReviewedAt?: Date;
+  manualNotes?: string;
+  manualScore?: number;
+  manualDueAt?: Date;
   queuedAt: Date;
   startedAt?: Date;
   finishedAt?: Date;
@@ -362,6 +370,10 @@ const verdictSeeds = [
   { code: "MLE", label: "Memory Limit Exceeded", rank: 4 },
   { code: "RE", label: "Runtime Error", rank: 5 },
   { code: "CE", label: "Compile Error", rank: 6 },
+  { code: "MANUAL_PENDING", label: "Manual Pending", rank: 10, isTerminal: false },
+  { code: "MANUAL_ACCEPTED", label: "Manual Accepted", rank: 11 },
+  { code: "MANUAL_REJECTED", label: "Manual Rejected", rank: 12 },
+  { code: "MANUAL_PARTIAL", label: "Manual Partial", rank: 13 },
 ];
 
 const tagSeeds = [
@@ -432,6 +444,7 @@ const problemSeeds: ProblemSeed[] = [
     slug: "two-sum",
     state: ProblemState.PUBLISHED,
     visibility: ProblemVisibility.PUBLIC,
+    judgeMode: ProblemJudgeMode.AUTO,
     difficulty: "EASY",
     authorKey: "curatorOne",
     createdByKey: "curatorOne",
@@ -506,6 +519,7 @@ const problemSeeds: ProblemSeed[] = [
     slug: "interval-maestro",
     state: ProblemState.REVIEW,
     visibility: ProblemVisibility.INTERNAL,
+    judgeMode: ProblemJudgeMode.HYBRID,
     difficulty: "MEDIUM",
     authorKey: "curatorTwo",
     createdByKey: "curatorTwo",
@@ -563,6 +577,7 @@ const problemSeeds: ProblemSeed[] = [
     slug: "galactic-network",
     state: ProblemState.PUBLISHED,
     visibility: ProblemVisibility.UNLISTED,
+    judgeMode: ProblemJudgeMode.MANUAL,
     difficulty: "HARD",
     authorKey: "curatorTwo",
     createdByKey: "curatorTwo",
@@ -734,7 +749,7 @@ const submissionSeeds: SubmissionSeed[] = [
     problemVersion: 3,
     languageCode: "python3",
     verdictCode: "AC",
-    status: SubmissionStatus.COMPLETED,
+    status: SubmissionStatus.SUCCEEDED,
     queuedAt: new Date(submissionBaseTime.getTime()),
     startedAt: new Date(submissionBaseTime.getTime() + 5_000),
     finishedAt: new Date(submissionBaseTime.getTime() + 15_000),
@@ -756,7 +771,7 @@ const submissionSeeds: SubmissionSeed[] = [
     problemVersion: 3,
     languageCode: "node20",
     verdictCode: "WA",
-    status: SubmissionStatus.COMPLETED,
+    status: SubmissionStatus.FAILED,
     queuedAt: new Date(submissionBaseTime.getTime() + 60_000),
     startedAt: new Date(submissionBaseTime.getTime() + 70_000),
     finishedAt: new Date(submissionBaseTime.getTime() + 120_000),
@@ -773,18 +788,13 @@ const submissionSeeds: SubmissionSeed[] = [
     problemSlug: "galactic-network",
     problemVersion: 2,
     languageCode: "cpp17",
-    verdictCode: "RE",
-    status: SubmissionStatus.FAILED,
+    verdictCode: "MANUAL_PENDING",
+    status: SubmissionStatus.MANUAL_PENDING,
+    requiresManualReview: true,
     queuedAt: new Date(submissionBaseTime.getTime() + 120_000),
-    startedAt: new Date(submissionBaseTime.getTime() + 130_000),
-    finishedAt: new Date(submissionBaseTime.getTime() + 250_000),
-    score: 0,
-    timeUsedMs: 5100,
-    memoryUsedKb: 150000,
-    judgeNodeId: "judge-ap-southeast-1",
-    metadata: { runtimeSignal: "SIGSEGV" },
     sourceCodeRef: "inline://submissions/galactic-kai.cpp",
-    caseResults: [{ testOrdinal: 1, verdictCode: "RE", timeMs: 1200, memoryKb: 80000 }],
+    metadata: { manualRequestedBy: "Kai" },
+    caseResults: [],
   },
   {
     id: "sub-interval-curator",
@@ -793,10 +803,11 @@ const submissionSeeds: SubmissionSeed[] = [
     problemVersion: 1,
     languageCode: "cpp17",
     verdictCode: null,
-    status: SubmissionStatus.RUNNING,
+    status: SubmissionStatus.RETRYING,
     queuedAt: new Date(submissionBaseTime.getTime() + 180_000),
     startedAt: new Date(submissionBaseTime.getTime() + 185_000),
     sourceCodeRef: "inline://submissions/interval-jo.cpp",
+    metadata: { lastError: "container exited unexpectedly" },
     caseResults: [],
   },
   {
@@ -805,21 +816,21 @@ const submissionSeeds: SubmissionSeed[] = [
     problemSlug: "galactic-network",
     problemVersion: 2,
     languageCode: "python3",
-    verdictCode: "TLE",
-    status: SubmissionStatus.COMPLETED,
+    verdictCode: "MANUAL_ACCEPTED",
+    status: SubmissionStatus.SUCCEEDED,
+    requiresManualReview: true,
+    manualReviewerKey: "curatorOne",
+    manualReviewedAt: new Date(submissionBaseTime.getTime() + 400_000),
+    manualScore: 85,
+    manualNotes: "Great approach, minimal edge handling tweaks suggested.",
     queuedAt: new Date(submissionBaseTime.getTime() + 240_000),
     startedAt: new Date(submissionBaseTime.getTime() + 250_000),
     finishedAt: new Date(submissionBaseTime.getTime() + 360_000),
-    score: 0,
-    timeUsedMs: 6000,
-    memoryUsedKb: 180000,
+    score: 85,
     contestSlug: contestSeed.slug,
-    metadata: { contestRun: true },
+    metadata: { contestRun: true, manualNotes: "Accepted with strong explanation" },
     sourceCodeRef: "inline://submissions/galactic-lena.py",
-    caseResults: [
-      { testOrdinal: 1, verdictCode: "AC", timeMs: 2000, memoryKb: 90000 },
-      { testOrdinal: 2, verdictCode: "TLE", timeMs: 6000, memoryKb: 120000 },
-    ],
+    caseResults: [],
   },
 ];
 
@@ -1020,6 +1031,7 @@ async function main() {
       update: {
         state: seed.state,
         visibility: seed.visibility,
+        judgeMode: seed.judgeMode ?? ProblemJudgeMode.AUTO,
         authorId: author.id,
         difficultyId: difficulty.id,
         updatedById: createdBy.id,
@@ -1028,6 +1040,7 @@ async function main() {
         slug: seed.slug,
         state: seed.state,
         visibility: seed.visibility,
+        judgeMode: seed.judgeMode ?? ProblemJudgeMode.AUTO,
         authorId: author.id,
         difficultyId: difficulty.id,
         createdById: createdBy.id,
@@ -1075,8 +1088,10 @@ async function main() {
           problemVersionId: version.id,
           kind: testCase.kind,
           ordinal: testCase.ordinal,
-          inputBlobRef: `inline://${seed.slug}/v${seed.version.versionNumber}/case-${testCase.ordinal}.in`,
-          outputBlobRef: `inline://${seed.slug}/v${seed.version.versionNumber}/case-${testCase.ordinal}.out`,
+          inputBlobRef: testCase.input,
+          outputBlobRef: testCase.output,
+          inputData: testCase.input,
+          outputData: testCase.output,
           checksum: contentHash(seed.slug, testCase.ordinal, testCase.input, testCase.output),
           timeLimitMs: testCase.timeLimitMs,
           memoryLimitMb: testCase.memoryLimitMb,
@@ -1422,6 +1437,12 @@ async function main() {
   for (const submissionSeed of submissionSeeds) {
     const user = userMap.get(submissionSeed.userKey);
     const problem = problemMap.get(submissionSeed.problemSlug);
+    const manualReviewer = submissionSeed.manualReviewerKey
+      ? userMap.get(submissionSeed.manualReviewerKey)
+      : null;
+    if (submissionSeed.manualReviewerKey && !manualReviewer) {
+      throw new Error(`Missing manual reviewer ${submissionSeed.manualReviewerKey}`);
+    }
     if (!user || !problem) {
       throw new Error(`Missing user/problem for submission ${submissionSeed.id}`);
     }
@@ -1439,6 +1460,12 @@ async function main() {
         languageCode: submissionSeed.languageCode,
         verdictCode: submissionSeed.verdictCode ?? undefined,
         status: submissionSeed.status,
+        requiresManualReview: submissionSeed.requiresManualReview ?? false,
+        manualReviewerId: manualReviewer?.id ?? null,
+        manualReviewedAt: submissionSeed.manualReviewedAt,
+        manualNotes: submissionSeed.manualNotes ?? undefined,
+        manualScore: submissionSeed.manualScore,
+        manualDueAt: submissionSeed.manualDueAt,
         score: submissionSeed.score,
         timeUsedMs: submissionSeed.timeUsedMs,
         memoryUsedKb: submissionSeed.memoryUsedKb,
@@ -1457,6 +1484,12 @@ async function main() {
         languageCode: submissionSeed.languageCode,
         verdictCode: submissionSeed.verdictCode ?? undefined,
         status: submissionSeed.status,
+        requiresManualReview: submissionSeed.requiresManualReview ?? false,
+        manualReviewerId: manualReviewer?.id ?? null,
+        manualReviewedAt: submissionSeed.manualReviewedAt,
+        manualNotes: submissionSeed.manualNotes ?? undefined,
+        manualScore: submissionSeed.manualScore,
+        manualDueAt: submissionSeed.manualDueAt,
         sourceCodeRef: submissionSeed.sourceCodeRef,
         codeHash: contentHash(submissionSeed.id, user.id, submissionSeed.languageCode),
         queuedAt: submissionSeed.queuedAt,
