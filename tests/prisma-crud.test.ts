@@ -235,6 +235,43 @@ describe("Submissions", () => {
   });
 });
 
+describe("Submission drafts", () => {
+  test("submission drafts can be stored and pruned", async () => {
+    const { author, problem } = await createProblemGraph();
+    const language = await createLanguage();
+
+    const draft = await prisma.submissionDraft.create({
+      data: {
+        userId: author.id,
+        problemId: problem.id,
+        languageCode: language.code,
+        sourceCode: "print('hello world')",
+        cursorOffset: 12,
+        savedVia: "manual",
+        sourceHash: unique("hash"),
+      },
+    });
+
+    expect(draft.sourceCode).toContain("hello");
+
+    await prisma.submissionDraft.update({
+      where: { id: draft.id },
+      data: { sourceCode: "print('updated')" },
+    });
+
+    const drafts = await prisma.submissionDraft.findMany({
+      where: { userId: author.id, problemId: problem.id, languageCode: language.code },
+    });
+    expect(drafts).toHaveLength(1);
+
+    await prisma.submissionDraft.delete({ where: { id: draft.id } });
+    const afterDelete = await prisma.submissionDraft.findMany({
+      where: { userId: author.id, problemId: problem.id },
+    });
+    expect(afterDelete).toHaveLength(0);
+  });
+});
+
 describe("Discussions & votes", () => {
   test("discussion threads can be created, replied to, voted on, and moderated", async () => {
     const { author, problem } = await createProblemGraph();

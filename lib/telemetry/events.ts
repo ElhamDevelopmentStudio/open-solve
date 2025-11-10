@@ -11,6 +11,11 @@ export const TELEMETRY_EVENTS = [
   "problemDetail.startSolving",
   "problemDetail.performance",
   "problemDetail.report",
+  "submission.runSample",
+  "submission.create",
+  "submission.timeline.open",
+  "submission.draft.saved",
+  "submission.draft.restored",
 ] as const;
 
 export type TelemetryEvent = (typeof TELEMETRY_EVENTS)[number];

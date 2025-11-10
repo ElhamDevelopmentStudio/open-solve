@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,14 +26,31 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CodeEditor } from "@/components/code/code-editor";
-import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert, UserPlus, Trash2, RotateCcw } from "lucide-react";
+import { RichTextEditor } from "@/components/editor/rich-text-editor";
+import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert, UserPlus, Trash2, RotateCcw, Info, Eye, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
 import type { Tag } from "@prisma/client";
+import { uploadImageToMinio } from "@/lib/storage/minio-upload";
+import TurndownService from "turndown";
+import { marked } from "marked";
+import { TagInput, type Tag as EmblorTag } from "emblor";
 
-type SampleRow = {
+type TestCaseRow = {
   id?: string;
   ordinal: number;
   input: string;
@@ -41,7 +58,26 @@ type SampleRow = {
   timeLimitMs: number;
   memoryLimitMb: number;
   strength?: number | null;
+  kind: "sample" | "hidden";
 };
+
+const turndownService = new TurndownService({
+  headingStyle: "atx",
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+});
+
+marked.setOptions({ breaks: true, gfm: true });
+
+const markdownToHtml = (value: string) =>
+  (marked.parse(value ?? "", { async: false }) as string) || "";
+
+const htmlToMarkdown = (value: string) => (value ? turndownService.turndown(value) : "");
+
+const generateLocalId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 const SUPPORTED_LANGUAGE_SET = new Set<SupportedLanguage>(SUPPORTED_LANGUAGES);
 const isSupportedLanguage = (code: string): code is SupportedLanguage =>
@@ -126,10 +162,12 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
     slug: "",
     visibility: "INTERNAL",
     difficultyCode: "",
-    tagsInput: "",
   });
-  const [samples, setSamples] = useState<SampleRow[]>([]);
-  const [hidden, setHidden] = useState<SampleRow[]>([]);
+  const [metadataTags, setMetadataTags] = useState<EmblorTag[]>([]);
+  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+  const [testCases, setTestCases] = useState<TestCaseRow[]>([]);
+  const [testCaseModalOpen, setTestCaseModalOpen] = useState(false);
+  const [activeTestCase, setActiveTestCase] = useState<TestCaseRow | null>(null);
   const [languageState, setLanguageState] = useState<
     Record<string, { enabled: boolean; codeStub: string }>
   >({});
@@ -154,9 +192,14 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
         slug: data.slug,
         visibility: data.visibility,
         difficultyCode: data.difficulty ?? "",
-        tagsInput: data.tags.map((tag: Tag) => tag.slug).join(","),
       });
-      setSamples(
+      setMetadataTags(
+        data.tags.map((tag: Tag) => ({
+          id: tag.slug,
+          text: tag.name ?? tag.slug,
+        })),
+      );
+      const sampleRows =
         data.tests.samples.length > 0
           ? data.tests.samples.map((sample) => ({
               id: sample.id,
@@ -166,19 +209,21 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
               timeLimitMs: sample.timeLimitMs,
               memoryLimitMb: sample.memoryLimitMb,
               strength: 0,
+              kind: "sample" as const,
             }))
           : [
               {
+                id: generateLocalId(),
                 ordinal: 1,
                 input: "",
                 output: "",
                 timeLimitMs: 2000,
                 memoryLimitMb: 256,
                 strength: 0,
+                kind: "sample" as const,
               },
-            ],
-      );
-      setHidden(
+            ];
+      const hiddenRows =
         data.tests.hidden.length > 0
           ? data.tests.hidden.map((test) => ({
               id: test.id,
@@ -188,18 +233,21 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
               timeLimitMs: test.timeLimitMs,
               memoryLimitMb: test.memoryLimitMb,
               strength: test.strength ?? 100,
+              kind: "hidden" as const,
             }))
           : [
               {
+                id: generateLocalId(),
                 ordinal: 1,
                 input: "",
                 output: "",
                 timeLimitMs: 2000,
                 memoryLimitMb: 256,
                 strength: 100,
+                kind: "hidden" as const,
               },
-            ],
-      );
+            ];
+      setTestCases([...sampleRows, ...hiddenRows]);
     }
   }, [data]);
 
@@ -229,16 +277,75 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
     if (contentState.samples.length === 0) {
       issues.push("Add at least one sample for the public statement.");
     }
-    if (metadataState.tagsInput.split(",").filter(Boolean).length === 0) {
+    if (metadataTags.length === 0) {
       issues.push("Add at least one tag.");
     }
     return issues;
-  }, [contentState.statement.length, contentState.samples.length, metadataState.tagsInput]);
+  }, [contentState.statement.length, contentState.samples.length, metadataTags.length]);
 
-  const hiddenStrengthTotal = hidden.reduce((sum, row) => sum + (row.strength ?? 0), 0);
+  const hiddenStrengthTotal = testCases
+    .filter((row) => row.kind === "hidden")
+    .reduce((sum, row) => sum + (row.strength ?? 0), 0);
+  const sampleCount = useMemo(
+    () => testCases.filter((row) => row.kind === "sample").length,
+    [testCases],
+  );
+  const hiddenCount = useMemo(
+    () => testCases.filter((row) => row.kind === "hidden").length,
+    [testCases],
+  );
+  const orderedTestCases = useMemo(() => {
+    return [...testCases].sort((a, b) => {
+      if (a.ordinal === b.ordinal) {
+        if (a.kind === b.kind) return 0;
+        return a.kind === "sample" ? -1 : 1;
+      }
+      return a.ordinal - b.ordinal;
+    });
+  }, [testCases]);
+  const tagSuggestions = useMemo(
+    () =>
+      metadata?.tags.map((tag) => ({
+        id: tag.slug,
+        text: `${tag.name} (${tag.problemCount})`,
+      })) ?? [],
+    [metadata],
+  );
+
   const enabledLanguageCount = Object.values(languageState).filter((entry) => entry.enabled).length;
   const languageEntries =
     languageCatalog?.filter((language) => isSupportedLanguage(language.code)) ?? [];
+  const statementImageUpload = useCallback(async (file: File) => uploadImageToMinio(file), []);
+
+  const addPublicSample = () => {
+    setContentState((state) => ({
+      ...state,
+      samples: [...state.samples, { input: "", output: "" }],
+    }));
+  };
+
+  const removePublicSample = (index: number) => {
+    setContentState((state) => ({
+      ...state,
+      samples: state.samples.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const updateSampleField = (index: number, field: "input" | "output", html: string) => {
+    setContentState((state) => {
+      const next = [...state.samples];
+      next[index] = { ...next[index], [field]: htmlToMarkdown(html) };
+      return { ...state, samples: next };
+    });
+  };
+
+  const summarizeTestValue = (value: string) => {
+    if (!value) return "Empty";
+    if (value.startsWith("inline://")) return value;
+    const plain = value.replace(/[`*_>#]/g, "").replace(/\s+/g, " ").trim();
+    if (!plain) return "Empty";
+    return plain.length > 80 ? `${plain.slice(0, 80)}…` : plain;
+  };
 
   if (isLoading || !data) {
     return (
@@ -266,60 +373,81 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
       slug: metadataState.slug,
       visibility: metadataState.visibility as typeof data.visibility,
       difficultyCode: metadataState.difficultyCode || null,
-      tagSlugs: metadataState.tagsInput
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean),
+      tagSlugs: metadataTags.map((tag) => tag.id),
     });
+  };
+
+  const serializeTestCase = (test: TestCaseRow) => {
+    const { id: _id, kind: _kind, ...payload } = test;
+    return payload;
   };
 
   const handleSaveTests = () => {
+    const sampleCases = testCases.filter((test) => test.kind === "sample");
+    const hiddenCases = testCases.filter((test) => test.kind === "hidden");
     saveTests.mutate({
       problemId,
-      samples: samples.map((sample) => ({ ...sample, strength: 0 })),
-      hidden: hidden.map((test) => ({ ...test, strength: test.strength ?? 0 })),
+      samples: sampleCases.map((sample) => ({ ...serializeTestCase(sample), strength: 0 })),
+      hidden: hiddenCases.map((test) => ({
+        ...serializeTestCase(test),
+        strength: test.strength ?? 0,
+      })),
     });
   };
 
-  const addSampleRow = (kind: "sample" | "hidden") => {
-    const setter = kind === "sample" ? setSamples : setHidden;
-    setter((rows) => [
-      ...rows,
-      {
-        ordinal: rows.length + 1,
-        input: "",
-        output: "",
-        timeLimitMs: 2000,
-        memoryLimitMb: 256,
-        strength: kind === "sample" ? 0 : 100,
-      },
-    ]);
+  const getNextOrdinal = useCallback(() => {
+    if (testCases.length === 0) {
+      return 1;
+    }
+    return Math.max(...testCases.map((test) => test.ordinal)) + 1;
+  }, [testCases]);
+
+  const openTestCaseModal = useCallback(
+    (test?: TestCaseRow) => {
+      if (test) {
+        setActiveTestCase(test);
+      } else {
+        setActiveTestCase({
+          ordinal: getNextOrdinal(),
+          input: "",
+          output: "",
+          timeLimitMs: 2000,
+          memoryLimitMb: 256,
+          strength: 100,
+          kind: "hidden",
+        });
+      }
+      setTestCaseModalOpen(true);
+    },
+    [getNextOrdinal],
+  );
+
+  const handlePersistTestCase = (draft: TestCaseRow) => {
+    setTestCases((prev) => {
+      const identifier = draft.id ?? generateLocalId();
+      const nextEntry = { ...draft, id: identifier };
+      const existingIndex = prev.findIndex((entry) => entry.id === identifier);
+      if (existingIndex === -1) {
+        return [...prev, nextEntry];
+      }
+      return prev.map((entry) => (entry.id === identifier ? nextEntry : entry));
+    });
+    setActiveTestCase(null);
+    setTestCaseModalOpen(false);
   };
 
-  const updateRow = (
-    kind: "sample" | "hidden",
-    index: number,
-    field: keyof SampleRow,
-    value: string,
-  ) => {
-    const list = kind === "sample" ? samples : hidden;
-    const setter = kind === "sample" ? setSamples : setHidden;
-    setter((rows) =>
-      rows.map((row, idx) =>
-        idx === index
-          ? {
-              ...row,
-              [field]:
-                field === "ordinal" ||
-                field === "timeLimitMs" ||
-                field === "memoryLimitMb" ||
-                field === "strength"
-                  ? Number(value)
-                  : value,
-            }
-          : row,
-      ),
-    );
+  const handleDeleteTestCase = (id?: string) => {
+    if (!id) return;
+    setTestCases((prev) => prev.filter((test) => test.id !== id));
+    setActiveTestCase((prev) => (prev && prev.id === id ? null : prev));
+    setTestCaseModalOpen(false);
+  };
+
+  const handleTestModalToggle = (open: boolean) => {
+    setTestCaseModalOpen(open);
+    if (!open) {
+      setActiveTestCase(null);
+    }
   };
 
   const toggleLanguage = (code: SupportedLanguage, enabled: boolean) => {
@@ -414,91 +542,136 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
             <CardHeader>
               <CardTitle>Statement</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Input
-                value={contentState.title}
-                onChange={(event) =>
-                  setContentState((state) => ({ ...state, title: event.target.value }))
-                }
-                placeholder="Problem title"
-              />
-              <Textarea
-                value={contentState.statement}
-                onChange={(event) =>
-                  setContentState((state) => ({ ...state, statement: event.target.value }))
-                }
-                placeholder="Problem statement (supports Markdown + KaTeX)"
-                rows={8}
-              />
-              <Textarea
-                value={contentState.constraints}
-                onChange={(event) =>
-                  setContentState((state) => ({ ...state, constraints: event.target.value }))
-                }
-                placeholder="Constraints"
-                rows={4}
-              />
-              <Textarea
-                value={contentState.hints}
-                onChange={(event) =>
-                  setContentState((state) => ({ ...state, hints: event.target.value }))
-                }
-                placeholder="Notes & hints"
-                rows={3}
-              />
-              <Textarea
-                value={contentState.editorial}
-                onChange={(event) =>
-                  setContentState((state) => ({ ...state, editorial: event.target.value }))
-                }
-                placeholder="Editorial"
-                rows={6}
-              />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Public samples</p>
-                  <p className="text-xs text-muted-foreground">
-                    These show up in the reader immediately.
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    setContentState((state) => ({
-                      ...state,
-                      samples: [...state.samples, { input: "", output: "" }],
-                    }))
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <FieldLabel label="Problem title" htmlFor="problem-title" />
+                <Input
+                  id="problem-title"
+                  value={contentState.title}
+                  onChange={(event) =>
+                    setContentState((state) => ({ ...state, title: event.target.value }))
                   }
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add sample
-                </Button>
+                  placeholder="e.g. Interval Maestro"
+                />
               </div>
-              {contentState.samples.map((sample, index) => (
-                <div
-                  key={index}
-                  className="grid gap-2 rounded-xl border border-white/5 bg-muted/10 p-3 md:grid-cols-2"
-                >
-                  <Textarea
-                    value={sample.input}
-                    onChange={(event) => {
-                      const next = [...contentState.samples];
-                      next[index] = { ...next[index], input: event.target.value };
-                      setContentState((state) => ({ ...state, samples: next }));
-                    }}
-                    placeholder="Input"
+              <div className="space-y-2">
+                <FieldLabel
+                  label="Statement"
+                  htmlFor="problem-statement"
+                  tooltip="Supports Markdown, KaTeX, links, and inline imagery."
+                />
+                <RichTextEditor
+                  className="min-h-[320px]"
+                  content={markdownToHtml(contentState.statement)}
+                  onChange={(html) =>
+                    setContentState((state) => ({ ...state, statement: htmlToMarkdown(html) }))
+                  }
+                  placeholder="Describe the full problem statement..."
+                  enableImages
+                  onImageUpload={statementImageUpload}
+                />
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <FieldLabel
+                    label="Constraints"
+                    htmlFor="problem-constraints"
+                    tooltip="Highlight limits, ranges, and invariants readers should consider."
                   />
-                  <Textarea
-                    value={sample.output}
-                    onChange={(event) => {
-                      const next = [...contentState.samples];
-                      next[index] = { ...next[index], output: event.target.value };
-                      setContentState((state) => ({ ...state, samples: next }));
-                    }}
-                    placeholder="Output"
+                  <RichTextEditor
+                    content={markdownToHtml(contentState.constraints)}
+                    onChange={(html) =>
+                      setContentState((state) => ({ ...state, constraints: htmlToMarkdown(html) }))
+                    }
+                    placeholder="N ≤ 2 · 10^5, edges ≤ 3 · 10^5..."
                   />
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <FieldLabel
+                    label="Hints"
+                    htmlFor="problem-hints"
+                    tooltip="Share optional nudges or clarifications for the audience."
+                  />
+                  <RichTextEditor
+                    content={markdownToHtml(contentState.hints)}
+                    onChange={(html) =>
+                      setContentState((state) => ({ ...state, hints: htmlToMarkdown(html) }))
+                    }
+                    placeholder="Try sorting intervals before sweeping..."
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <FieldLabel
+                  label="Editorial"
+                  htmlFor="problem-editorial"
+                  tooltip="Internal draft for the walkthrough; rich formatting coming soon."
+                />
+                <Textarea
+                  id="problem-editorial"
+                  value={contentState.editorial}
+                  onChange={(event) =>
+                    setContentState((state) => ({ ...state, editorial: event.target.value }))
+                  }
+                  placeholder="Explain the intended solution and key observations."
+                  rows={6}
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Public samples</p>
+                    <p className="text-xs text-muted-foreground">
+                      These run in the reader before submission.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={addPublicSample}>
+                    <Plus className="mr-2 h-4 w-4" /> Add sample
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {contentState.samples.map((sample, index) => (
+                    <div
+                      key={`sample-${index}`}
+                      className="space-y-4 rounded-2xl border border-white/10 bg-muted/5 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-foreground">Sample #{index + 1}</p>
+                        {contentState.samples.length > 1 ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => removePublicSample(index)}
+                            className="text-muted-foreground"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span className="sr-only">Remove sample</span>
+                          </Button>
+                        ) : null}
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <FieldLabel label="Input" htmlFor={`sample-input-${index}`} />
+                          <RichTextEditor
+                            content={markdownToHtml(sample.input)}
+                            onChange={(html) => updateSampleField(index, "input", html)}
+                            placeholder="Input shown to solvers"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <FieldLabel label="Output" htmlFor={`sample-output-${index}`} />
+                          <RichTextEditor
+                            content={markdownToHtml(sample.output)}
+                            onChange={(html) => updateSampleField(index, "output", html)}
+                            placeholder="Expected output"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
                   {lintIssues.length > 0 ? (
@@ -688,63 +861,94 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
             <CardHeader>
               <CardTitle>Metadata</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Slug</label>
-                <Input
-                  value={metadataState.slug}
-                  onChange={(event) =>
-                    setMetadataState((state) => ({ ...state, slug: event.target.value }))
-                  }
-                />
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <FieldLabel
+                    label="Slug"
+                    htmlFor="problem-slug"
+                    tooltip="Used in URLs and API identifiers. Stick to lowercase letters, numbers, and hyphens."
+                  />
+                  <Input
+                    id="problem-slug"
+                    value={metadataState.slug}
+                    onChange={(event) =>
+                      setMetadataState((state) => ({ ...state, slug: event.target.value }))
+                    }
+                    placeholder="interval-maestro"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel
+                    label="Visibility"
+                    tooltip="Controls whether the problem is internal, unlisted, or visible to everyone."
+                  />
+                  <Select
+                    value={metadataState.visibility}
+                    onValueChange={(value) =>
+                      setMetadataState((state) => ({ ...state, visibility: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Visibility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PUBLIC">Public</SelectItem>
+                      <SelectItem value="UNLISTED">Unlisted</SelectItem>
+                      <SelectItem value="INTERNAL">Internal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel
+                    label="Difficulty"
+                    tooltip="Appears on the reader page and in search filters."
+                  />
+                  <Select
+                    value={metadataState.difficultyCode || "UNRATED"}
+                    onValueChange={(value) =>
+                      setMetadataState((state) => ({
+                        ...state,
+                        difficultyCode: value === "UNRATED" ? "" : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UNRATED">Unrated</SelectItem>
+                      {metadata?.difficulties.map((difficulty) => (
+                        <SelectItem key={difficulty} value={difficulty}>
+                          {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Select
-                value={metadataState.visibility}
-                onValueChange={(value) =>
-                  setMetadataState((state) => ({ ...state, visibility: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Visibility" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PUBLIC">Public</SelectItem>
-                  <SelectItem value="UNLISTED">Unlisted</SelectItem>
-                  <SelectItem value="INTERNAL">Internal</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={metadataState.difficultyCode || "UNRATED"}
-                onValueChange={(value) =>
-                  setMetadataState((state) => ({
-                    ...state,
-                    difficultyCode: value === "UNRATED" ? "" : value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="UNRATED">Unrated</SelectItem>
-                  {metadata?.difficulties.map((difficulty) => (
-                    <SelectItem key={difficulty} value={difficulty}>
-                      {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div>
-                <label className="text-sm font-medium">Tags</label>
-                <Input
-                  value={metadataState.tagsInput}
-                  onChange={(event) =>
-                    setMetadataState((state) => ({ ...state, tagsInput: event.target.value }))
-                  }
-                  placeholder="Comma separated tag slugs"
+              <div className="space-y-2">
+                <FieldLabel
+                  label="Tags"
+                  tooltip="Tag the key topics or companies this problem relates to. Minimum one tag."
                 />
+                <TagInput
+                  placeholder="Add a topic"
+                  tags={metadataTags}
+                  setTags={setMetadataTags}
+                  autocompleteOptions={tagSuggestions}
+                  activeTagIndex={activeTagIndex}
+                  setActiveTagIndex={setActiveTagIndex}
+                  styleClasses={{
+                    input: "w-full",
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Need inspiration? Start typing to search across {tagSuggestions.length} curated tags.
+                </p>
               </div>
-              <div className="flex items-center justify-end">
+              <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <span>{metadataTags.length} tag(s) selected</span>
                 <Button onClick={handleSaveMetadata} disabled={saveMetadata.isPending}>
                   {saveMetadata.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -760,49 +964,120 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
 
         <TabsContent value="tests" className="space-y-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>Sample tests</CardTitle>
-                <p className="text-sm text-muted-foreground">Visible to users.</p>
+                <CardTitle>Judge test cases</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Maintain both public samples and hidden cases from a single table.
+                </p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => addSampleRow("sample")}>
-                <Plus className="mr-2 h-4 w-4" /> Add sample
+              <Button onClick={() => openTestCaseModal()}>
+                <Plus className="mr-2 h-4 w-4" /> Add test case
               </Button>
             </CardHeader>
-            <CardContent>
-              <TestTable
-                rows={samples}
-                onChange={(index, field, value) => updateRow("sample", index, field, value)}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Hidden tests</CardTitle>
-                <p className="text-sm text-muted-foreground">Used by the judge.</p>
+            <CardContent className="space-y-4">
+              <Alert>
+                <FileText className="h-4 w-4" />
+                <AlertTitle>Inline storage references</AlertTitle>
+                <AlertDescription>
+                  Values such as <code>inline://interval-maestro/v1/case-1.in</code> reference blobs
+                  uploaded to storage. You can keep the pointer or replace it with raw text directly
+                  in the modal below.
+                </AlertDescription>
+              </Alert>
+              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                <Badge variant="secondary">Samples · {sampleCount}</Badge>
+                <Badge variant="outline">Hidden · {hiddenCount}</Badge>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => addSampleRow("hidden")}>
-                <Plus className="mr-2 h-4 w-4" /> Add hidden case
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <TestTable
-                rows={hidden}
-                onChange={(index, field, value) => updateRow("hidden", index, field, value)}
-              />
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Input / Output</TableHead>
+                      <TableHead>Limits</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orderedTestCases.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="py-10 text-center text-sm text-muted-foreground"
+                        >
+                          No test cases yet. Start by adding a public sample.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      orderedTestCases.map((test) => (
+                        <TableRow key={test.id ?? `${test.kind}-${test.ordinal}`}>
+                          <TableCell className="font-medium">#{test.ordinal}</TableCell>
+                          <TableCell className="space-y-1">
+                            <Badge variant={test.kind === "sample" ? "outline" : "secondary"}>
+                              {test.kind === "sample" ? "Sample" : "Hidden"}
+                            </Badge>
+                            {test.kind === "hidden" && typeof test.strength === "number" ? (
+                              <p className="text-xs text-muted-foreground">
+                                Strength {test.strength}
+                              </p>
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="space-y-2 text-sm">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Input</p>
+                              <p>{summarizeTestValue(test.input)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Output</p>
+                              <p>{summarizeTestValue(test.output)}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <p className="font-medium">{test.timeLimitMs} ms</p>
+                            <p className="text-xs text-muted-foreground">{test.memoryLimitMb} MB</p>
+                          </TableCell>
+                          <TableCell className="space-x-1 text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openTestCaseModal(test)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">View test case</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleDeleteTestCase(test.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Remove test case</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
+            <CardFooter className="flex flex-col gap-3 border-t border-white/5 pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="font-medium text-foreground">{hiddenCount} hidden case(s)</p>
+                <p>Strength budget: {hiddenStrengthTotal}</p>
+              </div>
+              <Button onClick={handleSaveTests} disabled={saveTests.isPending}>
+                {saveTests.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save tests
+              </Button>
+            </CardFooter>
           </Card>
-          <div className="flex justify-end">
-            <Button onClick={handleSaveTests} disabled={saveTests.isPending}>
-              {saveTests.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              Save tests
-            </Button>
-          </div>
         </TabsContent>
 
         <TabsContent value="review">
@@ -877,75 +1152,241 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
           </Card>
         </TabsContent>
       </Tabs>
+      <TestCaseModal
+        open={testCaseModalOpen}
+        onOpenChange={handleTestModalToggle}
+        testCase={activeTestCase}
+        onSave={handlePersistTestCase}
+        onDelete={handleDeleteTestCase}
+      />
     </div>
   );
 }
 
-function TestTable({
-  rows,
-  onChange,
+type TestCaseModalProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  testCase: TestCaseRow | null;
+  onSave: (draft: TestCaseRow) => void;
+  onDelete: (id?: string) => void;
+};
+
+const defaultTestCasePayload: TestCaseRow = {
+  ordinal: 1,
+  input: "",
+  output: "",
+  timeLimitMs: 2000,
+  memoryLimitMb: 256,
+  strength: 100,
+  kind: "hidden",
+};
+
+function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestCaseModalProps) {
+  const [draft, setDraft] = useState<TestCaseRow>(testCase ?? { ...defaultTestCasePayload });
+
+  useEffect(() => {
+    if (open) {
+      setDraft(testCase ?? { ...defaultTestCasePayload });
+    }
+  }, [open, testCase]);
+
+  const handleNumberChange = (
+    field: keyof Pick<TestCaseRow, "ordinal" | "timeLimitMs" | "memoryLimitMb" | "strength">,
+    value: number,
+  ) => {
+    setDraft((prev) => {
+      const previousValue = prev[field];
+      const fallback =
+        typeof previousValue === "number" && Number.isFinite(previousValue) ? previousValue : 0;
+      return {
+        ...prev,
+        [field]: Number.isFinite(value) ? value : fallback,
+      };
+    });
+  };
+
+  const handleKindChange = (value: string) => {
+    const nextKind = value === "sample" ? "sample" : "hidden";
+    setDraft((prev) => ({
+      ...prev,
+      kind: nextKind,
+      strength: nextKind === "sample" ? 0 : prev.strength ?? 100,
+    }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{draft.id ? `Edit test #${draft.ordinal}` : "Add test case"}</DialogTitle>
+          <DialogDescription>Detailed view of the input, output, and guardrails for this case.</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="max-h-[65vh] pr-6">
+          <div className="space-y-6 py-2">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <FieldLabel label="Ordinal" htmlFor="test-ordinal" />
+                <Input
+                  id="test-ordinal"
+                  type="number"
+                  min={1}
+                  value={draft.ordinal}
+                  onChange={(event) => handleNumberChange("ordinal", Number(event.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel label="Time limit (ms)" htmlFor="test-time" />
+                <Input
+                  id="test-time"
+                  type="number"
+                  min={100}
+                  value={draft.timeLimitMs}
+                  onChange={(event) =>
+                    handleNumberChange("timeLimitMs", Number(event.target.value))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel label="Memory limit (MB)" htmlFor="test-memory" />
+                <Input
+                  id="test-memory"
+                  type="number"
+                  min={32}
+                  value={draft.memoryLimitMb}
+                  onChange={(event) =>
+                    handleNumberChange("memoryLimitMb", Number(event.target.value))
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <FieldLabel
+                label="Input"
+                tooltip="Use Markdown formatting for clarity. Upload references may stay as inline:// URIs."
+              />
+              <RichTextEditor
+                content={markdownToHtml(draft.input)}
+                onChange={(html) => setDraft((prev) => ({ ...prev, input: htmlToMarkdown(html) }))}
+                placeholder="Paste the judge input or link to an inline blob."
+              />
+              {draft.input.startsWith("inline://") ? (
+                <p className="text-xs text-muted-foreground">
+                  Editing this field replaces the blob reference with the new content.
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <FieldLabel label="Output" />
+              <RichTextEditor
+                content={markdownToHtml(draft.output)}
+                onChange={(html) => setDraft((prev) => ({ ...prev, output: htmlToMarkdown(html) }))}
+                placeholder="Expected output for the case."
+              />
+              {draft.output.startsWith("inline://") ? (
+                <p className="text-xs text-muted-foreground">
+                  Editing this field replaces the blob reference with the new content.
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-3">
+              <FieldLabel
+                label="Visibility"
+                tooltip="Samples are public. Hidden cases run privately and can carry strength for partial scoring."
+              />
+              <RadioGroup
+                value={draft.kind}
+                onValueChange={handleKindChange}
+                className="grid gap-3 md:grid-cols-2"
+              >
+                <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3">
+                  <RadioGroupItem value="sample" id="case-kind-sample" />
+                  <div>
+                    <Label htmlFor="case-kind-sample" className="font-medium">
+                      Sample (public)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Appears in the reader alongside the statement.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3">
+                  <RadioGroupItem value="hidden" id="case-kind-hidden" />
+                  <div>
+                    <Label htmlFor="case-kind-hidden" className="font-medium">
+                      Hidden
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Judge-only case that contributes to overall strength.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+              {draft.kind === "hidden" ? (
+                <div className="space-y-2">
+                  <FieldLabel
+                    label="Strength"
+                    tooltip="Used for partial scoring and prioritisation in the judge."
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    value={draft.strength ?? 0}
+                    onChange={(event) => handleNumberChange("strength", Number(event.target.value))}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </ScrollArea>
+        <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {draft.id ? (
+            <Button type="button" variant="ghost" className="text-destructive" onClick={() => onDelete(draft.id)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete case
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">New cases default to hidden until published.</p>
+          )}
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => onSave(draft)}>
+              Save case
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FieldLabel({
+  label,
+  htmlFor,
+  tooltip,
 }: {
-  rows: SampleRow[];
-  onChange: (index: number, field: keyof SampleRow, value: string) => void;
+  label: string;
+  htmlFor?: string;
+  tooltip?: string;
 }) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>#</TableHead>
-          <TableHead>Input</TableHead>
-          <TableHead>Output</TableHead>
-          <TableHead>Limits</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((row, index) => (
-          <TableRow key={index}>
-            <TableCell>
-              <Input
-                type="number"
-                min={1}
-                value={row.ordinal}
-                onChange={(event) => onChange(index, "ordinal", event.target.value)}
-              />
-            </TableCell>
-            <TableCell>
-              <Textarea
-                value={row.input}
-                onChange={(event) => onChange(index, "input", event.target.value)}
-                rows={3}
-              />
-            </TableCell>
-            <TableCell>
-              <Textarea
-                value={row.output}
-                onChange={(event) => onChange(index, "output", event.target.value)}
-                rows={3}
-              />
-            </TableCell>
-            <TableCell>
-              <div className="grid gap-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <span>Time (ms)</span>
-                  <Input
-                    type="number"
-                    value={row.timeLimitMs}
-                    onChange={(event) => onChange(index, "timeLimitMs", event.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Memory (MB)</span>
-                  <Input
-                    type="number"
-                    value={row.memoryLimitMb}
-                    onChange={(event) => onChange(index, "memoryLimitMb", event.target.value)}
-                  />
-                </div>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="text-muted-foreground transition hover:text-foreground"
+              aria-label={`${label} info`}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+      ) : null}
+    </div>
   );
 }

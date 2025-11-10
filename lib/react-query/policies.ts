@@ -36,6 +36,18 @@ export const judgeStatusQueryOptions = {
   refetchOnReconnect: true,
 } as const;
 
+export const submissionHistoryQueryOptions = {
+  staleTime: 5_000,
+  gcTime: 60_000,
+  refetchOnWindowFocus: false,
+} as const;
+
+export const submissionDraftQueryOptions = {
+  staleTime: 0,
+  gcTime: 10 * 60_000,
+  refetchOnWindowFocus: false,
+} as const;
+
 export const nonRetriableMutationOptions = {
   retry: false,
 } as const;
