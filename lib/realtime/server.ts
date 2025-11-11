@@ -5,12 +5,15 @@ import { WebSocketServer } from "ws";
 import { parse } from "cookie";
 import { prisma } from "@/lib/prisma";
 import { getSubmissionRealtimeHub } from "@/lib/realtime/submission-hub";
+import { getLeaderboardRealtimeHub } from "@/lib/realtime/leaderboard-hub";
+import { logger } from "@/lib/logger";
 
-interface SubmissionServer extends HTTPServer {
+interface RealtimeServer extends HTTPServer {
   submissionWss?: WebSocketServer;
+  leaderboardWss?: WebSocketServer;
 }
 
-export const installSubmissionWebSocketServer = (server: SubmissionServer) => {
+export const installSubmissionWebSocketServer = (server: RealtimeServer) => {
   if (server.submissionWss) {
     return server.submissionWss;
   }
@@ -20,44 +23,80 @@ export const installSubmissionWebSocketServer = (server: SubmissionServer) => {
   wss.on("connection", (ws, req) => {
     const userId = (req as IncomingMessage & { userId?: string }).userId;
     if (!userId) {
+      logger.warn({ path: req.url }, "submission ws missing user on connection");
       ws.close(4401, "unauthorized");
       return;
     }
+    logger.debug({ userId }, "submission ws connected");
     hub.attach(ws, userId);
   });
 
-  server.on("upgrade", async (req: IncomingMessage, socket: Socket, head) => {
+  server.prependListener("upgrade", (req: IncomingMessage, socket: Socket, head) => {
     if (!req.url?.startsWith("/api/ws/submissions")) {
       return;
     }
-    console.info("upgrade received", req.url);
+    logger.debug({ url: req.url }, "submission ws upgrade received");
     socket.on("error", (error) => {
-      console.error("upgrade socket error", error);
+      logger.error({ error }, "submission ws socket error");
     });
     socket.on("close", () => {
-      console.info("upgrade socket closed");
+      logger.debug({ url: req.url }, "submission ws socket closed");
     });
-    const sessionUserId = await resolveUserIdFromRequest(req);
-    console.info("resolved user", sessionUserId);
-    if (!sessionUserId) {
-      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-      socket.destroy();
-      return;
-    }
 
-    try {
-      (req as IncomingMessage & { userId?: string }).userId = sessionUserId;
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        console.info("ws attached");
-        wss.emit("connection", ws, req);
-      });
-      console.info("handleUpgrade completed");
-    } catch (error) {
-      console.error("handleUpgrade failed", error);
-    }
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      void (async () => {
+        try {
+          const sessionUserId = await resolveUserIdFromRequest(req);
+          if (!sessionUserId) {
+            logger.debug({ url: req.url }, "submission ws unauthorized");
+            ws.close(4401, "unauthorized");
+            return;
+          }
+          (req as IncomingMessage & { userId?: string }).userId = sessionUserId;
+          logger.debug({ userId: sessionUserId }, "submission ws handleUpgrade complete");
+          wss.emit("connection", ws, req);
+        } catch (error) {
+          logger.error({ error }, "submission ws handleUpgrade failed");
+          ws.close(1011, "internal_error");
+        }
+      })();
+    });
   });
 
   server.submissionWss = wss;
+  return wss;
+};
+
+export const installLeaderboardWebSocketServer = (server: RealtimeServer) => {
+  if (server.leaderboardWss) {
+    return server.leaderboardWss;
+  }
+  const wss = new WebSocketServer({ noServer: true });
+  const hub = getLeaderboardRealtimeHub();
+
+  wss.on("connection", (ws, req) => {
+    logger.debug({ path: req.url }, "leaderboard ws connected");
+    hub.attach(ws);
+  });
+
+  server.prependListener("upgrade", (req: IncomingMessage, socket: Socket, head) => {
+    if (!req.url?.startsWith("/api/ws/leaderboard")) {
+      return;
+    }
+    logger.debug({ url: req.url }, "leaderboard ws upgrade received");
+    socket.on("error", (error) => {
+      logger.error({ error }, "leaderboard ws socket error");
+    });
+    socket.on("close", () => {
+      logger.debug({ url: req.url }, "leaderboard ws socket closed");
+    });
+
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit("connection", ws, req);
+    });
+  });
+
+  server.leaderboardWss = wss;
   return wss;
 };
 
