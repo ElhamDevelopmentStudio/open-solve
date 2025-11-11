@@ -7,6 +7,10 @@ const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
     schema.optional(),
   );
 
+const amqpUrl = z
+  .string()
+  .regex(/^amqps?:\/\//i, "JUDGE_RABBIT_URL must start with amqp:// or amqps://");
+
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
@@ -46,6 +50,11 @@ export const env = createEnv({
       .transform((v) => v === "true")
       .optional(),
     MINIO_PUBLIC_URL: emptyToUndefined(z.string().url()),
+    JUDGE_RABBIT_URL: emptyToUndefined(amqpUrl),
+    JUDGE_RABBIT_PREFETCH: z.coerce.number().int().positive().default(2),
+    JUDGE_SANDBOX_DRIVER: z.enum(["docker", "mock"]).default("docker"),
+    JUDGE_SANDBOX_WORKDIR: emptyToUndefined(z.string()),
+    REALTIME_WORKER_TOKEN: emptyToUndefined(z.string()),
   },
   client: {
     NEXT_PUBLIC_SENTRY_DSN: emptyToUndefined(z.string().url()),
@@ -79,6 +88,11 @@ export const env = createEnv({
     MINIO_REGION: process.env.MINIO_REGION,
     MINIO_USE_SSL: process.env.MINIO_USE_SSL,
     MINIO_PUBLIC_URL: process.env.MINIO_PUBLIC_URL,
+    JUDGE_RABBIT_URL: process.env.JUDGE_RABBIT_URL,
+    JUDGE_RABBIT_PREFETCH: process.env.JUDGE_RABBIT_PREFETCH,
+    JUDGE_SANDBOX_DRIVER: process.env.JUDGE_SANDBOX_DRIVER,
+    JUDGE_SANDBOX_WORKDIR: process.env.JUDGE_SANDBOX_WORKDIR,
+    REALTIME_WORKER_TOKEN: process.env.REALTIME_WORKER_TOKEN,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
