@@ -126,3 +126,4 @@ export function SignUpForm() {
     </Form>
   );
 }
+
