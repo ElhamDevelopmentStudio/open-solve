@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
 import { ThemeToggle } from "@/components/ui";
-import { ArrowLeft, Code2, FileText, Shield, ClipboardList, Gavel } from "lucide-react";
+import { ArrowLeft, Code2, FileText, Shield, ClipboardList, Gavel, Trophy } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -32,23 +32,30 @@ export default async function StaffLayout({ children }: PropsWithChildren) {
                   <span className="text-xs text-muted-foreground">Staff Console</span>
                 </div>
               </Link>
-              <nav className="hidden items-center gap-1 md:flex">
-                <Link
-                  href="/staff/problems"
+            <nav className="hidden items-center gap-1 md:flex">
+              <Link
+                href="/staff/problems"
                   className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   <FileText className="h-4 w-4" />
-                  <span>Problems</span>
-                </Link>
-                <Link
-                  href="/staff/proposals"
+                <span>Problems</span>
+              </Link>
+              <Link
+                href="/staff/proposals"
                   className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   <ClipboardList className="h-4 w-4" />
-                  <span>Proposals</span>
-                </Link>
-                <Link
-                  href="/staff/judge/manual"
+                <span>Proposals</span>
+              </Link>
+              <Link
+                href="/staff/contests"
+                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <Trophy className="h-4 w-4" />
+                <span>Contests</span>
+              </Link>
+              <Link
+                href="/staff/judge/manual"
                   className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   <Gavel className="h-4 w-4" />
