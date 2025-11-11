@@ -8,7 +8,7 @@ import {
 import { parseProblemSamples, type ProblemSample as ParsedProblemSample } from "@/lib/problems/samples";
 import { prisma } from "@/lib/prisma";
 import { publicProcedure, router } from "@/lib/trpc/trpc";
-import { Prisma, SubmissionStatus, TestCaseKind } from "@prisma/client";
+import { Prisma, SubmissionStatus, TestCaseKind, ProblemJudgeMode } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -55,6 +55,7 @@ export type ProblemDetailPayload = {
   slug: string;
   title: string;
   difficulty: string | null;
+  judgeMode: ProblemJudgeMode;
   languages: Array<{
     code: string;
     displayName: string;
@@ -223,8 +224,8 @@ async function getUserProblemStatus(userId: string) {
       where: {
         userId,
         deletedAt: null,
-        status: SubmissionStatus.COMPLETED,
-        verdictCode: "AC",
+        status: SubmissionStatus.SUCCEEDED,
+        verdictCode: { in: ["AC", "MANUAL_ACCEPTED"] },
       },
       distinct: ["problemId"],
       select: { problemId: true },
@@ -560,6 +561,7 @@ export const problemsRouter = router({
       slug: problem.slug,
       title: problem.currentVersion.title,
       difficulty: problem.difficulty?.code ?? null,
+      judgeMode: problem.judgeMode,
       languages: languagesForResponse,
       status,
       lastSubmissionAt,

@@ -83,6 +83,30 @@ const SUPPORTED_LANGUAGE_SET = new Set<SupportedLanguage>(SUPPORTED_LANGUAGES);
 const isSupportedLanguage = (code: string): code is SupportedLanguage =>
   SUPPORTED_LANGUAGE_SET.has(code as SupportedLanguage);
 
+type JudgeMode = "AUTO" | "MANUAL" | "HYBRID";
+
+const JUDGE_MODE_OPTIONS: Array<{
+  value: JudgeMode;
+  title: string;
+  description: string;
+}> = [
+  {
+    value: "AUTO",
+    title: "Auto judge",
+    description: "Fully automated judging. Ideal for traditional algorithmic problems.",
+  },
+  {
+    value: "HYBRID",
+    title: "Hybrid",
+    description: "Run automated checks first, then require a manual reviewer verdict.",
+  },
+  {
+    value: "MANUAL",
+    title: "Manual only",
+    description: "Skip the worker entirely and queue every submission for a curator.",
+  },
+];
+
 export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.staff.problems.get.useQuery({ id: problemId });
@@ -158,10 +182,16 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
     editorial: "",
     samples: [] as Array<{ input: string; output: string; explanation?: string | null }>,
   });
-  const [metadataState, setMetadataState] = useState({
+  const [metadataState, setMetadataState] = useState<{
+    slug: string;
+    visibility: "PUBLIC" | "UNLISTED" | "INTERNAL";
+    difficultyCode: string;
+    judgeMode: JudgeMode;
+  }>({
     slug: "",
     visibility: "INTERNAL",
     difficultyCode: "",
+    judgeMode: "AUTO",
   });
   const [metadataTags, setMetadataTags] = useState<EmblorTag[]>([]);
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
@@ -192,6 +222,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
         slug: data.slug,
         visibility: data.visibility,
         difficultyCode: data.difficulty ?? "",
+        judgeMode: (data.judgeMode as JudgeMode) ?? "AUTO",
       });
       setMetadataTags(
         data.tags.map((tag: Tag) => ({
@@ -316,6 +347,32 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const languageEntries =
     languageCatalog?.filter((language) => isSupportedLanguage(language.code)) ?? [];
   const statementImageUpload = useCallback(async (file: File) => uploadImageToMinio(file), []);
+  const getNextOrdinal = useCallback(() => {
+    if (testCases.length === 0) {
+      return 1;
+    }
+    return Math.max(...testCases.map((test) => test.ordinal)) + 1;
+  }, [testCases]);
+
+  const openTestCaseModal = useCallback(
+    (test?: TestCaseRow) => {
+      if (test) {
+        setActiveTestCase(test);
+      } else {
+        setActiveTestCase({
+          ordinal: getNextOrdinal(),
+          input: "",
+          output: "",
+          timeLimitMs: 2000,
+          memoryLimitMb: 256,
+          strength: 100,
+          kind: "hidden",
+        });
+      }
+      setTestCaseModalOpen(true);
+    },
+    [getNextOrdinal],
+  );
 
   const addPublicSample = () => {
     setContentState((state) => ({
@@ -374,6 +431,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
       visibility: metadataState.visibility as typeof data.visibility,
       difficultyCode: metadataState.difficultyCode || null,
       tagSlugs: metadataTags.map((tag) => tag.id),
+      judgeMode: metadataState.judgeMode,
     });
   };
 
@@ -394,33 +452,6 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
       })),
     });
   };
-
-  const getNextOrdinal = useCallback(() => {
-    if (testCases.length === 0) {
-      return 1;
-    }
-    return Math.max(...testCases.map((test) => test.ordinal)) + 1;
-  }, [testCases]);
-
-  const openTestCaseModal = useCallback(
-    (test?: TestCaseRow) => {
-      if (test) {
-        setActiveTestCase(test);
-      } else {
-        setActiveTestCase({
-          ordinal: getNextOrdinal(),
-          input: "",
-          output: "",
-          timeLimitMs: 2000,
-          memoryLimitMb: 256,
-          strength: 100,
-          kind: "hidden",
-        });
-      }
-      setTestCaseModalOpen(true);
-    },
-    [getNextOrdinal],
-  );
 
   const handlePersistTestCase = (draft: TestCaseRow) => {
     setTestCases((prev) => {
@@ -561,7 +592,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   tooltip="Supports Markdown, KaTeX, links, and inline imagery."
                 />
                 <RichTextEditor
-                  className="min-h-[320px]"
+                  className="min-h-80"
                   content={markdownToHtml(contentState.statement)}
                   onChange={(html) =>
                     setContentState((state) => ({ ...state, statement: htmlToMarkdown(html) }))
@@ -886,7 +917,10 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   <Select
                     value={metadataState.visibility}
                     onValueChange={(value) =>
-                      setMetadataState((state) => ({ ...state, visibility: value }))
+                      setMetadataState((state) => ({
+                        ...state,
+                        visibility: value as "PUBLIC" | "UNLISTED" | "INTERNAL",
+                      }))
                     }
                   >
                     <SelectTrigger>
@@ -926,6 +960,45 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-3">
+                <FieldLabel
+                  label="Judge mode"
+                  tooltip="Control how this problem's submissions are evaluated."
+                />
+                <RadioGroup
+                  value={metadataState.judgeMode}
+                  onValueChange={(value) =>
+                    setMetadataState((state) => ({
+                      ...state,
+                      judgeMode: value as JudgeMode,
+                    }))
+                  }
+                  className="grid gap-3 md:grid-cols-3"
+                >
+                  {JUDGE_MODE_OPTIONS.map((option) => {
+                    const id = `judge-mode-${option.value.toLowerCase()}`;
+                    const isActive = metadataState.judgeMode === option.value;
+                    return (
+                      <Label
+                        key={option.value}
+                        htmlFor={id}
+                        className={cn(
+                          "cursor-pointer rounded-2xl border bg-card/50 p-3 text-left transition hover:border-primary/60",
+                          isActive ? "border-primary shadow-sm" : "border-border/60",
+                        )}
+                      >
+                        <div className="flex items-start gap-2">
+                          <RadioGroupItem id={id} value={option.value} />
+                          <div>
+                            <p className="font-medium text-foreground">{option.title}</p>
+                            <p className="text-xs text-muted-foreground">{option.description}</p>
+                          </div>
+                        </div>
+                      </Label>
+                    );
+                  })}
+                </RadioGroup>
               </div>
               <div className="space-y-2">
                 <FieldLabel
@@ -1262,12 +1335,18 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
             <div className="space-y-2">
               <FieldLabel
                 label="Input"
-                tooltip="Use Markdown formatting for clarity. Upload references may stay as inline:// URIs."
+                tooltip="Provide the exact stdin fed to the judge."
               />
-              <RichTextEditor
-                content={markdownToHtml(draft.input)}
-                onChange={(html) => setDraft((prev) => ({ ...prev, input: htmlToMarkdown(html) }))}
+              <Textarea
+                value={draft.input}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    input: event.target.value,
+                  }))
+                }
                 placeholder="Paste the judge input or link to an inline blob."
+                rows={6}
               />
               {draft.input.startsWith("inline://") ? (
                 <p className="text-xs text-muted-foreground">
@@ -1277,10 +1356,16 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
             </div>
             <div className="space-y-2">
               <FieldLabel label="Output" />
-              <RichTextEditor
-                content={markdownToHtml(draft.output)}
-                onChange={(html) => setDraft((prev) => ({ ...prev, output: htmlToMarkdown(html) }))}
+              <Textarea
+                value={draft.output}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    output: event.target.value,
+                  }))
+                }
                 placeholder="Expected output for the case."
+                rows={4}
               />
               {draft.output.startsWith("inline://") ? (
                 <p className="text-xs text-muted-foreground">
