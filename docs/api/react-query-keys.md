@@ -17,9 +17,12 @@
 | `staff.problems.get`      | `['trpc','staff.problems.get', problemId]`      | `30s / 5m`                    | `invalidateTags(['staffProblems'])` on any save/transition                          | No           |
 | `proposals.listMine`      | `['trpc','proposals.listMine']`                 | `30s / 5m`                    | `invalidateTags(['proposals'])` on submit/update                                    | No           |
 | `proposals.staffList`     | `['trpc','proposals.staffList', status?]`       | `30s / 5m`                    | `invalidateTags(['proposals'])` whenever staff updates statuses or comments         | No           |
-| `submissions.get`         | `['trpc','submissions.get', submissionId]`      | `0s / 1m`                     | `invalidateTags(['submissions'])` after new submission or status change             | No           |
-| `submissions.listMine`    | `['trpc','submissions.listMine', {problem?}]`   | `5s / 1m`                     | `invalidateTags(['submissions'])` on create/delete                                  | No           |
-| `submissions.getDrafts`   | `['trpc','submissions.getDrafts', key]`         | `0s / 10m`                    | `invalidateTags(['submissionDrafts'])` on save/delete                               | No           |
+| `submissions.get`         | `['trpc','submissions.get', submissionId]`      | `0s / 1m`                     | `invalidateTags(['submissions'])` after new submission or status change         | No           |
+| `submissions.listMine`    | `['trpc','submissions.listMine', filters,'infinite']` | `15s / 2m`                 | `invalidateTags(['submissions'])` on create/resubmit/share changes              | Yes          |
+| `submissions.listByProblem` | `['trpc','submissions.listByProblem', slug,'infinite']` | `15s / 2m`           | `invalidateTags(['submissions'])` on create/resubmit/share changes              | Yes          |
+| `submissions.getShare`    | `['trpc','submissions.getShare', publicId]`     | `0s / 5m`                     | Automatic via share enable/disable                                              | No           |
+| `submissions.filters`     | `['trpc','submissions.filters']`                | `5m / 30m`                    | `invalidateTags(['submissions'])` when attempts change                          | No           |
+| `submissions.getDrafts`   | `['trpc','submissions.getDrafts', key]`         | `0s / 10m`                    | `invalidateTags(['submissionDrafts'])` on save/delete                           | No           |
 
 ## Mutation → Invalidation Matrix
 
@@ -33,7 +36,8 @@
 | `staff.problems.submitForReview`, `approve`, `publish`, `archive`                   | `invalidateTags(['staffProblems','problems'])`                                 |
 | `proposals.submit`, `proposals.comment`                                             | `invalidateTags(['proposals'])`                                                |
 | `proposals.staffUpdateStatus`, `proposals.convertToDraft`                           | `invalidateTags(['proposals','staffProblems'])`                                |
-| `submissions.create`, judge events                                                  | `invalidateTags(['submissions'])`                                              |
+| `submissions.create`, `submissions.resubmit`, judge events                          | `invalidateTags(['submissions'])`                                              |
+| `submissions.shareEnable`, `submissions.shareDisable`, `submissions.hideFromProfile`| `invalidateTags(['submissions'])`                                              |
 | `submissions.saveDraft`, `submissions.getDrafts`                                    | `invalidateTags(['submissionDrafts'])`                                         |
 
 ## Notes
