@@ -6,7 +6,7 @@ import type { PropsWithChildren } from "react";
 import { getSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { isStaffRole } from "@/lib/auth/permissions";
-import { Code2, LayoutDashboard, Shield, User } from "lucide-react";
+import { Code2, Crown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -23,65 +23,68 @@ export default async function PlatformLayout({ children }: PropsWithChildren) {
   return (
     <AppShell
       header={
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary shadow-md">
-              <Code2 className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight">OpenSolve</h1>
-              <p className="text-xs text-muted-foreground">Workspace</p>
-            </div>
+        <div className="flex h-14 items-center justify-between border-b border-border/60 bg-card/50 px-4 backdrop-blur-sm sm:px-6">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 shadow-sm">
+                <Code2 className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div className="hidden sm:block">
+                <span className="text-sm font-semibold tracking-tight">OpenSolve</span>
+              </div>
+            </Link>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            <Link href="/settings/profile">
+              <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </Link>
           </div>
         </div>
       }
       sidebar={
-        <nav className="flex flex-1 flex-col p-3">
-          <ul className="space-y-1">
+        <nav className="flex h-full flex-col p-3">
+          <div className="flex-1 space-y-1">
             {dashboardNav.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="group flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <span>{item.title}</span>
-                  {item.soon ? (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Soon
-                    </Badge>
-                  ) : null}
-                </Link>
-              </li>
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group relative flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-foreground/70 transition-all hover:bg-accent hover:text-foreground"
+              >
+                <span>{item.title}</span>
+                {item.soon ? (
+                  <Badge variant="secondary" className="text-[10px] font-medium">
+                    Soon
+                  </Badge>
+                ) : null}
+              </Link>
             ))}
-          </ul>
+          </div>
 
-          {/* Staff Access */}
           {staffAccess ? (
             <>
               <Separator className="my-3" />
               <Link
                 href="/staff/problems"
-                className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
+                className="flex items-center gap-2.5 rounded-md bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 text-sm font-medium text-primary transition-all hover:from-primary/15 hover:to-primary/10"
               >
-                <Shield className="h-4 w-4" />
+                <Crown className="h-4 w-4" />
                 <span>Staff Console</span>
               </Link>
             </>
           ) : null}
 
-          {/* User Info at Bottom */}
-          <div className="mt-auto border-t pt-3">
-            <div className="flex items-center gap-3 rounded-md px-2 py-2">
+          <div className="mt-auto border-t border-border/60 pt-3">
+            <Link
+              href="/settings/profile"
+              className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent"
+            >
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                   {userInitials}
@@ -89,14 +92,15 @@ export default async function PlatformLayout({ children }: PropsWithChildren) {
               </Avatar>
               <div className="flex-1 overflow-hidden">
                 <p className="truncate text-xs font-medium">{session.user.email}</p>
-                <p className="text-xs text-muted-foreground">Online</p>
+                <p className="text-xs text-muted-foreground">@{session.user.handle}</p>
               </div>
-            </div>
+              <User className="h-4 w-4 text-muted-foreground" />
+            </Link>
           </div>
         </nav>
       }
     >
-      {children}
+      <div className="min-h-[calc(100vh-3.5rem)] bg-background p-4 sm:p-6">{children}</div>
     </AppShell>
   );
 }

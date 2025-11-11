@@ -1,15 +1,36 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
+import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { ContestDashboard } from "@/components/contests/contest-dashboard";
 
-export default function ContestsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ContestsPage() {
+  const caller = await createTRPCCaller();
+  const overview = await caller.contests.overview();
+  const initialSlug =
+    overview.featured?.slug ??
+    overview.live[0]?.slug ??
+    overview.upcoming[0]?.slug ??
+    overview.past[0]?.slug ??
+    null;
+
+  const state = await buildHydrationState([
+    prefetchTrpcQuery("contests.overview", () => caller.contests.overview()),
+    ...(initialSlug
+      ? [
+          prefetchTrpcQuery(
+            "contests.detail",
+            () => caller.contests.detail({ slug: initialSlug }),
+            { input: { slug: initialSlug } },
+          ),
+        ]
+      : []),
+  ]);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Contests</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm text-muted-foreground">
-        <p>Live and upcoming contests, standings, and registration will appear here.</p>
-        <p>Wire up scheduling and rating logic when the judging service is ready.</p>
-      </CardContent>
-    </Card>
+    <HydrationBoundary state={state}>
+      <ContestDashboard initialSlug={initialSlug ?? undefined} />
+    </HydrationBoundary>
   );
 }
