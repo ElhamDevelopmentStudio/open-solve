@@ -1,13 +1,11 @@
 export const DIFFICULTIES = ["EASY", "MEDIUM", "HARD"] as const;
 export const SUBMISSION_STATUSES = [
-  "PENDING",
+  "QUEUED",
   "RUNNING",
-  "AC",
-  "WA",
-  "TLE",
-  "MLE",
-  "RE",
-  "CE",
+  "SUCCEEDED",
+  "FAILED",
+  "RETRYING",
+  "MANUAL_PENDING",
 ] as const;
 
 export const PROBLEM_STATUS_FILTERS = ["SOLVED", "ATTEMPTED", "UNSEEN"] as const;

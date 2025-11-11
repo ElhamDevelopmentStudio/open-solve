@@ -55,6 +55,7 @@ export function RichTextEditor({
   const [isUploading, setIsUploading] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
@@ -96,7 +97,7 @@ export function RichTextEditor({
     if (editor.getHTML() === nextContent) {
       return;
     }
-    editor.commands.setContent(nextContent, false);
+    editor.commands.setContent(nextContent);
   }, [content, editor]);
 
   const handleImageUpload = useCallback(
