@@ -1,7 +1,7 @@
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, ThemeToggle } from "@/components/ui";
 import { siteConfig } from "@/config/site";
 import Link from "next/link";
-import { Code2, Sparkles } from "lucide-react";
+import { Code2, Sparkles } from "@/components/icons";
 
 export const revalidate = 21600;
 
