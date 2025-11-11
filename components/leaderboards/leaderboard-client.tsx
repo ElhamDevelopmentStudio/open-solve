@@ -186,12 +186,12 @@ function LeaderboardSection({
   loadMore,
 }: LeaderboardSectionProps) {
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-            <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <Badge variant="secondary" className="rounded-full text-[10px] font-semibold uppercase tracking-wide">
               Live
             </Badge>
           </div>
@@ -199,9 +199,9 @@ function LeaderboardSection({
         </div>
         {onWindowChange ? (
           <Tabs value={window} onValueChange={(value) => onWindowChange(value as LeaderboardWindow)}>
-            <TabsList className="flex flex-wrap">
+            <TabsList className="rounded-xl">
               {WINDOW_TABS.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value} className="capitalize">
+                <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg capitalize">
                   {tab.label}
                 </TabsTrigger>
               ))}
@@ -212,14 +212,14 @@ function LeaderboardSection({
       <LeaderboardHero hero={hero} meta={meta} />
       {viewerEntry ? <ViewerBadge entry={viewerEntry} /> : null}
       <LeaderboardTable entries={entries} isLoading={isLoading} />
-      <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-muted-foreground">
         <p>
           Updated {meta?.generatedAt ? formatDistanceToNow(new Date(meta.generatedAt), { addSuffix: true }) : "recently"}
         </p>
         <p>{meta?.totalEntries ? `${meta.totalEntries.toLocaleString()} competitors` : null}</p>
       </div>
       {hasMore ? (
-        <Button onClick={loadMore} disabled={isFetchingMore} variant="outline" className="w-full">
+        <Button onClick={loadMore} disabled={isFetchingMore} variant="outline" className="w-full rounded-xl">
           {isFetchingMore ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading more
@@ -239,31 +239,41 @@ function LeaderboardHero({ hero, meta }: { hero: LeaderboardEntry[]; meta?: { pe
   }
   const range = meta?.periodStart ? formatRange(meta.periodStart, meta?.periodEnd ?? null) : null;
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-3">
       {hero.map((entry, index) => (
-        <Card key={entry.user.id} className={cn(index === 0 && "border-primary/60 shadow-lg shadow-primary/20")}
+        <div
+          key={entry.user.id}
+          className={cn(
+            "premium-card space-y-4 rounded-2xl p-6",
+            index === 0 && "border-primary/40 shadow-lg shadow-primary/10"
+          )}
         >
-          <CardHeader className="flex flex-row items-center gap-3">
-            <Medal className={cn("h-5 w-5", index === 0 ? "text-primary" : "text-muted-foreground")}
-            />
-            <div>
-              <CardTitle className="text-base">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "flex h-12 w-12 items-center justify-center rounded-xl",
+              index === 0 ? "bg-primary/10" : "bg-muted"
+            )}>
+              <Medal className={cn("h-6 w-6", index === 0 ? "text-primary" : "text-muted-foreground")} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-lg font-bold">
                 #{entry.rank} {entry.user.handle}
-              </CardTitle>
-              {range ? <p className="text-xs text-muted-foreground">{range}</p> : null}
+              </p>
+              {range ? <p className="truncate text-xs text-muted-foreground">{range}</p> : null}
             </div>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Score</p>
-              <p className="text-lg font-semibold">{formatScore(entry.score)}</p>
+          </div>
+          <div className="flex items-center justify-around rounded-xl border border-border/50 bg-card/30 py-3">
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Score</p>
+              <p className="text-2xl font-bold">{formatScore(entry.score)}</p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Solved</p>
-              <p className="text-lg font-semibold">{entry.solved}</p>
+            <div className="h-8 w-px bg-border" />
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Solved</p>
+              <p className="text-2xl font-bold">{entry.solved}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -275,8 +285,11 @@ type ViewerBadgeProps = {
 
 function ViewerBadge({ entry }: ViewerBadgeProps) {
   return (
-    <div className="rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary">
-      You’re currently #{entry.rank} with {Math.round(entry.score)} pts.
+    <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-6 py-4 text-sm">
+      <Trophy className="h-5 w-5 text-primary" />
+      <p className="font-medium text-primary">
+        You're currently ranked <span className="font-bold">#{entry.rank}</span> with <span className="font-bold">{Math.round(entry.score)}</span> points
+      </p>
     </div>
   );
 }
@@ -293,51 +306,51 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
 
   if (isLoading && entries.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex h-40 items-center justify-center text-muted-foreground">
+      <div className="premium-card rounded-2xl p-12">
+        <div className="flex items-center justify-center text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading leaderboard…
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (entries.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex h-40 items-center justify-center text-muted-foreground">
-          Leaderboard entries will appear once submissions are available.
-        </CardContent>
-      </Card>
+      <div className="premium-card rounded-2xl p-12">
+        <p className="text-center text-muted-foreground">
+          Leaderboard entries will appear once submissions are available
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border">
-      <div className="hidden text-xs font-medium uppercase text-muted-foreground/80 lg:grid lg:grid-cols-12">
-        <span className="col-span-1 px-4 py-3">Rank</span>
-        <span className="col-span-4 px-4 py-3">Competitor</span>
-        <span className="col-span-2 px-4 py-3">Score</span>
-        <span className="col-span-2 px-4 py-3">Solved</span>
-        {showSubmissions ? <span className="col-span-1 px-4 py-3">Attempts</span> : null}
-        {showPenalty ? <span className="col-span-1 px-4 py-3">Penalty</span> : null}
-        {showAvgRuntime ? <span className="col-span-1 px-4 py-3">Avg runtime</span> : null}
+    <div className="premium-card overflow-hidden rounded-2xl">
+      <div className="hidden border-b bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:grid-cols-12">
+        <span className="col-span-1 px-6 py-4">Rank</span>
+        <span className="col-span-4 px-6 py-4">Competitor</span>
+        <span className="col-span-2 px-6 py-4">Score</span>
+        <span className="col-span-2 px-6 py-4">Solved</span>
+        {showSubmissions ? <span className="col-span-1 px-6 py-4">Attempts</span> : null}
+        {showPenalty ? <span className="col-span-1 px-6 py-4">Penalty</span> : null}
+        {showAvgRuntime ? <span className="col-span-1 px-6 py-4">Runtime</span> : null}
       </div>
-      <div className="divide-y">
+      <div className="divide-y divide-border/50">
         {entries.map((entry, index) => (
           <div
             key={`${entry.user.id}-${entry.rank}-${index}`}
-            className="grid grid-cols-2 items-center gap-2 px-4 py-4 text-sm lg:grid-cols-12"
+            className="grid grid-cols-2 items-center gap-3 px-6 py-5 text-sm smooth-transition hover:bg-muted/30 lg:grid-cols-12"
           >
             <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
-              <span className="font-semibold">#{entry.rank}</span>
+              <span className="text-base font-bold">#{entry.rank}</span>
             </div>
             <div className="col-span-2 flex items-center gap-3 lg:col-span-4">
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-11 w-11 ring-2 ring-border/30 ring-offset-2 ring-offset-background">
                 {entry.user.avatarUrl ? <AvatarImage src={entry.user.avatarUrl} alt={entry.user.handle} /> : null}
-                <AvatarFallback>{entry.user.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="text-xs font-semibold">{entry.user.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div>
-                <Link href={`/u/${entry.user.handle}`} className="font-medium text-primary hover:underline">
+              <div className="min-w-0 flex-1">
+                <Link href={`/u/${entry.user.handle}`} className="font-semibold text-primary hover:underline">
                   @{entry.user.handle}
                 </Link>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -347,10 +360,10 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
               </div>
             </div>
             <div className="col-span-1 lg:col-span-2">
-              <p className="font-semibold">{formatScore(entry.score)}</p>
+              <p className="text-base font-bold">{formatScore(entry.score)}</p>
             </div>
             <div className="col-span-1 lg:col-span-2">
-              <p>{entry.solved}</p>
+              <p className="font-semibold">{entry.solved}</p>
             </div>
             {showSubmissions ? (
               <div className="col-span-1">
@@ -376,15 +389,15 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
 
 function RoleBadge({ role, status }: { role: string; status: string }) {
   if (status === "SHADOW_BANNED") {
-    return <Badge variant="destructive">shadow banned</Badge>;
+    return <Badge variant="destructive" className="rounded-full text-[10px]">Shadow Banned</Badge>;
   }
   if (role === "ADMIN") {
-    return <Badge variant="secondary">admin</Badge>;
+    return <Badge variant="secondary" className="rounded-full text-[10px]">Admin</Badge>;
   }
   if (role === "PROBLEM_CURATOR") {
-    return <Badge variant="outline">curator</Badge>;
+    return <Badge variant="outline" className="rounded-full text-[10px]">Curator</Badge>;
   }
-  return <Badge variant="outline">member</Badge>;
+  return null;
 }
 
 function formatScore(score: number) {

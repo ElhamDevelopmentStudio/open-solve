@@ -48,40 +48,45 @@ type OverviewCard = {
 
 function Hero({ overview }: { overview: OverviewCard[] }) {
   return (
-    <div>
+    <div className="space-y-8">
       <div className="space-y-3">
-        <p className="text-xs uppercase text-muted-foreground">OpenSolve rankings</p>
-        <h1 className="text-4xl font-semibold tracking-tight">Leaderboards</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">OpenSolve Rankings</p>
+        <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Leaderboards</h1>
+        <p className="max-w-2xl text-base text-muted-foreground">
           Discover the most consistent problem solvers across weekly, monthly, and all-time windows.
         </p>
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {overview.map((window) => (
-          <Card key={window.window}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base capitalize">{window.window.replace("_", " ")}</CardTitle>
-              <Badge variant="secondary">Top performers</Badge>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+          <div key={window.window} className="premium-card space-y-4 rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold capitalize">{window.window.replace("_", " ")}</h3>
+              <Badge variant="secondary" className="rounded-full text-[10px] font-semibold uppercase">
+                Top 3
+              </Badge>
+            </div>
+            <div className="space-y-3 text-sm">
               {window.hero.length === 0 ? (
-                <p className="text-muted-foreground">No data yet.</p>
+                <p className="py-4 text-center text-muted-foreground">No data yet</p>
               ) : (
-                window.hero.map((entry) => (
-                  <div key={entry.user.id} className="flex items-center justify-between">
-                    <span>@{entry.user.handle}</span>
+                window.hero.map((entry, idx) => (
+                  <div key={entry.user.id} className="flex items-center justify-between rounded-xl border border-border/50 bg-card/30 p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground">#{idx + 1}</span>
+                      <span className="font-medium">@{entry.user.handle}</span>
+                    </div>
                     <span className="font-semibold">{Math.round(entry.score)}</span>
                   </div>
                 ))
               )}
-              <Button variant="ghost" size="sm" asChild className="w-full justify-between">
-                <Link href={`/leaderboards/${window.window === "all_time" ? "global" : window.window}`}>
-                  View board
-                  <span aria-hidden>→</span>
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="w-full justify-between rounded-xl">
+              <Link href={`/leaderboards/${window.window === "all_time" ? "global" : window.window}`}>
+                View Full Board
+                <span aria-hidden>→</span>
+              </Link>
+            </Button>
+          </div>
         ))}
       </div>
     </div>
@@ -90,37 +95,43 @@ function Hero({ overview }: { overview: OverviewCard[] }) {
 
 function Callouts() {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Difficulty capsules</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>Compare how solvers perform on easy, medium, and hard sets independently.</p>
-          <div className="flex gap-2">
-            {(["easy", "medium", "hard"] as const).map((level) => (
-              <Button key={level} variant="outline" asChild>
-                <Link href={`/leaderboards/difficulty/${level}`}>{level}</Link>
-              </Button>
-            ))}
+    <div className="grid gap-6 md:grid-cols-2">
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Badge className="h-6 w-6 rounded-md bg-primary text-[10px] font-bold">D</Badge>
           </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Tag spotlights</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>Track mastery for specific topics like DP, graphs, and arrays.</p>
-          <div className="flex gap-2">
-            {["graphs", "dp", "arrays"].map((slug) => (
-              <Button key={slug} variant="outline" asChild>
-                <Link href={`/leaderboards/tag/${slug}`}>#{slug}</Link>
-              </Button>
-            ))}
+          <h3 className="text-lg font-semibold">Difficulty Capsules</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Compare how solvers perform on easy, medium, and hard sets independently.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(["easy", "medium", "hard"] as const).map((level) => (
+            <Button key={level} variant="outline" size="sm" asChild className="rounded-xl capitalize">
+              <Link href={`/leaderboards/difficulty/${level}`}>{level}</Link>
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10">
+            <Badge className="h-6 w-6 rounded-md bg-secondary text-[10px] font-bold">#</Badge>
           </div>
-        </CardContent>
-      </Card>
+          <h3 className="text-lg font-semibold">Tag Spotlights</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Track mastery for specific topics like DP, graphs, and arrays.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {["graphs", "dp", "arrays"].map((slug) => (
+            <Button key={slug} variant="outline" size="sm" asChild className="rounded-xl">
+              <Link href={`/leaderboards/tag/${slug}`}>#{slug}</Link>
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

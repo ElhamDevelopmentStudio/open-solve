@@ -20,11 +20,13 @@ export default async function GlobalDiscussPage() {
   ]);
 
   return (
-    <div className="space-y-8 py-10">
-      <div className="space-y-2">
-        <p className="text-xs uppercase text-muted-foreground">Community</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Global discussions</h1>
-        <p className="text-sm text-muted-foreground">Share hints, ask for help, and talk platform meta with the OpenSolve community.</p>
+    <div className="mx-auto max-w-6xl space-y-8 py-10">
+      <div className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Community</p>
+        <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Global Discussions</h1>
+        <p className="max-w-2xl text-base text-muted-foreground">
+          Share hints, ask for help, and talk platform meta with the OpenSolve community
+        </p>
       </div>
       <HydrationBoundary state={hydration}>
         <GlobalDiscussionsClient

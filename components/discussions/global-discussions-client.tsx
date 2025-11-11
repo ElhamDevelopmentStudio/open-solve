@@ -73,14 +73,15 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
 
   return (
     <div className="space-y-8">
-      <section className="space-y-4 rounded-3xl border border-border/70 bg-card/80 p-6">
+      <section className="premium-card space-y-5 rounded-2xl p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Start a topic</p>
-            <h1 className="text-2xl font-semibold">Community discussions</h1>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Start a Topic</p>
+            <h2 className="text-2xl font-semibold">Community Discussions</h2>
           </div>
-          <Button variant="ghost" size="sm" className="gap-2" onClick={resetFilters}>
-            Reset filters
+          <Button variant="ghost" size="sm" className="gap-2 rounded-xl" onClick={resetFilters}>
+            <Filter className="h-4 w-4" />
+            Reset Filters
           </Button>
         </div>
         <DiscussionComposer
@@ -90,11 +91,11 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
         />
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <Tabs value={tab} onValueChange={(value) => setTab(value as "trending" | "latest" | "help" | "meta")}>
-          <TabsList className="grid grid-cols-4">
+          <TabsList className="grid w-full grid-cols-4 rounded-xl">
             {tabOptions.map((option) => (
-              <TabsTrigger key={option.value} value={option.value}>
+              <TabsTrigger key={option.value} value={option.value} className="rounded-lg">
                 {option.label}
               </TabsTrigger>
             ))}
@@ -103,12 +104,17 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
         <div className="flex flex-wrap items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 rounded-xl">
                 <Filter className="h-4 w-4" /> Tags
+                {selectedTags.length > 0 ? (
+                  <Badge variant="secondary" className="ml-1 h-5 rounded-full px-1.5 text-[10px]">
+                    {selectedTags.length}
+                  </Badge>
+                ) : null}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Popular tags</DropdownMenuLabel>
+              <DropdownMenuLabel>Popular Tags</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {tagOptions.slice(0, 12).map((tag) => (
                 <DropdownMenuCheckboxItem
@@ -123,7 +129,14 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Difficulty</Button>
+              <Button variant="outline" size="sm" className="rounded-xl">
+                Difficulty
+                {selectedDifficulty.length > 0 ? (
+                  <Badge variant="secondary" className="ml-2 h-5 rounded-full px-1.5 text-[10px]">
+                    {selectedDifficulty.length}
+                  </Badge>
+                ) : null}
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>Difficulty</DropdownMenuLabel>
@@ -139,13 +152,13 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-      {selectedTags.map((slug) => (
-            <Badge key={slug} variant="secondary" className="cursor-pointer" onClick={() => toggleTag(slug)}>
+          {selectedTags.map((slug) => (
+            <Badge key={slug} variant="secondary" className="cursor-pointer rounded-full" onClick={() => toggleTag(slug)}>
               #{slug}
             </Badge>
           ))}
           {selectedDifficulty.map((value) => (
-            <Badge key={value} variant="outline" className="cursor-pointer" onClick={() => toggleDifficulty(value)}>
+            <Badge key={value} variant="outline" className="cursor-pointer rounded-full" onClick={() => toggleDifficulty(value)}>
               {value}
             </Badge>
           ))}
@@ -153,12 +166,13 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
       </section>
 
       {listQuery.isLoading ? (
-        <div className="flex items-center justify-center rounded-3xl border border-border/60 bg-card/70 p-12 text-sm text-muted-foreground">
-          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading threads…
+        <div className="premium-card flex items-center justify-center rounded-2xl p-16 text-sm text-muted-foreground">
+          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading discussions…
         </div>
       ) : threads.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-border/60 bg-muted/10 p-12 text-center text-sm text-muted-foreground">
-          No discussions yet. Start the conversation above.
+        <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 p-16 text-center">
+          <p className="text-sm font-medium text-muted-foreground">No discussions yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">Start the conversation above</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -170,12 +184,18 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
           })}
           {listQuery.hasNextPage ? (
             <Button
-              className="w-full"
+              className="w-full rounded-xl"
               variant="outline"
               disabled={listQuery.isFetchingNextPage}
               onClick={() => listQuery.fetchNextPage()}
             >
-              {listQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+              {listQuery.isFetchingNextPage ? (
+                <>
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading…
+                </>
+              ) : (
+                "Load More"
+              )}
             </Button>
           ) : null}
         </div>
