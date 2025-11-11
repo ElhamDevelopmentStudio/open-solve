@@ -190,7 +190,7 @@ describe("Submissions", () => {
         problemId: problem.id,
         problemVersionId: version.id,
         languageCode: language.code,
-        status: SubmissionStatus.PENDING,
+        status: SubmissionStatus.QUEUED,
         sourceCodeRef: `inline://${unique("src")}`,
         codeHash: unique("hash"),
       },
@@ -215,13 +215,13 @@ describe("Submissions", () => {
     const completed = await prisma.submission.update({
       where: { id: submission.id },
       data: {
-        status: SubmissionStatus.COMPLETED,
+        status: SubmissionStatus.SUCCEEDED,
         verdictCode: verdict.code,
         score: 100,
         timeUsedMs: 45,
       },
     });
-    expect(completed.status).toBe(SubmissionStatus.COMPLETED);
+    expect(completed.status).toBe(SubmissionStatus.SUCCEEDED);
     expect(completed.verdictCode).toBe(verdict.code);
 
     await prisma.submission.update({

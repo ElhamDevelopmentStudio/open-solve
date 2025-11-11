@@ -79,7 +79,7 @@ export function onRequestError(
   context: Readonly<{
     routerKind: "Pages Router" | "App Router";
     routePath: string;
-    routeType: "render" | "route" | "action" | "proxy";
+    routeType: "render" | "route" | "action" | "middleware";
     renderSource?:
       | "react-server-components"
       | "react-server-components-payload"
