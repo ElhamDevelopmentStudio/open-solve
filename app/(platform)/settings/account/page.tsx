@@ -1,19 +1,19 @@
 "use client";
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-    Badge,
-    Button,
-    Input,
-    Skeleton,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  Badge,
+  Button,
+  Input,
+  Skeleton,
 } from "@/components/ui";
 import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import { sessionQueryOptions, userScopedListOptions } from "@/lib/react-query/policies";
@@ -21,19 +21,19 @@ import { trpc } from "@/lib/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import {
-    AlertTriangle,
-    CheckCircle2,
-    Loader2,
-    LogOut,
-    Mail,
-    Monitor,
-    Shield,
-    Smartphone,
-    Tablet,
-    Trash2,
-    User as UserIcon,
-    XCircle
-} from "lucide-react";
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  LogOut,
+  Mail,
+  Monitor,
+  Shield,
+  Smartphone,
+  Tablet,
+  Trash2,
+  User as UserIcon,
+  XCircle
+} from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";

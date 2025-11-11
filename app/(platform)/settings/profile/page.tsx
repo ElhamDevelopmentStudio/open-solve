@@ -1,9 +1,9 @@
 "use client";
 
-import { trpc } from "@/lib/trpc/client";
-import { sessionQueryOptions } from "@/lib/react-query/policies";
-import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Button,
   Form,
   FormControl,
@@ -12,19 +12,19 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  Textarea,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
   Skeleton,
+  Textarea,
 } from "@/components/ui";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
+import { sessionQueryOptions } from "@/lib/react-query/policies";
+import { trpc } from "@/lib/trpc/client";
 import { updateProfileSchema, type UpdateProfileInput } from "@/lib/validators/auth";
-import { toast } from "sonner";
-import { useState, useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2, Upload } from "@/components/icons";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function ProfileSettingsPage() {
   const queryClient = useQueryClient();

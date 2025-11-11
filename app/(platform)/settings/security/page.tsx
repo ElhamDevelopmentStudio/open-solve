@@ -1,18 +1,14 @@
 "use client";
 
-import { trpc } from "@/lib/trpc/client";
-import { invalidateAuthSession } from "@/lib/react-query/invalidation";
-import { sessionQueryOptions } from "@/lib/react-query/policies";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  changePasswordSchema,
-  changeEmailSchema,
-  type ChangePasswordInput,
-  type ChangeEmailInput,
-} from "@/lib/validators/auth";
-import {
+  Badge,
   Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
   Form,
   FormControl,
   FormField,
@@ -20,20 +16,24 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  Badge,
   Skeleton,
 } from "@/components/ui";
-import { toast } from "sonner";
-import { useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { invalidateAuthSession } from "@/lib/react-query/invalidation";
+import { sessionQueryOptions } from "@/lib/react-query/policies";
+import { trpc } from "@/lib/trpc/client";
+import {
+  changeEmailSchema,
+  changePasswordSchema,
+  type ChangeEmailInput,
+  type ChangePasswordInput,
+} from "@/lib/validators/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Key, Mail, Shield, Loader2, CheckCircle2, Copy, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Copy, Key, Loader2, Mail, Shield, ShieldCheck } from "@/components/icons";
+import { QRCodeSVG } from "qrcode.react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function SecuritySettingsPage() {
   const queryClient = useQueryClient();

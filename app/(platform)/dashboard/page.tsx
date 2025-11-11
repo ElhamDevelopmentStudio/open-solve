@@ -1,12 +1,14 @@
-import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
+import { RecentSubmissionsTable, type RecentSubmissionRow } from "@/components/dashboard/recent-submissions-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { getSession } from "@/lib/auth/session";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/lib/trpc/router";
+import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { cn } from "@/lib/utils";
+import { ProblemProposalStatus } from "@prisma/client";
+import type { inferRouterOutputs } from "@trpc/server";
+import { formatDistanceToNow } from "date-fns";
 import {
   ArrowRight05Icon,
   Award02Icon,
@@ -16,9 +18,7 @@ import {
   SparklesIcon,
   Target01Icon,
 } from "hugeicons-react";
-import { RecentSubmissionsTable, type RecentSubmissionRow } from "@/components/dashboard/recent-submissions-table";
-import { cn } from "@/lib/utils";
-import { ProblemProposalStatus } from "@prisma/client";
+import Link from "next/link";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type SubmissionSnapshot = RouterOutputs["submissions"]["listMine"];
