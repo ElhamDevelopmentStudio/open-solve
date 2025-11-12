@@ -16,31 +16,35 @@ export default async function ProblemSubmissionsPage({
   const enforcedSearch = { ...resolvedSearch, problem: resolvedParams.slug };
   const initialInput = buildSubmissionListInputFromParams(enforcedSearch);
   const caller = await createTRPCCaller();
+  let initialData;
+  let filterMetadata;
+  let problem;
   try {
-    const [initialData, filterMetadata, problem] = await Promise.all([
+    [initialData, filterMetadata, problem] = await Promise.all([
       caller.submissions.listMine(initialInput),
       caller.submissions.filters(),
       caller.problems.detail({ slug: resolvedParams.slug }),
     ]);
-    return (
-      <div className="space-y-6">
-        <div className="rounded-xl border border-border bg-card/70 p-4">
-          <p className="text-xs uppercase text-muted-foreground">Problem</p>
-          <h1 className="text-xl font-semibold text-foreground">{problem.title}</h1>
-        </div>
-        <SubmissionsClient
-          initialInput={initialInput}
-          initialData={initialData}
-          filterMetadata={filterMetadata}
-          lockedProblemSlug={resolvedParams.slug}
-          lockedProblemTitle={problem.title}
-        />
-      </div>
-    );
   } catch (error) {
     if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
       notFound();
     }
     throw error;
   }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-card/70 p-4">
+        <p className="text-xs uppercase text-muted-foreground">Problem</p>
+        <h1 className="text-xl font-semibold text-foreground">{problem.title}</h1>
+      </div>
+      <SubmissionsClient
+        initialInput={initialInput}
+        initialData={initialData}
+        filterMetadata={filterMetadata}
+        lockedProblemSlug={resolvedParams.slug}
+        lockedProblemTitle={problem.title}
+      />
+    </div>
+  );
 }
