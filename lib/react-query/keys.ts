@@ -79,6 +79,17 @@ export const trpcProcedures = {
       list: "proposals.staffList" as ProcedureName,
     },
   },
+  submissions: {
+    runSample: "submissions.runSample" as ProcedureName,
+    create: "submissions.create" as ProcedureName,
+    get: "submissions.get" as ProcedureName,
+    listMine: "submissions.listMine" as ProcedureName,
+    listByProblem: "submissions.listByProblem" as ProcedureName,
+    getShare: "submissions.getShare" as ProcedureName,
+    filters: "submissions.filters" as ProcedureName,
+    saveDraft: "submissions.saveDraft" as ProcedureName,
+    getDrafts: "submissions.getDrafts" as ProcedureName,
+  },
 } as const;
 
 export type QueryTag =
@@ -87,7 +98,9 @@ export type QueryTag =
   | "tags"
   | "session"
   | "staffProblems"
-  | "proposals";
+  | "proposals"
+  | "submissions"
+  | "submissionDrafts";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
@@ -96,4 +109,11 @@ export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   session: [trpcProcedures.auth.getSession, trpcProcedures.auth.getSessions],
   staffProblems: [trpcProcedures.staff.problems.list, trpcProcedures.staff.problems.get],
   proposals: [trpcProcedures.proposals.listMine, trpcProcedures.proposals.staffList],
+  submissions: [
+    trpcProcedures.submissions.listMine,
+    trpcProcedures.submissions.listByProblem,
+    trpcProcedures.submissions.get,
+    trpcProcedures.submissions.filters,
+  ],
+  submissionDrafts: [trpcProcedures.submissions.getDrafts],
 };

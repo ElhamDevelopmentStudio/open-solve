@@ -2,7 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { generateUniqueProblemSlug } from "@/lib/problems/slugify";
 import { staffProcedure, router } from "@/lib/trpc/trpc";
-import { Prisma, ProblemState, ProblemVisibility, TestCaseKind, type UserRole } from "@prisma/client";
+import {
+  Prisma,
+  ProblemJudgeMode,
+  ProblemState,
+  ProblemVisibility,
+  TestCaseKind,
+  type UserRole,
+} from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -268,6 +275,7 @@ export const staffProblemsRouter = router({
       slug: problem.slug,
       state: problem.state,
       visibility: problem.visibility,
+      judgeMode: problem.judgeMode,
       authorId: problem.authorId,
       difficulty: problem.difficulty?.code ?? null,
       tags: problem.tags.map((entry) => entry.tag),
@@ -345,6 +353,7 @@ export const staffProblemsRouter = router({
         visibility: z.nativeEnum(ProblemVisibility),
         difficultyCode: z.string().nullable(),
         tagSlugs: z.array(z.string()).min(1),
+        judgeMode: z.nativeEnum(ProblemJudgeMode),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -384,6 +393,7 @@ export const staffProblemsRouter = router({
           data: {
             slug: problem.slug,
             visibility: input.visibility,
+            judgeMode: input.judgeMode,
             difficultyId: difficulty?.id,
             updatedById: ctx.user.id,
           },

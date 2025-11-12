@@ -236,3 +236,5 @@ Session is auto-loaded in tRPC context. Use appropriate procedure type:
 - [ ] Review audit logs regularly
 - [ ] Test 2FA enrollment & recovery flows
 - [ ] Test email deliverability across providers
+
+

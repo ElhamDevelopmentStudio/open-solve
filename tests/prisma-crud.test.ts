@@ -190,7 +190,7 @@ describe("Submissions", () => {
         problemId: problem.id,
         problemVersionId: version.id,
         languageCode: language.code,
-        status: SubmissionStatus.PENDING,
+        status: SubmissionStatus.QUEUED,
         sourceCodeRef: `inline://${unique("src")}`,
         codeHash: unique("hash"),
       },
@@ -215,13 +215,13 @@ describe("Submissions", () => {
     const completed = await prisma.submission.update({
       where: { id: submission.id },
       data: {
-        status: SubmissionStatus.COMPLETED,
+        status: SubmissionStatus.SUCCEEDED,
         verdictCode: verdict.code,
         score: 100,
         timeUsedMs: 45,
       },
     });
-    expect(completed.status).toBe(SubmissionStatus.COMPLETED);
+    expect(completed.status).toBe(SubmissionStatus.SUCCEEDED);
     expect(completed.verdictCode).toBe(verdict.code);
 
     await prisma.submission.update({
@@ -232,6 +232,43 @@ describe("Submissions", () => {
       where: { id: submission.id, deletedAt: null },
     });
     expect(visible).toHaveLength(0);
+  });
+});
+
+describe("Submission drafts", () => {
+  test("submission drafts can be stored and pruned", async () => {
+    const { author, problem } = await createProblemGraph();
+    const language = await createLanguage();
+
+    const draft = await prisma.submissionDraft.create({
+      data: {
+        userId: author.id,
+        problemId: problem.id,
+        languageCode: language.code,
+        sourceCode: "print('hello world')",
+        cursorOffset: 12,
+        savedVia: "manual",
+        sourceHash: unique("hash"),
+      },
+    });
+
+    expect(draft.sourceCode).toContain("hello");
+
+    await prisma.submissionDraft.update({
+      where: { id: draft.id },
+      data: { sourceCode: "print('updated')" },
+    });
+
+    const drafts = await prisma.submissionDraft.findMany({
+      where: { userId: author.id, problemId: problem.id, languageCode: language.code },
+    });
+    expect(drafts).toHaveLength(1);
+
+    await prisma.submissionDraft.delete({ where: { id: draft.id } });
+    const afterDelete = await prisma.submissionDraft.findMany({
+      where: { userId: author.id, problemId: problem.id },
+    });
+    expect(afterDelete).toHaveLength(0);
   });
 });
 

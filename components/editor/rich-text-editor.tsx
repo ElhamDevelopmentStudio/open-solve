@@ -21,7 +21,7 @@ import {
   Link2,
   Loader2,
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,7 @@ export function RichTextEditor({
   const [isUploading, setIsUploading] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
@@ -87,6 +88,17 @@ export function RichTextEditor({
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    const nextContent = content ?? "";
+    if (editor.getHTML() === nextContent) {
+      return;
+    }
+    editor.commands.setContent(nextContent);
+  }, [content, editor]);
 
   const handleImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {

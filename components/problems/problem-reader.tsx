@@ -3,6 +3,7 @@
 import "katex/dist/katex.min.css";
 
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
+import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -14,15 +15,12 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackEvent } from "@/lib/telemetry/client";
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
-import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2, RotateCcw } from "lucide-react";
+import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -30,7 +28,25 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { toast } from "sonner";
-import { CodeEditor } from "@/components/code/code-editor";
+
+const ProblemWorkspace = dynamic(
+  () => import("@/components/problems/problem-workspace").then((mod) => mod.ProblemWorkspace),
+  {
+    ssr: false,
+    loading: () => (
+      <section
+        id="editor"
+        className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
+      >
+        <div className="animate-pulse space-y-4">
+          <div className="h-5 w-48 rounded bg-muted" />
+          <div className="h-4 w-full rounded bg-muted" />
+          <div className="h-[320px] rounded-xl border border-white/10 bg-background/60" />
+        </div>
+      </section>
+    ),
+  },
+);
 
 const sectionsOrder = [
   { id: "statement", label: "Statement" },
@@ -42,10 +58,6 @@ const sectionsOrder = [
 
 const formatDifficulty = (value?: string | null) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase() : "Unrated";
-
-const SUPPORTED_LANGUAGE_SET = new Set<SupportedLanguage>(SUPPORTED_LANGUAGES);
-const isWorkspaceLanguage = (code: string): code is SupportedLanguage =>
-  SUPPORTED_LANGUAGE_SET.has(code as SupportedLanguage);
 
 export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
   const prefersReducedMotion = useReducedMotion();
@@ -183,12 +195,20 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
             </Badge>
+            {problem.judgeMode !== "AUTO" ? (
+              <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-200">
+                Manual Review
+              </Badge>
+            ) : null}
             <ProblemStatusBadge status={problem.status} />
             {lastSubmissionLabel ? (
               <span className="text-xs text-muted-foreground">
                 Last attempt {lastSubmissionLabel}
               </span>
             ) : null}
+            <Button size="sm" variant="outline" asChild className="ml-auto">
+              <Link href={`/problems/${problem.slug}/submissions`}>Attempt history</Link>
+            </Button>
           </div>
           <div className="mt-4 flex flex-wrap items-start gap-4">
             <div className="flex-1 space-y-2">
@@ -419,171 +439,6 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
   );
 }
 
-function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload }) {
-  const languageOptions = useMemo(() => {
-    if (problem.languages.length > 0) {
-      return problem.languages.filter((language) => isWorkspaceLanguage(language.code));
-    }
-    return SUPPORTED_LANGUAGES.map((code) => ({
-      code,
-      displayName: code.toUpperCase(),
-      codeStub: getDefaultCodeStub(code),
-      fileExtension: null,
-    }));
-  }, [problem.id]);
-
-  const defaultLanguage = useMemo(
-    () => languageOptions[0]?.code as SupportedLanguage | undefined,
-    [languageOptions],
-  );
-  const defaultMap = useMemo(
-    () =>
-      languageOptions.reduce<Record<string, string>>((acc, language) => {
-        if (!isWorkspaceLanguage(language.code)) {
-          return acc;
-        }
-        acc[language.code] = language.codeStub ?? getDefaultCodeStub(language.code);
-        return acc;
-      }, {}),
-    [languageOptions, problem.id],
-  );
-
-  const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage | null>(
-    defaultLanguage ?? null,
-  );
-  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(defaultMap);
-
-  useEffect(() => {
-    setCodeByLanguage(defaultMap);
-    setActiveLanguage(defaultLanguage ?? null);
-  }, [defaultLanguage, defaultMap]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = localStorage.getItem(`opensolve:workspace:${problem.id}`);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, string>;
-        setCodeByLanguage((state) => ({ ...state, ...parsed }));
-      }
-    } catch {
-      // ignore
-    }
-  }, [problem.id]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem(`opensolve:workspace:${problem.id}`, JSON.stringify(codeByLanguage));
-    } catch {
-      // ignore write errors
-    }
-  }, [codeByLanguage, problem.id]);
-
-  if (!activeLanguage) {
-    return (
-      <section
-        id="editor"
-        className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
-      >
-        <h2 className="text-xl font-semibold">Workspace</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          No languages are available yet. Check back once this problem has runtime support.
-        </p>
-      </section>
-    );
-  }
-
-  const activeCode = codeByLanguage[activeLanguage] ?? defaultMap[activeLanguage] ?? "";
-  const activeLanguageMeta = languageOptions.find((lang) => lang.code === activeLanguage);
-
-  const handleReset = () => {
-    setCodeByLanguage((state) => ({
-      ...state,
-      [activeLanguage]: defaultMap[activeLanguage] ?? getDefaultCodeStub(activeLanguage),
-    }));
-    toast.success("Stub restored");
-  };
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(activeCode);
-      toast.success("Copied code to clipboard");
-    } catch {
-      toast.error("Unable to copy");
-    }
-  };
-
-  return (
-    <section
-      id="editor"
-      className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
-    >
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Workspace</h2>
-          <p className="text-sm text-muted-foreground">
-            Pick a language, tweak the stub, and code right in your browser. Drafts auto-save per
-            language on this device.
-          </p>
-        </div>
-        <Select
-          value={activeLanguage ?? undefined}
-          onValueChange={(value) => setActiveLanguage(value as SupportedLanguage)}
-        >
-          <SelectTrigger className="w-full md:w-56">
-            <SelectValue placeholder="Select language" />
-          </SelectTrigger>
-          <SelectContent>
-            {languageOptions.map((language) => (
-              <SelectItem key={language.code} value={language.code}>
-                {language.displayName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="mt-6 space-y-3 rounded-2xl border border-white/5 bg-background/60 p-4">
-        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
-          <span>{activeLanguageMeta?.displayName ?? activeLanguage}</span>
-          {activeLanguageMeta?.fileExtension ? (
-            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px]">
-              .{activeLanguageMeta.fileExtension}
-            </span>
-          ) : null}
-        </div>
-        <CodeEditor
-          value={activeCode}
-          language={activeLanguage}
-          minHeight={400}
-          onChange={(value) =>
-            setCodeByLanguage((state) => ({
-              ...state,
-              [activeLanguage]: value,
-            }))
-          }
-          ariaLabel="Problem workspace editor"
-        />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            Autosaved locally · {activeLanguageMeta?.displayName ?? activeLanguage}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={handleReset}>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reset stub
-            </Button>
-            <Button type="button" size="sm" onClick={handleCopy}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy code
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function ProblemSection({
   id,
   title,
@@ -597,10 +452,16 @@ function ProblemSection({
 }) {
   const [open, setOpen] = useState(true);
 
-  const copyAnchor = useCallback(() => {
+  const copyAnchor = useCallback(async () => {
     if (typeof window === "undefined") return;
-    navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#${id}`);
-    toast.success("Section link copied");
+    const success = await copyToClipboard(
+      `${window.location.origin}${window.location.pathname}#${id}`,
+    );
+    if (success) {
+      toast.success("Section link copied");
+    } else {
+      toast.error("Clipboard unavailable");
+    }
   }, [id]);
 
   const heading = (
@@ -791,10 +652,14 @@ function CopyButton({
   onCopy?: () => void;
   label?: string;
 }) {
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
-    onCopy?.();
+  const handleCopy = async () => {
+    const success = await copyToClipboard(text);
+    if (success) {
+      toast.success("Copied to clipboard");
+      onCopy?.();
+    } else {
+      toast.error("Clipboard unavailable");
+    }
   };
   return (
     <Button
@@ -848,4 +713,34 @@ function useReducedMotion() {
     return () => media.removeEventListener("change", handle);
   }, []);
   return prefers;
+}
+
+async function copyToClipboard(text: string) {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  if (typeof document !== "undefined") {
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return successful;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 }

@@ -10,7 +10,7 @@ import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") || "";
+  const token = searchParams?.get("token") || "";
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
@@ -85,3 +85,4 @@ export default function VerifyEmailPage() {
     </Card>
   );
 }
+

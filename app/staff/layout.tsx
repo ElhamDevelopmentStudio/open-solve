@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
 import { ThemeToggle } from "@/components/ui";
-import { ArrowLeft, Code2, FileText, Shield, ClipboardList } from "lucide-react";
+import { ArrowLeft, Code2, FileText, Shield, ClipboardList, Gavel } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +46,13 @@ export default async function StaffLayout({ children }: PropsWithChildren) {
                 >
                   <ClipboardList className="h-4 w-4" />
                   <span>Proposals</span>
+                </Link>
+                <Link
+                  href="/staff/judge/manual"
+                  className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Gavel className="h-4 w-4" />
+                  <span>Judge</span>
                 </Link>
               </nav>
             </div>

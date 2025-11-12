@@ -5,9 +5,10 @@ import {
   PROBLEM_SORT_OPTIONS,
   PROBLEM_STATUS_FILTERS,
 } from "@/lib/problems/constants";
+import { parseProblemSamples, type ProblemSample as ParsedProblemSample } from "@/lib/problems/samples";
 import { prisma } from "@/lib/prisma";
 import { publicProcedure, router } from "@/lib/trpc/trpc";
-import { Prisma, SubmissionStatus, TestCaseKind } from "@prisma/client";
+import { Prisma, SubmissionStatus, TestCaseKind, ProblemJudgeMode } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -54,6 +55,7 @@ export type ProblemDetailPayload = {
   slug: string;
   title: string;
   difficulty: string | null;
+  judgeMode: ProblemJudgeMode;
   languages: Array<{
     code: string;
     displayName: string;
@@ -81,7 +83,7 @@ export type ProblemDetailPayload = {
     statement: string;
     constraints: string;
     hints: string | null;
-    samples: Sample[];
+    samples: ParsedProblemSample[];
     editorial: string | null;
     sampleTestCases: Array<{
       ordinal: number;
@@ -106,7 +108,7 @@ export type ProblemFilterMetadata = {
   tags: Array<{ slug: string; name: string; problemCount: number }>;
 };
 
-export type ProblemSample = Sample;
+export type ProblemSample = ParsedProblemSample;
 
 const DIFFICULTY_DEFAULTS: ProblemFiltersInput["difficulty"] = ["EASY", "MEDIUM", "HARD"];
 
@@ -222,8 +224,8 @@ async function getUserProblemStatus(userId: string) {
       where: {
         userId,
         deletedAt: null,
-        status: SubmissionStatus.COMPLETED,
-        verdictCode: "AC",
+        status: SubmissionStatus.SUCCEEDED,
+        verdictCode: { in: ["AC", "MANUAL_ACCEPTED"] },
       },
       distinct: ["problemId"],
       select: { problemId: true },
@@ -313,27 +315,6 @@ function inferProblemStatus(
     return "ATTEMPTED";
   }
   return "UNSEEN";
-}
-
-type Sample = { input: string; output: string; explanation?: string };
-
-function parseSamples(samples: Prisma.JsonValue | null | undefined): Sample[] {
-  if (!samples || !Array.isArray(samples)) {
-    return [];
-  }
-
-  return samples
-    .map((raw) => {
-      if (typeof raw !== "object" || raw === null) return null;
-      const value = raw as Record<string, unknown>;
-      const input = typeof value.input === "string" ? (value.input as string) : "";
-      const output = typeof value.output === "string" ? (value.output as string) : "";
-      const explanation =
-        typeof value.explanation === "string" ? (value.explanation as string) : undefined;
-      if (!input && !output) return null;
-      return { input, output, explanation };
-    })
-    .filter(Boolean) as Sample[];
 }
 
 export const problemsRouter = router({
@@ -487,7 +468,7 @@ export const problemsRouter = router({
     const status = inferProblemStatus(problem.id, userStatus);
     const lastSubmissionAt = userStatus?.lastSubmission.get(problem.id) ?? null;
 
-    const samplesFromVersion = parseSamples(problem.currentVersion.samples);
+    const samplesFromVersion = parseProblemSamples(problem.currentVersion.samples);
 
     const tagIds = problem.tags
       .map((entry) => entry.tagId)
@@ -580,6 +561,7 @@ export const problemsRouter = router({
       slug: problem.slug,
       title: problem.currentVersion.title,
       difficulty: problem.difficulty?.code ?? null,
+      judgeMode: problem.judgeMode,
       languages: languagesForResponse,
       status,
       lastSubmissionAt,
