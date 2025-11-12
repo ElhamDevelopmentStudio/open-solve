@@ -9,6 +9,7 @@ import {
   CardTitle,
   Dialog,
   DialogContent,
+  DialogTrigger,
   Form,
   FormControl,
   FormField,
@@ -26,13 +27,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
   Switch,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Textarea,
+  Textarea
 } from "@/components/ui";
 import { contestBuilderSchema, contestProblemSettingsSchema } from "@/lib/contests/schema";
 import { defaultContestSettings } from "@/lib/contests/settings";
@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ContestRuleset, ContestType, ContestVisibility } from "@prisma/client";
 import { format } from "date-fns";
-import { Check, ChevronLeft, ChevronRight, Plus, Search, Sparkles, Trash2 } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, ClipboardCheck, Layers, Plus, Search, Shield, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
@@ -49,6 +49,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const STEP_LABELS = ["Basics", "Schedule", "Problems", "Rules", "Review"] as const;
+const STEP_META = [
+  { label: "Basics", description: "Identity, copy, and format.", icon: Sparkles },
+  { label: "Schedule", description: "Window, grace, and access.", icon: CalendarDays },
+  { label: "Problems", description: "Curate the exact set.", icon: Layers },
+  { label: "Rules", description: "Scoring, freeze, anti-cheat.", icon: Shield },
+  { label: "Review", description: "Final audit before launch.", icon: ClipboardCheck },
+] as const;
 const STEP_VALIDATION_FIELDS: Record<number, (keyof BuilderFormValues)[]> = {
   0: ["name", "slug"],
   1: ["startsAt", "endsAt"],
@@ -285,7 +292,7 @@ export function ContestCreationWizard({ canCreate = true, onCreated, variant = "
       const message =
         resolveMessageForFields(form.formState.errors, fields) ?? resolveFriendlyErrorMessage(form.formState.errors);
       if (message) {
-        toast.error(message);
+        toast.warning(message);
       }
     }
     return isValid;
@@ -300,7 +307,7 @@ export function ContestCreationWizard({ canCreate = true, onCreated, variant = "
   const handleSubmit = form.handleSubmit(
     (values) => {
       if (selectedProblems.length === 0) {
-        toast.error("Add at least one problem before launching.");
+        toast.warning("Add at least one problem before launching.");
         setStep(2);
         return;
       }
@@ -323,48 +330,80 @@ export function ContestCreationWizard({ canCreate = true, onCreated, variant = "
     (errors) => {
       const message = resolveFriendlyErrorMessage(errors);
       if (message) {
-        toast.error(message);
+        toast.warning(message);
       }
     },
   );
+  const stepProgress = ((step + 1) / STEP_LABELS.length) * 100;
+  const handleResetClick = () => {
+    resetBuilder();
+    toast.info("Builder reset", {
+      description: "All inputs returned to their defaults.",
+    });
+  };
   const builderMarkup = (
-    <>
-      <div className="border-b px-6 py-4">
-        <p className="text-xs uppercase text-muted-foreground">Contest builder</p>
-        <h2 className="text-lg font-semibold leading-tight">Launch a new contest</h2>
-        <p className="text-sm text-muted-foreground">Guide admins through the required switches—no spreadsheets necessary.</p>
+    <div className="space-y-8 p-6 sm:p-8">
+      <div className="rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card/80 to-accent/30 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.12)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Contest Builder</p>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Launch a new contest</h2>
+              <p className="text-sm text-muted-foreground">Five precise passes cover everything from copy to anti-cheat.</p>
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Step <span className="font-semibold text-foreground">{step + 1}</span> / {STEP_LABELS.length}
+          </div>
+        </div>
+        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-border/60">
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${stepProgress}%` }} />
+        </div>
       </div>
-      <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="border-r bg-muted/30 px-4 py-6">
-          <ol className="space-y-3 text-sm">
-            {STEP_LABELS.map((label, index) => (
-              <li key={label}>
-                <button
-                  type="button"
-                  disabled={index > step}
-                  onClick={() => goToStep(index)}
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="space-y-4 rounded-3xl border border-border/70 bg-card/90 p-4">
+          {STEP_META.map((meta, index) => {
+            const status = index < step ? "complete" : index === step ? "active" : "upcoming";
+            const Icon = meta.icon;
+            return (
+              <button
+                key={meta.label}
+                type="button"
+                disabled={index > step}
+                onClick={() => goToStep(index)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition",
+                  status === "complete"
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : status === "active"
+                      ? "border-foreground/20 bg-card text-foreground shadow-lg"
+                      : "border-border/60 text-muted-foreground",
+                )}
+              >
+                <span
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition",
-                    index === step ? "bg-background text-foreground shadow" : "text-muted-foreground/80",
+                    "flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold",
+                    status === "complete"
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : status === "active"
+                        ? "border-foreground text-foreground"
+                        : "border-border text-muted-foreground",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full border text-xs",
-                      index <= step ? "border-primary bg-primary text-primary-foreground" : "border-border",
-                    )}
-                  >
-                    {index < step ? <Check className="h-3 w-3" /> : index + 1}
-                  </span>
-                  {label}
-                </button>
-              </li>
-            ))}
-          </ol>
+                  {status === "complete" ? <Check className="h-4 w-4" /> : index + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{meta.label}</p>
+                  <p className="text-xs text-muted-foreground">{meta.description}</p>
+                </div>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </button>
+            );
+          })}
         </aside>
-        <div className="px-6 py-6">
+        <div className="rounded-3xl border border-border/80 bg-card/95 p-4 sm:p-6">
           <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {step === 0 ? <BasicsStep form={form} /> : null}
               {step === 1 ? <ScheduleStep form={form} settings={settings} updateSettings={updateSettings} /> : null}
               {step === 2 ? (
@@ -383,24 +422,25 @@ export function ContestCreationWizard({ canCreate = true, onCreated, variant = "
               {step === 4 ? (
                 <ReviewStep formValues={form.watch()} selectedProblems={selectedProblems} settings={settings} />
               ) : null}
-              <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:justify-between">
-                <div className="flex flex-1 items-center gap-3 text-xs text-muted-foreground">
-                  <span>
-                    Step {step + 1} of {STEP_LABELS.length}
-                  </span>
-                  <Separator orientation="vertical" className="h-4" />
-                  <span>{STEP_LABELS[step]}</span>
+              <div className="flex flex-col gap-3 border-t border-dashed border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{STEP_LABELS[step]}</span> · Step {step + 1} of {STEP_LABELS.length}
                 </div>
-                <div className="flex flex-1 justify-end gap-2">
-                  <Button type="button" variant="ghost" disabled={step === 0} onClick={() => goToStep(step - 1)}>
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Back
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="ghost" className="rounded-full" onClick={handleResetClick}>
+                    Reset
+                  </Button>
+                  <Button type="button" variant="ghost" className="rounded-full" disabled={step === 0} onClick={() => goToStep(step - 1)}>
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Back
                   </Button>
                   {step < STEP_LABELS.length - 1 ? (
-                    <Button type="button" disabled={disableNext} onClick={handleNextStep}>
-                      Next <ChevronRight className="ml-2 h-4 w-4" />
+                    <Button type="button" className="rounded-full" disabled={disableNext} onClick={handleNextStep}>
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={createContest.isPending}>
+                    <Button type="submit" className="rounded-full bg-gradient-to-r from-primary to-primary/80" disabled={createContest.isPending}>
                       {createContest.isPending ? "Launching…" : "Launch contest"}
                     </Button>
                   )}
@@ -410,24 +450,28 @@ export function ContestCreationWizard({ canCreate = true, onCreated, variant = "
           </Form>
         </div>
       </div>
-    </>
+    </div>
   );
   if (isPageVariant) {
     return (
-      <section className="overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm ring-1 ring-border/40">
+      <section className="rounded-3xl border border-border/80 bg-card/95 text-card-foreground shadow-[0_30px_120px_rgba(15,23,42,0.08)]">
         {builderMarkup}
       </section>
     );
   }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <div>
-        <Button disabled={!canCreate} variant="outline" onClick={() => setOpen(true)}>
-          <Sparkles className="mr-2 h-4 w-4" /> Launch contest
+      <DialogTrigger asChild>
+        <Button
+          disabled={!canCreate}
+          className="rounded-full bg-gradient-to-r from-primary to-primary/70 px-6 text-primary-foreground shadow-lg"
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          Plan contest
         </Button>
-      </div>
-      <DialogContent className="max-w-5xl overflow-hidden border-0 p-0">
-        {builderMarkup}
+      </DialogTrigger>
+      <DialogContent className="max-w-6xl border-0 bg-transparent p-0 shadow-none">
+        <div className="rounded-3xl border border-border/80 bg-card/95">{builderMarkup}</div>
       </DialogContent>
     </Dialog>
   );
@@ -436,133 +480,153 @@ export function ContestCreationWizard({ canCreate = true, onCreated, variant = "
 function BasicsStep({ form }: { form: ReturnType<typeof useForm<BuilderFormValues>> }) {
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Contest name</FormLabel>
-              <FormControl>
-                <Input placeholder="Spring Championship" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="slug"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Slug</FormLabel>
-              <FormControl>
-                <Input placeholder="spring-championship" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <div className="rounded-2xl border border-border/70 bg-card/80 p-4">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Identity</p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contest name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Spring Championship" className="rounded-2xl" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Slug</FormLabel>
+                <FormControl>
+                  <Input placeholder="spring-championship" className="rounded-2xl" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="mt-4">
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    rows={3}
+                    placeholder="One line teaser, duration, or format."
+                    className="rounded-2xl"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  rows={3}
-                  placeholder="One line teaser, duration, or format."
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       <div className="grid gap-4 md:grid-cols-3">
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mode</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="COMPETITIVE">Competitive</SelectItem>
-                  <SelectItem value="EDUCATIONAL">Educational</SelectItem>
-                  <SelectItem value="PRIVATE">Private</SelectItem>
-                  <SelectItem value="CUSTOM">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="visibility"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Visibility</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="PUBLIC">Public</SelectItem>
-                  <SelectItem value="PRIVATE">Private</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="rules"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Scoring</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="ICPC">ICPC</SelectItem>
-                  <SelectItem value="CF">Codeforces</SelectItem>
-                  <SelectItem value="ATCODER">AtCoder</SelectItem>
-                  <SelectItem value="CUSTOM">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
+        <div className="rounded-2xl border border-border/70 bg-card/80 p-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mode</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue placeholder="Select mode" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="COMPETITIVE">Competitive</SelectItem>
+                    <SelectItem value="EDUCATIONAL">Educational</SelectItem>
+                    <SelectItem value="PRIVATE">Private</SelectItem>
+                    <SelectItem value="CUSTOM">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="rounded-2xl border border-border/70 bg-card/80 p-4">
+          <FormField
+            control={form.control}
+            name="visibility"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Visibility</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue placeholder="Choose visibility" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                    <SelectItem value="PRIVATE">Private</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="rounded-2xl border border-border/70 bg-card/80 p-4">
+          <FormField
+            control={form.control}
+            name="rules"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ruleset</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue placeholder="Pick rules" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.values(ContestRuleset).map((ruleset) => (
+                      <SelectItem key={ruleset} value={ruleset}>
+                        {ruleset}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
-      <FormField
-        control={form.control}
-        name="isRated"
-        render={({ field }) => (
-          <FormItem className="flex items-center justify-between rounded-lg border px-4 py-3">
-            <div>
-              <FormLabel>Rated contest</FormLabel>
-              <p className="text-xs text-muted-foreground">Enable delta tracking and leaderboard badges.</p>
-            </div>
-            <FormControl>
-              <Switch checked={field.value} onCheckedChange={field.onChange} />
-            </FormControl>
-          </FormItem>
-        )}
-      />
+      <div className="rounded-2xl border border-border/70 bg-card/80 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold">Rated contest</p>
+            <p className="text-xs text-muted-foreground">Enable delta tracking and leaderboard badges.</p>
+          </div>
+          <FormField
+            control={form.control}
+            name="isRated"
+            render={({ field }) => (
+              <FormItem className="mb-0 flex items-center space-x-2">
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
     </div>
   );
 }
