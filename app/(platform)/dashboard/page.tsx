@@ -182,7 +182,7 @@ export default async function DashboardPage() {
               </div>
             </div>
             <Button asChild className="mt-6 w-full">
-              <Link href="/problems">Solve a problem</Link>
+              <Link href="/workspace/problems">Solve a problem</Link>
             </Button>
           </div>
         </div>
