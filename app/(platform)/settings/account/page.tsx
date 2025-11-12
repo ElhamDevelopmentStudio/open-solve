@@ -142,7 +142,7 @@ export default function AccountSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Active Sessions</CardTitle>
-          <CardDescription>Manage devices where you're currently signed in</CardDescription>
+          <CardDescription>Manage devices where you&apos;re currently signed in</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {sessions?.map((sess) => (
@@ -234,7 +234,6 @@ export default function AccountSettingsPage() {
     </div>
   );
 }
-
 
 
 

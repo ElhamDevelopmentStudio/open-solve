@@ -332,7 +332,7 @@ export default function SecuritySettingsPage() {
                         ))}
                       </div>
                       <p className="text-xs text-muted-foreground text-center">
-                        You'll need these codes to access your account if you lose your
+                        You&apos;ll need these codes to access your account if you lose your
                         authenticator device.
                       </p>
                     </div>
@@ -363,7 +363,6 @@ export default function SecuritySettingsPage() {
     </div>
   );
 }
-
 
 
 
