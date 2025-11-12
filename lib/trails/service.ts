@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/auth/permissions";
+import { sanitizePlainInput } from "@/lib/security/markdown";
 import type { TrailGraphPayload, TrailViewer, TrailReportInput } from "@/lib/trails/types";
 import type { Prisma, TrailInsightCategory, UserRole, UserStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -87,12 +88,9 @@ export async function addTrailInsight(params: {
   if (!problem) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
   }
-  const content = params.content.trim();
+  const content = sanitizePlainInput(params.content, 200);
   if (!content) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Insight text is required" });
-  }
-  if (content.length > 200) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Insight must be under 200 characters" });
   }
   const connectIds = params.connectFrom?.slice(0, 5) ?? [];
   await prisma.$transaction(async (tx) => {

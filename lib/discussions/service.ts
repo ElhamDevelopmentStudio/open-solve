@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/auth/permissions";
+import { containsSpoiler, sanitizeUserMarkdown } from "@/lib/security/markdown";
 import type {
   PaginatedDiscussions,
   PaginatedReplies,
@@ -153,7 +154,7 @@ const feedOrder: Record<DiscussionFeedTab, Prisma.DiscussionOrderByWithRelationI
 };
 
 const sanitizeContent = (content: string) => {
-  const value = content.trim();
+  const value = sanitizeUserMarkdown(content).trim();
   if (!value) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Content is required" });
   }
@@ -287,6 +288,7 @@ export async function createThread(params: {
   viewerStatus: DiscussionViewer;
 }) {
   const content = sanitizeContent(params.content);
+  const flaggedSpoiler = params.containsSpoiler || containsSpoiler(content);
   const title = params.title.trim();
   if (!title) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Title is required" });
@@ -302,7 +304,7 @@ export async function createThread(params: {
         problemId: params.problemId ?? null,
         title,
         content,
-        containsSpoiler: params.containsSpoiler,
+        containsSpoiler: flaggedSpoiler,
         category,
         state: params.viewerStatus.status === "SHADOW_BANNED" ? "HIDDEN" : "VISIBLE",
         lastActivityAt: new Date(),
@@ -354,6 +356,7 @@ export async function createReply(params: {
     }
   }
   const content = sanitizeContent(params.content);
+  const flaggedSpoiler = params.containsSpoiler || containsSpoiler(content);
   const parentId = params.parentId ?? params.threadId;
   const reply = await prisma.$transaction(async (tx) => {
     const created = await tx.discussion.create({
@@ -362,7 +365,7 @@ export async function createReply(params: {
         problemId: thread.problemId,
         parentId,
         content,
-        containsSpoiler: params.containsSpoiler,
+        containsSpoiler: flaggedSpoiler,
         state: params.viewerStatus.status === "SHADOW_BANNED" ? "HIDDEN" : "VISIBLE",
       },
       include: replyInclude(params.viewerStatus),

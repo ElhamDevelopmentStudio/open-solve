@@ -12,6 +12,7 @@ import { publishManualReviewMessage } from "@/lib/judge/dispatcher";
 import { env } from "@/lib/env";
 import type { JudgeSummary } from "@/lib/submissions/types";
 import { notifySubmissionUpdate } from "@/lib/realtime/notifications";
+import { recordJudgeWorkerFailure, recordSubmissionEvent } from "@/lib/observability/metrics";
 
 export class JudgeWorker {
   private nodeId = process.env.JUDGE_NODE_ID ?? hostname();
@@ -31,8 +32,9 @@ export class JudgeWorker {
 
   private async handle(channel: amqplib.Channel, msg: amqplib.ConsumeMessage | null) {
     if (!msg) return;
+    let payload: JudgeSubmissionMessage | null = null;
     try {
-      const payload = JSON.parse(msg.content.toString()) as JudgeSubmissionMessage;
+      payload = JSON.parse(msg.content.toString()) as JudgeSubmissionMessage;
       if (!isJudgeSubmissionMessage(payload)) {
         throw new Error("Invalid judge payload");
       }
@@ -48,6 +50,14 @@ export class JudgeWorker {
           }
         })();
       logger.error({ error, submissionId }, "judge worker failed to process submission");
+      recordJudgeWorkerFailure(this.nodeId);
+      if (payload) {
+        recordSubmissionEvent({
+          event: "failed",
+          language: payload.languageCode,
+          manual: payload.requiresManualReview,
+        });
+      }
       if (submissionId) {
         await prisma.submission
           .update({
@@ -200,5 +210,11 @@ export class JudgeWorker {
         reason: submission.problem.judgeMode === "HYBRID" ? "HYBRID" : "MANUAL_ONLY",
       });
     }
+
+    recordSubmissionEvent({
+      event: "processed",
+      language: submission.language.code,
+      manual: submission.requiresManualReview,
+    });
   }
 }

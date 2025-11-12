@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ACCEPTED_VERDICTS } from "@/lib/submissions/constants";
 import { isStaffRole } from "@/lib/auth/permissions";
 import type { ProfileSettingsInput } from "@/lib/validators/profile";
+import { sanitizePlainInput } from "@/lib/security/markdown";
 
 export type ProfileSocialLinks = {
   github?: string | null;
@@ -95,7 +96,7 @@ const CALENDAR_WINDOW_DAYS = 365;
 
 const sanitizeSocial = (value?: string | null): string | null => {
   if (!value) return null;
-  const trimmed = value.trim();
+  const trimmed = sanitizePlainInput(value, 120);
   if (!trimmed) return null;
   if (/^https?:\/\//i.test(trimmed)) {
     return trimmed;
