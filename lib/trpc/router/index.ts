@@ -5,6 +5,8 @@ import { proposalsRouter } from "@/lib/trpc/router/proposals";
 import { staffRouter } from "@/lib/trpc/router/staff";
 import { router } from "@/lib/trpc/trpc";
 import { submissionsRouter } from "@/lib/trpc/router/submissions";
+import { profileRouter } from "@/lib/trpc/router/profile";
+import { leaderboardRouter } from "@/lib/trpc/router/leaderboard";
 
 export const appRouter = router({
   health: healthRouter,
@@ -13,6 +15,8 @@ export const appRouter = router({
   proposals: proposalsRouter,
   staff: staffRouter,
   submissions: submissionsRouter,
+  profile: profileRouter,
+  leaderboard: leaderboardRouter,
 });
 
 export type AppRouter = typeof appRouter;

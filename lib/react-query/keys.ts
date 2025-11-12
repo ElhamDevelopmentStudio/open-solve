@@ -90,6 +90,15 @@ export const trpcProcedures = {
     saveDraft: "submissions.saveDraft" as ProcedureName,
     getDrafts: "submissions.getDrafts" as ProcedureName,
   },
+  profile: {
+    detail: "profile.detail" as ProcedureName,
+  },
+  leaderboard: {
+    overview: "leaderboard.overview" as ProcedureName,
+    global: "leaderboard.global" as ProcedureName,
+    difficulty: "leaderboard.difficulty" as ProcedureName,
+    tag: "leaderboard.tag" as ProcedureName,
+  },
 } as const;
 
 export type QueryTag =
@@ -100,7 +109,9 @@ export type QueryTag =
   | "staffProblems"
   | "proposals"
   | "submissions"
-  | "submissionDrafts";
+  | "submissionDrafts"
+  | "profile"
+  | "leaderboard";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
@@ -116,4 +127,11 @@ export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
     trpcProcedures.submissions.filters,
   ],
   submissionDrafts: [trpcProcedures.submissions.getDrafts],
+  profile: [trpcProcedures.profile.detail],
+  leaderboard: [
+    trpcProcedures.leaderboard.overview,
+    trpcProcedures.leaderboard.global,
+    trpcProcedures.leaderboard.difficulty,
+    trpcProcedures.leaderboard.tag,
+  ],
 };

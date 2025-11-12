@@ -18,6 +18,14 @@ model User {
   bio                  String?
   country              String?
   timezone             String?
+  socialGithub         String?
+  socialLinkedin       String?
+  socialTwitter        String?
+  socialWebsite        String?
+  shareAcceptedCode    Boolean                  @default(false)
+  showOnLeaderboard    Boolean                  @default(true)
+  showCountry          Boolean                  @default(true)
+  showSocials          Boolean                  @default(true)
   role                 UserRole                 @default(USER)
   twoFactorEnabled     Boolean                  @default(false)
   lastLoginAt          DateTime?
@@ -47,6 +55,7 @@ model User {
   twoFactorSecret      TwoFactorSecret?
   stats                UserStats?
   votes                Vote[]
+  leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
 
   @@index([handle])
   @@index([status, role])
@@ -286,6 +295,7 @@ model Problem {
   versions         ProblemVersion[]
   submissions      Submission[]
   submissionDrafts SubmissionDraft[]
+  leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
 
   @@index([state, visibility, difficultyId, createdAt])
 }
@@ -542,6 +552,7 @@ model Submission {
   user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   verdict              Verdict?               @relation(fields: [verdictCode], references: [code])
   caseResults          SubmissionCaseResult[]
+  leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
 
   @@index([userId, problemId, createdAt])
   @@index([problemId, verdictCode, createdAt])
@@ -675,6 +686,7 @@ model LeaderboardSnapshot {
   updatedById String?
   window      String
   entries     LeaderboardEntry[]
+  realtimeSolves LeaderboardRealtimeSolve[]
 
   @@unique([window, periodStart])
 }
@@ -697,6 +709,27 @@ model LeaderboardEntry {
 
   @@unique([snapshotId, rank])
   @@unique([snapshotId, userId])
+}
+
+model LeaderboardRealtimeSolve {
+  id           String              @id @default(cuid())
+  snapshotId   String
+  window       String
+  userId       String
+  problemId    String
+  submissionId String
+  score        Float              @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  snapshot     LeaderboardSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem      Problem            @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  submission   Submission         @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, userId, problemId])
+  @@index([snapshotId, window])
+  @@index([userId, window])
+  @@index([submissionId])
 }
 
 model Contest {

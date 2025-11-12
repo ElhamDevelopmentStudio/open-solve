@@ -28,6 +28,16 @@ type UserSeed = {
   country?: string;
   timezone?: string;
   bio?: string;
+  shareAcceptedCode?: boolean;
+  showOnLeaderboard?: boolean;
+  showCountry?: boolean;
+  showSocials?: boolean;
+  socials?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    website?: string;
+  };
   stats: {
     totalSolved: number;
     solvedEasy: number;
@@ -195,8 +205,15 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "US",
     timezone: "America/New_York",
-    bio: "Keeps the lights on for OpenSolve.",
-    stats: {
+  bio: "Keeps the lights on for OpenSolve.",
+  shareAcceptedCode: true,
+  showOnLeaderboard: false,
+  showSocials: false,
+  socials: {
+    github: "https://github.com/opensolve",
+    linkedin: "https://www.linkedin.com/company/opensolve"
+  },
+  stats: {
       totalSolved: 512,
       solvedEasy: 220,
       solvedMedium: 210,
@@ -216,8 +233,13 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "BG",
     timezone: "Europe/Sofia",
-    bio: "Curates graph problems with a focus on pedagogy.",
-    stats: {
+  bio: "Curates graph problems with a focus on pedagogy.",
+  showSocials: true,
+  socials: {
+    twitter: "https://twitter.com/mira_q",
+    linkedin: "https://www.linkedin.com/in/mira-queue"
+  },
+  stats: {
       totalSolved: 312,
       solvedEasy: 140,
       solvedMedium: 130,
@@ -258,8 +280,14 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "GB",
     timezone: "Europe/London",
-    bio: "Building a daily streak before internship season.",
-    stats: {
+  bio: "Building a daily streak before internship season.",
+  shareAcceptedCode: true,
+  showOnLeaderboard: true,
+  socials: {
+    github: "https://github.com/lena-dev",
+    website: "https://lena.dev"
+  },
+  stats: {
       totalSolved: 188,
       solvedEasy: 110,
       solvedMedium: 66,
@@ -279,8 +307,10 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.SHADOW_BANNED,
     country: "US",
     timezone: "America/Chicago",
-    bio: "Experimenting with unusual heuristics.",
-    stats: {
+  bio: "Experimenting with unusual heuristics.",
+  showOnLeaderboard: false,
+  showCountry: false,
+  stats: {
       totalSolved: 96,
       solvedEasy: 60,
       solvedMedium: 32,
@@ -300,8 +330,11 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "SG",
     timezone: "Asia/Singapore",
-    bio: "Hard-mode grinder focused on graphs.",
-    stats: {
+  bio: "Hard-mode grinder focused on graphs.",
+  socials: {
+    twitter: "https://twitter.com/kaicode"
+  },
+  stats: {
       totalSolved: 244,
       solvedEasy: 80,
       solvedMedium: 120,
@@ -855,6 +888,14 @@ async function main() {
         country: userSeed.country,
         timezone: userSeed.timezone,
         bio: userSeed.bio,
+        shareAcceptedCode: userSeed.shareAcceptedCode ?? false,
+        showOnLeaderboard: userSeed.showOnLeaderboard ?? true,
+        showCountry: userSeed.showCountry ?? true,
+        showSocials: userSeed.showSocials ?? true,
+        socialGithub: userSeed.socials?.github ?? null,
+        socialLinkedin: userSeed.socials?.linkedin ?? null,
+        socialTwitter: userSeed.socials?.twitter ?? null,
+        socialWebsite: userSeed.socials?.website ?? null,
       },
       create: {
         email: userSeed.email,
@@ -865,6 +906,14 @@ async function main() {
         country: userSeed.country,
         timezone: userSeed.timezone,
         bio: userSeed.bio,
+        shareAcceptedCode: userSeed.shareAcceptedCode ?? false,
+        showOnLeaderboard: userSeed.showOnLeaderboard ?? true,
+        showCountry: userSeed.showCountry ?? true,
+        showSocials: userSeed.showSocials ?? true,
+        socialGithub: userSeed.socials?.github ?? null,
+        socialLinkedin: userSeed.socials?.linkedin ?? null,
+        socialTwitter: userSeed.socials?.twitter ?? null,
+        socialWebsite: userSeed.socials?.website ?? null,
         hashedPassword: defaultPasswordHash,
       },
     });

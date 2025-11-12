@@ -46,7 +46,7 @@
 
 ---
 
-# 3) tRPC Router & Data-Fetching Contract (React Query edition)
+## 3) tRPC Router & Data-Fetching Contract (React Query edition)
 
 **Goals:** Stable tRPC procedure surface; React Query manages caching, prefetch, optimistic updates, and invalidation. Transport remains tRPC HTTP/Batch link. No NextAuth—auth is in-house and enforced in tRPC middleware.
 
