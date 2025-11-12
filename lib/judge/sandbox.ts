@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -81,7 +81,18 @@ export const executeInSandbox = async ({
     return runSimulation();
   }
 
-  const workspaceRoot = path.resolve(JUDGE_WORKSPACE_ROOT ?? tmpdir());
+  const preferredRoot = path.resolve(JUDGE_WORKSPACE_ROOT ?? tmpdir());
+  let workspaceRoot = preferredRoot;
+  try {
+    await mkdir(workspaceRoot, { recursive: true });
+  } catch (error) {
+    logger.warn({ error, workspaceRoot }, "failed to prepare judge workspace root, falling back to tmpdir");
+    workspaceRoot = path.resolve(tmpdir());
+    await mkdir(workspaceRoot, { recursive: true }).catch((fallbackError) => {
+      logger.error({ fallbackError }, "failed to initialize fallback judge workspace root");
+      throw fallbackError;
+    });
+  }
   const workspace = await mkdtemp(path.join(workspaceRoot, `${submissionId}-`));
   const cleanup = async () => {
     await rm(workspace, { recursive: true, force: true }).catch(() => {});
@@ -210,6 +221,7 @@ const execDocker = async ({
 }): Promise<CommandResult> => {
   const dockerArgs = [
     "run",
+    "-i",
     "--rm",
     "--network",
     "none",

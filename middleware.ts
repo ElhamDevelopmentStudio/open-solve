@@ -10,6 +10,10 @@ const isProduction = process.env.NODE_ENV === "production";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname === "/api/ws/submissions") {
+    return NextResponse.next();
+  }
+
   if (!RATE_LIMITED_PATH.test(pathname)) {
     return NextResponse.next();
   }

@@ -36,8 +36,14 @@ export class SubmissionRealtimeHub {
     this.clients.add(ws);
     this.meta.set(ws, meta);
     ws.on("message", (raw) => this.handleMessage(ws, raw));
-    ws.on("close", () => this.detach(ws));
-    ws.on("error", () => this.detach(ws));
+    ws.on("close", (code) => {
+      logger.debug({ code }, "submission realtime socket closed");
+      this.detach(ws);
+    });
+    ws.on("error", (error) => {
+      logger.warn({ error }, "submission realtime socket error");
+      this.detach(ws);
+    });
     ws.on("pong", () => {
       const ref = this.meta.get(ws);
       if (ref) {
