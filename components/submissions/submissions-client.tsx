@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { trpc } from "@/lib/trpc/client";
-import type {
-  SubmissionFilterMetadata,
-  SubmissionListEntry,
-  SubmissionListSummary,
-} from "@/lib/submissions/types";
-import { buildSubmissionListInputFromParams, type SubmissionListInputDTO } from "@/lib/submissions/filter-utils";
-import { submissionListQueryOptions } from "@/lib/react-query/policies";
-import { useSubmissionFilters } from "@/hooks/use-submission-filters";
 import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card } from "@/components/ui/card";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,30 +15,36 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSubmissionFilters } from "@/hooks/use-submission-filters";
+import { SUBMISSION_STATUSES } from "@/lib/problems/constants";
+import { submissionListQueryOptions } from "@/lib/react-query/policies";
+import { SUBMISSION_CONTEST_FILTERS, SUBMISSION_LIST_SORTS, SUBMISSION_VERDICTS } from "@/lib/submissions/constants";
+import { buildSubmissionListInputFromParams, type SubmissionListInputDTO } from "@/lib/submissions/filter-utils";
+import type { SubmissionSearchParams } from "@/lib/submissions/search-params";
+import type {
+  SubmissionFilterMetadata,
+  SubmissionListEntry,
+  SubmissionListSummary,
+} from "@/lib/submissions/types";
+import { trpc } from "@/lib/trpc/client";
+import type { AppRouter } from "@/lib/trpc/router";
+import { stableHash } from "@/lib/utils/stable-hash";
+import type { InfiniteData } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import { format } from "date-fns";
 import {
   ArrowUpRight,
   CalendarRange,
-  Check,
   ChevronsUpDown,
   Filter,
   RefreshCw,
   RotateCcw,
   Search,
-  Star,
+  Star
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { SUBMISSION_VERDICTS, SUBMISSION_CONTEST_FILTERS, SUBMISSION_LIST_SORTS, type SubmissionContestFilter, type SubmissionListSort } from "@/lib/submissions/constants";
-import { SUBMISSION_STATUSES } from "@/lib/problems/constants";
-import { stableHash } from "@/lib/utils/stable-hash";
-import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@/lib/trpc/router";
-import type { SubmissionSearchParams } from "@/lib/submissions/search-params";
-import type { InfiniteData } from "@tanstack/react-query";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type SubmissionListResponse = RouterOutput["submissions"]["listMine"];
