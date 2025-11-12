@@ -282,4 +282,22 @@ export const adminUsersRouter = router({
     });
     return { ok: true };
   }),
+
+  purge: adminProcedure.input(simpleUserId).mutation(async ({ ctx, input }) => {
+    await prisma.$transaction([
+      prisma.authAuditLog.updateMany({
+        where: { userId: input.userId },
+        data: { userId: null },
+      }),
+      prisma.user.delete({ where: { id: input.userId } }),
+    ]);
+    await createAuditLog({
+      userId: input.userId,
+      action: "USER_PURGED",
+      metadata: {
+        actorId: ctx.session?.impersonatorId ?? ctx.user?.id,
+      },
+    });
+    return { ok: true };
+  }),
 });

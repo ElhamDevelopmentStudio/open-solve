@@ -2,14 +2,34 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { TRPCContext } from "@/lib/trpc/context";
 import { transformer } from "@/lib/trpc/transformer";
 import type { UserRole } from "@prisma/client";
+import { recordTrpcResult, startTrpcTimer } from "@/lib/observability/metrics";
 
 const t = initTRPC.context<TRPCContext>().create({
   transformer,
 });
 
+const metricsMiddleware = t.middleware(async ({ path, type, next }) => {
+  const procedure = path ?? "unknown";
+  const method = type ?? "unknown";
+  const stopTimer = startTrpcTimer({ procedure, method });
+  try {
+    const result = await next();
+    recordTrpcResult({ procedure, method, status: "success" });
+    return result;
+  } catch (error) {
+    const status = error instanceof TRPCError ? error.code : "failure";
+    recordTrpcResult({ procedure, method, status });
+    throw error;
+  } finally {
+    stopTimer();
+  }
+});
+
 export const router = t.router;
 export const mergeRouters = t.mergeRouters;
-export const publicProcedure = t.procedure;
+const baseProcedure = t.procedure.use(metricsMiddleware);
+
+export const publicProcedure = baseProcedure;
 export const createCallerFactory = t.createCallerFactory;
 
 // Middleware to check if user is authenticated
@@ -51,9 +71,9 @@ const hasRole = (role: UserRole) =>
     });
   });
 
-export const protectedProcedure = t.procedure.use(isAuthed);
-export const adminProcedure = t.procedure.use(hasRole("ADMIN"));
-export const curatorProcedure = t.procedure.use(hasRole("PROBLEM_CURATOR"));
+export const protectedProcedure = baseProcedure.use(isAuthed);
+export const adminProcedure = baseProcedure.use(hasRole("ADMIN"));
+export const curatorProcedure = baseProcedure.use(hasRole("PROBLEM_CURATOR"));
 const staffRoles: UserRole[] = ["PROBLEM_CURATOR", "MODERATOR", "ADMIN"];
 const isStaff = t.middleware(({ ctx, next }) => {
   if (!ctx.user || !ctx.session) {
@@ -71,4 +91,4 @@ const isStaff = t.middleware(({ ctx, next }) => {
   });
 });
 
-export const staffProcedure = t.procedure.use(isStaff);
+export const staffProcedure = baseProcedure.use(isStaff);

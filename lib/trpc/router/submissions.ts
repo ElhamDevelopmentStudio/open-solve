@@ -30,6 +30,7 @@ import {
   publishManualReviewMessage,
 } from "@/lib/judge/dispatcher";
 import { isStaffRole } from "@/lib/auth/permissions";
+import { recordSubmissionEvent } from "@/lib/observability/metrics";
 
 const codeInputSchema = z.object({
   problemId: z.string().cuid(),
@@ -458,6 +459,12 @@ async function enqueueSubmission(params: {
       languageCode: true,
       userId: true,
     },
+  });
+
+  recordSubmissionEvent({
+    event: "enqueued",
+    language: submission.languageCode,
+    manual: requiresManualReview,
   });
 
   if (manualOnly) {
