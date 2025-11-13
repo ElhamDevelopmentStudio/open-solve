@@ -10,6 +10,8 @@ datasource db {
 model User {
   id                        String                     @id @default(cuid())
   email                     String                     @unique
+  emailHash                 String?                    @unique
+  emailEncrypted            String?
   emailVerified             DateTime?
   name                      String?
   handle                    String                     @unique
@@ -34,6 +36,7 @@ model User {
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
   deletedAt                 DateTime?
+  piiScrubbedAt             DateTime?
   status                    UserStatus                 @default(ACTIVE)
   accounts                  Account[]
   auditLogs                 AuthAuditLog[]
@@ -1036,6 +1039,7 @@ enum UserStatus {
   ACTIVE
   BANNED
   SHADOW_BANNED
+  DELETED
 }
 
 enum ProblemState {
@@ -1211,6 +1215,8 @@ enum AuthAuditAction {
   USER_UNBANNED
   USER_ROLE_CHANGED
   USER_STATUS_CHANGED
+  USER_SELF_DELETED
+  USER_PURGED
   IMPERSONATION_STARTED
   IMPERSONATION_ENDED
   FEATURE_FLAG_CREATED

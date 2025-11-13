@@ -22,6 +22,7 @@ import { hashPassword } from "../lib/auth/password";
 import { prisma } from "../lib/prisma";
 import { getDefaultCodeStub } from "../lib/problems/editor-presets";
 import { defaultContestSettings } from "../lib/contests/settings";
+import { buildProtectedEmailFields } from "../lib/security/email";
 
 type UserSeed = {
   key: string;
@@ -901,6 +902,7 @@ async function main() {
   const userMap = new Map<string, Awaited<ReturnType<typeof prisma.user.upsert>>>();
 
   for (const userSeed of userSeeds) {
+    const emailFields = buildProtectedEmailFields(userSeed.email);
     const user = await prisma.user.upsert({
       where: { email: userSeed.email },
       update: {
@@ -919,9 +921,13 @@ async function main() {
         socialLinkedin: userSeed.socials?.linkedin ?? null,
         socialTwitter: userSeed.socials?.twitter ?? null,
         socialWebsite: userSeed.socials?.website ?? null,
+        emailHash: emailFields.emailHash,
+        emailEncrypted: emailFields.emailEncrypted,
       },
       create: {
         email: userSeed.email,
+        emailHash: emailFields.emailHash,
+        emailEncrypted: emailFields.emailEncrypted,
         name: userSeed.name,
         handle: userSeed.handle,
         role: userSeed.role,

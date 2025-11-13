@@ -55,6 +55,11 @@ export const env = createEnv({
     JUDGE_SANDBOX_DRIVER: z.enum(["docker", "mock"]).default("docker"),
     JUDGE_SANDBOX_WORKDIR: emptyToUndefined(z.string()),
     REALTIME_WORKER_TOKEN: emptyToUndefined(z.string()),
+    SENSITIVE_DATA_KEY: z
+      .string()
+      .min(32, "SENSITIVE_DATA_KEY must be at least 32 characters")
+      .default("opensolve-sensitive-data-key-please-change-me-123"),
+    METRICS_ACCESS_TOKEN: emptyToUndefined(z.string()),
   },
   client: {
     NEXT_PUBLIC_SENTRY_DSN: emptyToUndefined(z.string().url()),
@@ -93,6 +98,8 @@ export const env = createEnv({
     JUDGE_SANDBOX_DRIVER: process.env.JUDGE_SANDBOX_DRIVER,
     JUDGE_SANDBOX_WORKDIR: process.env.JUDGE_SANDBOX_WORKDIR,
     REALTIME_WORKER_TOKEN: process.env.REALTIME_WORKER_TOKEN,
+    SENSITIVE_DATA_KEY: process.env.SENSITIVE_DATA_KEY,
+    METRICS_ACCESS_TOKEN: process.env.METRICS_ACCESS_TOKEN,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
