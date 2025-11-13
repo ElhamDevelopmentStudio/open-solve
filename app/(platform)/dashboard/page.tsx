@@ -19,15 +19,6 @@ import {
 export default async function DashboardPage() {
   const session = await getSession();
   const caller = await createTRPCCaller();
-  
-  let userStats;
-  try {
-    userStats = await caller.profile.getSummary({
-      handle: session?.user.handle ?? "",
-    });
-  } catch (error) {
-    userStats = null;
-  }
 
   const quickActions = [
     { 
@@ -53,32 +44,32 @@ export default async function DashboardPage() {
   const metrics = [
     {
       label: "Problems Solved",
-      value: userStats?.solvedCount ?? 0,
-      total: userStats?.totalAttempted ?? 0,
+      value: 0,
+      total: 0,
       icon: CheckCircle2,
       color: "text-success",
       bgColor: "bg-success/10",
     },
     {
       label: "Current Streak",
-      value: `${userStats?.currentStreak ?? 0} days`,
-      subtitle: `Longest: ${userStats?.longestStreak ?? 0} days`,
+      value: "0 days",
+      subtitle: "Longest: 0 days",
       icon: Flame,
       color: "text-warning",
       bgColor: "bg-warning/10",
     },
     {
       label: "Total Submissions",
-      value: userStats?.totalSubmissions ?? 0,
-      subtitle: `${userStats?.acceptedSubmissions ?? 0} accepted`,
+      value: 0,
+      subtitle: "0 accepted",
       icon: Activity,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
       label: "Rank",
-      value: `#${userStats?.rank ?? "-"}`,
-      subtitle: userStats?.rating ? `Rating: ${userStats.rating}` : "Unranked",
+      value: "#-",
+      subtitle: "Unranked",
       icon: TrendingUp,
       color: "text-chart-3",
       bgColor: "bg-chart-3/10",
@@ -184,9 +175,9 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {[
-                { label: "Easy", solved: userStats?.easySolved ?? 0, total: 150, color: "bg-success" },
-                { label: "Medium", solved: userStats?.mediumSolved ?? 0, total: 200, color: "bg-warning" },
-                { label: "Hard", solved: userStats?.hardSolved ?? 0, total: 100, color: "bg-destructive" },
+                { label: "Easy", solved: 0, total: 150, color: "bg-success" },
+                { label: "Medium", solved: 0, total: 200, color: "bg-warning" },
+                { label: "Hard", solved: 0, total: 100, color: "bg-destructive" },
               ].map((diff) => {
                 const percentage = diff.total > 0 ? (diff.solved / diff.total) * 100 : 0;
                 return (

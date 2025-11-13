@@ -1,14 +1,14 @@
 import { AppShell } from "@/components/layout";
 import { Badge, Separator, ThemeToggle } from "@/components/ui";
-import { dashboardNav } from "@/config/navigation";
-import Link from "next/link";
-import type { PropsWithChildren } from "react";
-import { getSession } from "@/lib/auth/session";
-import { redirect } from "next/navigation";
-import { isStaffRole } from "@/lib/auth/permissions";
-import { Code2, Crown, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { dashboardNav } from "@/config/navigation";
+import { isStaffRole } from "@/lib/auth/permissions";
+import { getSession } from "@/lib/auth/session";
+import { Code2, Crown, User } from "lucide-react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { PropsWithChildren } from "react";
 
 export const dynamic = "force-dynamic";
 
