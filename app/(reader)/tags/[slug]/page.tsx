@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { renderProblemLibrary } from "@/app/(reader)/problems/page";
+import renderProblemLibrary from "@/app/(reader)/problems/page";
 
 export async function generateMetadata({
   params,

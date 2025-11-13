@@ -3,12 +3,15 @@ import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
-import { CodeIcon, Menu01Icon } from "hugeicons-react";
+import { CodeIcon } from "hugeicons-react";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
+import { ReaderMobileNav } from "@/components/layout/reader-mobile-nav";
 
 const navLinks = [
   { label: "Problems", href: "/problems" },
+  { label: "Discussions", href: "/discuss" },
+  { label: "Tags", href: "/tags" },
   { label: "Leaderboards", href: "/leaderboards" },
   { label: "Docs", href: siteConfig.links.docs },
   { label: "GitHub", href: siteConfig.links.github, external: true },
@@ -85,10 +88,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
                 <Link href="/sign-in">Sign in</Link>
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu01Icon className="h-5 w-5" strokeWidth={2} />
-              <span className="sr-only">Menu</span>
-            </Button>
+            <ReaderMobileNav links={navLinks} isLoggedIn={isLoggedIn} />
           </div>
         </div>
       </header>
