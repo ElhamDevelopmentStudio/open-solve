@@ -33,6 +33,7 @@ export type ProblemFiltersPanelProps = {
   onChange: (patch: Partial<ProblemFiltersInput>) => void;
   onReset: () => void;
   isMobile?: boolean;
+  showStatusFilters?: boolean;
 };
 
 export function ProblemFiltersPanel({
@@ -40,6 +41,7 @@ export function ProblemFiltersPanel({
   metadata,
   onChange,
   onReset,
+  showStatusFilters = true,
 }: ProblemFiltersPanelProps) {
   const [tagQuery, setTagQuery] = useState("");
   const tags = metadata?.tags ?? [];
@@ -52,7 +54,7 @@ export function ProblemFiltersPanel({
   const hasActiveFilters =
     Boolean(filters.q) ||
     filters.difficulty.length > 0 ||
-    filters.status.length > 0 ||
+    (showStatusFilters && filters.status.length > 0) ||
     filters.tags.length > 0 ||
     filters.onlyWithEditorial;
 
@@ -61,6 +63,7 @@ export function ProblemFiltersPanel({
   };
 
   const toggleStatus = (value: ProblemFiltersInput["status"][number]) => {
+    if (!showStatusFilters) return;
     const set = new Set(filters.status);
     if (set.has(value)) {
       set.delete(value);
@@ -121,26 +124,39 @@ export function ProblemFiltersPanel({
         </div>
       </FilterCard>
 
-      <FilterCard title="Status" description="Filter by your personal progress.">
-        <div className="flex flex-wrap gap-2">
-          {PROBLEM_STATUS_FILTERS.map((status) => {
-            const active = filters.status.includes(status);
-            return (
-              <button
-                key={status}
-                type="button"
-                onClick={() => toggleStatus(status)}
-                className={cn(
-                  "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:scale-105",
-                  active ? statusTone[status] : "border-border bg-background text-muted-foreground hover:bg-muted",
-                )}
-              >
-                {active && <Tick02Icon className="mr-1.5 h-3.5 w-3.5" strokeWidth={2.5} />}
-                {STATUS_LABELS[status]}
-              </button>
-            );
-          })}
-        </div>
+      <FilterCard
+        title="Status"
+        description={
+          showStatusFilters
+            ? "Filter by your personal progress."
+            : "Sign in to track solved and attempted problems."
+        }
+      >
+        {showStatusFilters ? (
+          <div className="flex flex-wrap gap-2">
+            {PROBLEM_STATUS_FILTERS.map((status) => {
+              const active = filters.status.includes(status);
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => toggleStatus(status)}
+                  className={cn(
+                    "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:scale-105",
+                    active ? statusTone[status] : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {active && <Tick02Icon className="mr-1.5 h-3.5 w-3.5" strokeWidth={2.5} />}
+                  {STATUS_LABELS[status]}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+            Create a free account or sign in from the reader to use progress filters.
+          </p>
+        )}
       </FilterCard>
 
       <FilterCard title="Tags" description="Stack multiple topics together.">

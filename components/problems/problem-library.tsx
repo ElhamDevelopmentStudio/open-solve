@@ -4,6 +4,7 @@ import { ProblemFiltersPanel } from "@/components/problems/problem-filters-panel
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Drawer,
   DrawerClose,
@@ -78,7 +79,17 @@ const DEFAULT_FILTERS: ProblemFiltersInput = {
 
 const VIRTUALIZATION_THRESHOLD = 50;
 
-export function ProblemLibraryShell({ initialFilters }: { initialFilters: ProblemFiltersInput }) {
+type ProblemLibraryShellProps = {
+  initialFilters: ProblemFiltersInput;
+  viewerHasSession?: boolean;
+  problemBasePath?: string;
+};
+
+export function ProblemLibraryShell({
+  initialFilters,
+  viewerHasSession = false,
+  problemBasePath = "/problems",
+}: ProblemLibraryShellProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const [filters, setFilters] = useProblemFilters();
@@ -100,14 +111,13 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     return () => clearTimeout(handle);
   }, [searchValue, mergedFilters.q, setFilters]);
 
-  const {
-    data: listData,
-    isFetching,
-    isPending,
-  } = trpc.problems.list.useQuery(mergedFilters, {
+  const listQuery = trpc.problems.list.useQuery(mergedFilters, {
     placeholderData: (previousData) => previousData,
-    staleTime: publicContentQueryOptions.staleTime,
+    staleTime: viewerHasSession ? 0 : publicContentQueryOptions.staleTime,
   });
+  const listData = listQuery.data;
+  const isFetching = listQuery.isFetching;
+  const isPending = listQuery.isPending;
   const { data: metadata } = trpc.problems.filterMetadata.useQuery(undefined, {
     staleTime: publicContentQueryOptions.staleTime,
   });
@@ -118,7 +128,9 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     let count = 0;
     if (mergedFilters.q) count += 1;
     count += mergedFilters.difficulty.length;
-    count += mergedFilters.status.length;
+    if (viewerHasSession) {
+      count += mergedFilters.status.length;
+    }
     count += mergedFilters.tags.length;
     if (mergedFilters.onlyWithEditorial) count += 1;
     return count;
@@ -166,9 +178,9 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   const openProblem = useCallback(
     (slug: string) => {
-      router.push(`/problems/${slug}`);
+      router.push(`${problemBasePath}/${slug}`);
     },
-    [router],
+    [problemBasePath, router],
   );
   const prefetchProblemDetail = useCallback(
     (slug: string | undefined) => {
@@ -183,9 +195,9 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
         { slug },
         { staleTime: publicContentQueryOptions.staleTime },
       );
-      router.prefetch(`/problems/${slug}`);
+      router.prefetch(`${problemBasePath}/${slug}`);
     },
-    [router, utils],
+    [problemBasePath, router, utils],
   );
 
   useEffect(() => {
@@ -220,7 +232,8 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     setFilters(DEFAULT_FILTERS);
   };
 
-  const listIsEmpty = !isPending && items.length === 0;
+  const statusFilterBlocked = !viewerHasSession && mergedFilters.status.length > 0;
+  const listIsEmpty = !isPending && items.length === 0 && !listQuery.isError && !statusFilterBlocked;
 
   useEffect(() => {
     if (!mergedFilters.q) return;
@@ -365,6 +378,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                       onChange={handleFilterChange}
                       onReset={handleClearAll}
                       isMobile
+                      showStatusFilters={viewerHasSession}
                     />
                   </div>
                   <DrawerFooter className="border-t bg-background px-5">
@@ -381,6 +395,23 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
           </div>
         </header>
 
+        {listQuery.isError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Unable to load problems</AlertTitle>
+            <AlertDescription>
+              {listQuery.error?.message ?? "Something went wrong while loading the library."}
+            </AlertDescription>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => listQuery.refetch()}
+            >
+              Retry
+            </Button>
+          </Alert>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside
             className="hidden rounded-2xl border border-border/50 bg-card/80 p-4 shadow-sm backdrop-blur-sm lg:block"
@@ -391,9 +422,22 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
               metadata={metadata}
               onChange={handleFilterChange}
               onReset={handleClearAll}
+              showStatusFilters={viewerHasSession}
             />
           </aside>
           <section className="space-y-4" aria-live={isPending ? "polite" : "off"}>
+            {statusFilterBlocked ? (
+              <Alert>
+                <AlertTitle>Sign in to use status filters</AlertTitle>
+                <AlertDescription>
+                  Progress filters rely on your submission history.{" "}
+                  <Link href="/sign-in" className="font-medium text-primary underline underline-offset-4">
+                    Sign in
+                  </Link>{" "}
+                  to filter by solved or attempted problems.
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {isPending && !results ? (
               <ProblemListSkeleton />
             ) : (
