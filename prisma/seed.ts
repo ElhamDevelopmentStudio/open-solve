@@ -4,7 +4,9 @@ import {
   BadgeAwardSource,
   ContestRuleset,
   ContestState,
+  ContestType,
   ContestVisibility,
+  ContestRegistrationStatus,
   ProblemProposalStatus,
   ProblemState,
   ProblemVisibility,
@@ -17,6 +19,7 @@ import {
 import { hashPassword } from "../lib/auth/password";
 import { prisma } from "../lib/prisma";
 import { getDefaultCodeStub } from "../lib/problems/editor-presets";
+import { defaultContestSettings } from "../lib/contests/settings";
 
 type UserSeed = {
   key: string;
@@ -159,6 +162,7 @@ type ContestSeed = {
   slug: string;
   name: string;
   description: string;
+  type: ContestType;
   state: ContestState;
   visibility: ContestVisibility;
   startsAt: Date;
@@ -167,6 +171,7 @@ type ContestSeed = {
   rules: ContestRuleset;
   isRated: boolean;
   editorialReleaseAt?: Date;
+  settings?: Prisma.JsonValue;
   problems: Array<{
     problemSlug: string;
     version: number;
@@ -177,6 +182,8 @@ type ContestSeed = {
   registrations: Array<{
     userKey: string;
     isVirtual?: boolean;
+    status?: ContestRegistrationStatus;
+    isDisqualified?: boolean;
   }>;
 };
 
@@ -741,6 +748,7 @@ const contestSeed: ContestSeed = {
   slug: "starter-sprint",
   name: "Starter Sprint 001",
   description: "A 90-minute mixed difficulty sprint to validate the contest pipeline.",
+  type: ContestType.COMPETITIVE,
   state: ContestState.RUNNING,
   visibility: ContestVisibility.PUBLIC,
   startsAt: new Date("2025-01-15T17:00:00Z"),
@@ -749,6 +757,19 @@ const contestSeed: ContestSeed = {
   rules: ContestRuleset.ICPC,
   isRated: true,
   editorialReleaseAt: new Date("2025-01-16T00:00:00Z"),
+  settings: json({
+    ...defaultContestSettings,
+    registration: {
+      ...defaultContestSettings.registration,
+      mode: "open",
+      allowVirtual: true,
+    },
+    freeze: {
+      ...defaultContestSettings.freeze,
+      enabled: true,
+      offsetMinutes: 20,
+    },
+  }),
   problems: [
     { problemSlug: "two-sum", version: 3, label: "A", order: 1, points: 100 },
     { problemSlug: "interval-maestro", version: 1, label: "B", order: 2, points: 200 },
@@ -1387,6 +1408,7 @@ async function main() {
     update: {
       name: contestSeed.name,
       description: contestSeed.description,
+      type: contestSeed.type,
       state: contestSeed.state,
       visibility: contestSeed.visibility,
       startsAt: contestSeed.startsAt,
@@ -1395,12 +1417,14 @@ async function main() {
       rules: contestSeed.rules,
       isRated: contestSeed.isRated,
       editorialReleaseAt: contestSeed.editorialReleaseAt,
+      settings: contestSeed.settings ?? json(defaultContestSettings),
       updatedById: adminUser.id,
     },
     create: {
       slug: contestSeed.slug,
       name: contestSeed.name,
       description: contestSeed.description,
+      type: contestSeed.type,
       state: contestSeed.state,
       visibility: contestSeed.visibility,
       startsAt: contestSeed.startsAt,
@@ -1409,6 +1433,7 @@ async function main() {
       rules: contestSeed.rules,
       isRated: contestSeed.isRated,
       editorialReleaseAt: contestSeed.editorialReleaseAt,
+      settings: contestSeed.settings ?? json(defaultContestSettings),
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
@@ -1428,6 +1453,7 @@ async function main() {
         label: problem.label,
         order: problem.order,
         points: problem.points,
+        settings: json({}),
         createdById: adminUser.id,
         updatedById: adminUser.id,
       };
@@ -1445,6 +1471,13 @@ async function main() {
         contestId: contest.id,
         userId: user.id,
         isVirtual: registration.isVirtual ?? false,
+        status: registration.status ?? ContestRegistrationStatus.REGISTERED,
+        isDisqualified: registration.isDisqualified ?? false,
+        disqualifiedAt: null,
+        dqReason: null,
+        deviceFingerprint: null,
+        ipHash: null,
+        inviteCode: null,
         createdById: user.id,
         updatedById: user.id,
       };
