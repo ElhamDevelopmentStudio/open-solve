@@ -2,6 +2,9 @@ import "dotenv/config";
 import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 
+process.env.SENSITIVE_DATA_KEY =
+  process.env.SENSITIVE_DATA_KEY ?? "test_sensitive_data_key_32chars_long!";
+
 const skipDbSetup =
   process.env.SKIP_DB_SETUP === "1" || process.env.SKIP_DB_SETUP?.toLowerCase() === "true";
 
