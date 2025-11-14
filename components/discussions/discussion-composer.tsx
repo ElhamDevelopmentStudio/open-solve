@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
 
 type DiscussionComposerProps = {
   mode: "thread" | "reply";
@@ -27,6 +28,8 @@ const categoryOptions = [
 
 export function DiscussionComposer({ mode, problemId, threadId, parentId, category, onSubmitted }: DiscussionComposerProps) {
   const utils = trpc.useUtils();
+  const sessionQuery = trpc.auth.getSession.useQuery(undefined, { staleTime: 30_000 });
+  const isAuthenticated = Boolean(sessionQuery.data?.user);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [spoiler, setSpoiler] = useState(false);
@@ -94,6 +97,17 @@ export function DiscussionComposer({ mode, problemId, threadId, parentId, catego
       });
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
+        <p>Sign in to join discussions.</p>
+        <Button asChild size="sm" className="mt-3">
+          <Link href="/sign-in">Sign in</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

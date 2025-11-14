@@ -4,6 +4,7 @@ import { DiscussionComposer } from "@/components/discussions/discussion-composer
 import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -168,6 +169,16 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
         <div className="premium-card flex items-center justify-center rounded-2xl p-16 text-sm text-muted-foreground">
           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading discussions…
         </div>
+      ) : listQuery.isError ? (
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load discussions</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            {listQuery.error?.message ?? "Please refresh and try again."}
+            <Button size="sm" onClick={() => listQuery.refetch()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       ) : threads.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 p-16 text-center">
           <p className="text-sm font-medium text-muted-foreground">No discussions yet</p>
