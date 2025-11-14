@@ -91,6 +91,12 @@ export const ContestScoreboard = ({ slug }: ContestScoreboardProps) => {
             Last updated {formatDistanceToNow(new Date(scoreboardMeta.generatedAt), { addSuffix: true })}
           </p>
         ) : null}
+        {scoreboardMeta?.frozen ? (
+          <div className="rounded-xl border border-amber-400/40 bg-amber-50/60 p-3 text-xs text-amber-700">
+            Scoreboard frozen — final standings will unlock{" "}
+            {contest.freezeAt ? formatDistanceToNow(new Date(contest.freezeAt), { addSuffix: true }) : "after the contest"}.
+          </div>
+        ) : null}
       </div>
 
       {scoreboardRows.length === 0 ? (

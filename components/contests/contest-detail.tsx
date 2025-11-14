@@ -11,6 +11,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { AlertCircle, ArrowLeft, Clock, ExternalLink, Flame, Shield, Trophy, Users } from "@/components/icons";
 import Link from "next/link";
 import { toast } from "sonner";
+import type { ContestSettings } from "@/lib/contests/schema";
 
 type ContestDetailProps = {
   slug: string;
@@ -131,6 +132,9 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                 helper={`${detail.data.registration.virtual} virtual`}
               />
             </div>
+            {contest.settings.antiCheat?.enabled ? (
+              <ContestAntiCheatNotice antiCheat={contest.settings.antiCheat} />
+            ) : null}
           </div>
 
           <div className="rounded-2xl border border-border/70 bg-card/60 p-6 lg:w-80">
@@ -409,6 +413,38 @@ const StatPill = ({
       </div>
       <p className="mt-1 text-base font-semibold">{value}</p>
       {helper ? <p className="text-xs text-muted-foreground">{helper}</p> : null}
+    </div>
+  );
+};
+
+const ContestAntiCheatNotice = ({ antiCheat }: { antiCheat: ContestSettings["antiCheat"] }) => {
+  const highlights: string[] = [];
+  if (antiCheat.focus.monitorBlur) {
+    highlights.push("Tab switches are tracked");
+  }
+  if (antiCheat.paste.trackLength) {
+    highlights.push("Clipboard and paste activity logged");
+  }
+  if (antiCheat.multiDevice.requireLock) {
+    highlights.push("Contest locked to one device");
+  }
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-sm">
+      <div className="flex items-center gap-2">
+        <Shield className="h-4 w-4 text-primary" />
+        <div>
+          <p className="font-semibold">Exam mode enabled</p>
+          <p className="text-xs text-muted-foreground">This contest collects anti-cheat telemetry.</p>
+        </div>
+      </div>
+      {highlights.length > 0 ? (
+        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+          {highlights.map((item) => (
+            <li key={item}>• {item}</li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 };

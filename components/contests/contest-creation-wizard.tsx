@@ -355,6 +355,21 @@ export function ContestCreationWizard({
         setStepIndex(2);
         return;
       }
+      const normalizedLabels = selectedProblems.map((problem) => problem.label.trim().toUpperCase());
+      const duplicateLabel = normalizedLabels.find(
+        (label, index) => normalizedLabels.indexOf(label) !== index,
+      );
+      if (duplicateLabel) {
+        toast.warning("Problem labels must be unique.");
+        setStepIndex(2);
+        return;
+      }
+      const invalidPoints = selectedProblems.find((problem) => !problem.points || problem.points <= 0);
+      if (invalidPoints) {
+        toast.warning("Assign points to every problem before launching.");
+        setStepIndex(2);
+        return;
+      }
       const payload = contestBuilderSchema.parse({
         ...values,
         startsAt: new Date(values.startsAt),
