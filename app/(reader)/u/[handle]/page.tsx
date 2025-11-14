@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Params | Promise<Pa
       title: `${profile.name ?? profile.handle} • Profile | OpenSolve`,
       description: `Practice stats and badges for @${profile.handle}.`,
     };
-  } catch (error) {
+  } catch {
     return {
       title: `${resolved.handle} • Profile | OpenSolve`,
       description: "Explore solver stats and badges on OpenSolve.",
@@ -30,8 +30,9 @@ export async function generateMetadata({ params }: { params: Params | Promise<Pa
 export default async function UserProfilePage({ params }: { params: Params | Promise<Params> }) {
   const { handle } = await params;
   const caller = await createTRPCCaller();
+  let state;
   try {
-    const state = await buildHydrationState([
+    state = await buildHydrationState([
       prefetchTrpcQuery(
         "profile.detail",
         () => caller.profile.detail({ handle }),
@@ -41,16 +42,16 @@ export default async function UserProfilePage({ params }: { params: Params | Pro
         },
       ),
     ]);
-
-    return (
-      <HydrationBoundary state={state}>
-        <ProfileClient handle={handle} />
-      </HydrationBoundary>
-    );
   } catch (error) {
     if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
       notFound();
     }
     throw error;
   }
+
+  return (
+    <HydrationBoundary state={state}>
+      <ProfileClient handle={handle} />
+    </HydrationBoundary>
+  );
 }
