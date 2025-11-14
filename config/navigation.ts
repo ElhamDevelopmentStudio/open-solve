@@ -11,7 +11,7 @@ export const dashboardNav: NavItem[] = [
   { title: "Submissions", href: "/submissions", icon: "history" },
   { title: "Leaderboards", href: "/leaderboards", icon: "trophy" },
   { title: "Proposals", href: "/proposals", icon: "sparkles" },
-  { title: "Contests", href: "/contests", icon: "trophy", soon: true },
+  { title: "Contests", href: "/contests", icon: "trophy" },
   { title: "Teams", href: "/teams", icon: "users", soon: true },
 ];
 
