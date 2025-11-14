@@ -2,23 +2,48 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+import type { Prisma } from "@prisma/client";
+
+type ResendEmailEnvelope = {
+  id?: string;
+  to?: string | string[];
+};
+
 type ResendEvent = {
   type?: string;
   event?: string;
-  data?: any;
+  data?: {
+    id?: string;
+    email_id?: string;
+    email?: ResendEmailEnvelope;
+    to?: string | string[];
+    recipient?: string;
+    reason?: string;
+    error?: string;
+    [key: string]: unknown;
+  };
   id?: string;
-  [key: string]: any;
+  error?: string;
+  [key: string]: unknown;
 };
 
 function extractMessageId(payload: ResendEvent): string | null {
   const d = payload.data ?? {};
-  return d.id || d.email_id || d.emailId || d.email?.id || payload.id || null;
+  return d.id ?? d.email_id ?? d.email?.id ?? payload.id ?? null;
 }
 
 function extractRecipient(payload: ResendEvent): string | null {
   const d = payload.data ?? {};
-  const email = d.to?.[0] || d.to || d.recipient || d.email?.to?.[0] || d.email?.to || null;
-  return typeof email === "string" ? email : Array.isArray(email) ? email[0] : null;
+  const email = d.to || d.recipient || d.email?.to || null;
+  if (typeof email === "string") {
+    return email;
+  }
+  if (Array.isArray(email)) {
+    return email[0] ?? null;
+  }
+  return null;
 }
 
 function normalizeStatus(evt: string): string | null {
@@ -43,7 +68,7 @@ export async function POST(req: Request) {
   const status = normalizeStatus(eventType);
   const messageId = extractMessageId(body);
   const recipient = extractRecipient(body);
-  const providerReason = body.data?.reason || body.data?.error || body["error"] || undefined;
+  const providerReason = body.data?.reason || body.data?.error || body.error || undefined;
 
   if (!messageId || !status) {
     logger.warn({ body }, "resend webhook: missing messageId or status");
@@ -51,7 +76,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const sets: any = { status, providerReason };
+    const sets: Prisma.EmailMessageUpdateManyMutationInput = { status, providerReason };
     if (status === "delivered") sets.deliveredAt = new Date();
     if (["bounced", "rejected", "complained"].includes(status)) sets.failureAt = new Date();
 

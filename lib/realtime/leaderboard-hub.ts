@@ -110,6 +110,6 @@ export const getLeaderboardRealtimeHub = () => {
 export const hasLeaderboardRealtimeHub = () => Boolean(globalThis.__leaderboardHub);
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __leaderboardHub: LeaderboardRealtimeHub | undefined;
 }
