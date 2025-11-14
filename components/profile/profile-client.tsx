@@ -1,25 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { trpc } from "@/lib/trpc/client";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
-import type { ProfileDetail } from "@/lib/profile/service";
-import { profileSettingsSchema, type ProfileSettingsInput } from "@/lib/validators/profile";
-import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import type { ProfileDetail } from "@/lib/profile/service";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
+import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+import { profileSettingsSchema, type ProfileSettingsInput } from "@/lib/validators/profile";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { formatDistanceToNow } from "date-fns";
 import {
   Activity,
   ArrowUpRight,
+  Flame,
   Github,
   Globe,
   Linkedin,
@@ -28,11 +28,11 @@ import {
   ShieldAlert,
   ShieldCheck,
   Trophy,
-  Flame,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import Link from "next/link";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
 
 type ProfileClientProps = {
@@ -70,9 +70,10 @@ export function ProfileClient({ handle }: ProfileClientProps) {
 function ProfileView({ profile }: { profile: ProfileDetail }) {
   const showCountry = profile.showCountry || profile.permissions.isOwner || profile.permissions.isStaff;
   const showSocials = profile.showSocials || profile.permissions.isOwner || profile.permissions.isStaff;
+  const showPrivacySettings = profile.permissions.isOwner || profile.permissions.isStaff;
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-7xl space-y-8 animate-fade-in">
       <ProfileHero profile={profile} showCountry={showCountry} showSocials={showSocials} />
       <StatsGrid profile={profile} />
       <ChartsSection profile={profile} />
@@ -80,7 +81,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
       <RecentSolves profile={profile} />
       <BadgesSection profile={profile} />
       {profile.staffInsights ? <StaffInsights insights={profile.staffInsights} /> : null}
-      {profile.privacySettings ? (
+      {showPrivacySettings && profile.privacySettings ? (
         <ProfilePrivacyCard handle={profile.handle} settings={profile.privacySettings} />
       ) : null}
     </div>
@@ -100,24 +101,24 @@ function ProfileHero({
   const socials = useMemo(() => buildSocialLinks(profile.socials, showSocials), [profile.socials, showSocials]);
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-center">
-          <Avatar className="h-24 w-24 text-2xl">
+    <div className="premium-card overflow-hidden rounded-2xl">
+      <div className="flex flex-col gap-6 p-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-5 lg:flex-row lg:items-center">
+          <Avatar className="h-28 w-28 ring-4 ring-border/30 ring-offset-2 ring-offset-background">
             {profile.avatarUrl ? <AvatarImage src={profile.avatarUrl} alt={profile.handle} /> : null}
-            <AvatarFallback>{profile.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarFallback className="text-2xl font-bold">{profile.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <div>
                 <p className="text-sm text-muted-foreground">@{profile.handle}</p>
-                <h1 className="text-2xl font-semibold tracking-tight">
+                <h1 className="text-2xl font-bold tracking-tight">
                   {profile.name ?? "OpenSolve user"}
                 </h1>
               </div>
               <RoleBadge role={profile.role} status={profile.status} />
               {!profile.showOnLeaderboard ? (
-                <Badge variant="outline" className="border-amber-300/60 text-amber-600 dark:border-amber-400/40 dark:text-amber-200">
+                <Badge variant="outline" className="rounded-full border-amber-300/60 text-amber-600 dark:border-amber-400/40 dark:text-amber-200">
                   Leaderboards opt-out
                 </Badge>
               ) : null}
@@ -125,7 +126,7 @@ function ProfileHero({
             {profile.bio ? <p className="max-w-2xl text-sm text-muted-foreground">{profile.bio}</p> : null}
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {countryLabel ? (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" />
                   {countryLabel}
                 </span>
@@ -133,12 +134,12 @@ function ProfileHero({
               {profile.timezone ? <span className="text-xs uppercase">{profile.timezone}</span> : null}
             </div>
             {socials.length > 0 ? (
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2">
                 {socials.map((social) => (
-                  <Button key={social.href} size="sm" variant="outline" className="gap-1" asChild>
+                  <Button key={social.href} size="sm" variant="outline" className="h-8 gap-1.5 rounded-xl" asChild>
                     <a href={social.href} target="_blank" rel="noreferrer">
                       {social.icon}
-                      <span>{social.label}</span>
+                      <span className="text-xs">{social.label}</span>
                     </a>
                   </Button>
                 ))}
@@ -147,23 +148,69 @@ function ProfileHero({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" asChild>
+          <Button variant="outline" asChild className="rounded-xl">
             <Link href="/leaderboards">
               <Trophy className="mr-2 h-4 w-4" />
-              View leaderboards
+              Leaderboards
             </Link>
           </Button>
           {profile.permissions.isOwner ? (
-            <Button variant="outline" asChild>
+            <Button variant="default" asChild className="rounded-xl">
               <Link href="/settings/profile">
-                Edit profile
+                Edit Profile
                 <ArrowUpRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+function StatsGrid({ profile }: { profile: ProfileDetail }) {
+  const cards = [
+    {
+      label: "Total solved",
+      value: profile.stats.totalSolved.toLocaleString(),
+      helper: profile.stats.lastAcceptedAt ? `Last AC ${formatDistanceToNow(profile.stats.lastAcceptedAt, { addSuffix: true })}` : "",
+      icon: <Trophy className="h-5 w-5 text-primary" />,
+    },
+    {
+      label: "Problems attempted",
+      value: profile.attempts.attempted.toLocaleString(),
+      helper: `${profile.attempts.solved.toLocaleString()} solved`,
+      icon: <Activity className="h-5 w-5 text-secondary" />,
+    },
+    {
+      label: "Acceptance rate",
+      value: `${Math.round(profile.stats.acceptanceRate * 100)}%`,
+      helper: profile.stats.firstAcceptedAt ? `First AC ${new Date(profile.stats.firstAcceptedAt).getFullYear()}` : "",
+      icon: <ShieldCheck className="h-5 w-5 text-emerald-500" />,
+    },
+    {
+      label: "Current streak",
+      value: `${profile.stats.streak.current} days`,
+      helper: `Best ${profile.stats.streak.best} days`,
+      icon: <Flame className="h-5 w-5 text-amber-500" />,
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <div key={card.label} className="premium-card rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted/60">{card.icon}</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{card.label}</p>
+              <p className="text-2xl font-bold tracking-tight">{card.value}</p>
+              {card.helper ? <p className="truncate text-xs text-muted-foreground">{card.helper}</p> : null}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -176,52 +223,6 @@ function RoleBadge({ role, status }: { role: ProfileDetail["role"]; status: Prof
   );
 }
 
-function StatsGrid({ profile }: { profile: ProfileDetail }) {
-  const cards = [
-    {
-      label: "Total solved",
-      value: profile.stats.totalSolved.toLocaleString(),
-      helper: profile.stats.lastAcceptedAt ? `Last AC ${formatDistanceToNow(profile.stats.lastAcceptedAt, { addSuffix: true })}` : "",
-      icon: <Trophy className="h-4 w-4 text-primary" />,
-    },
-    {
-      label: "Problems attempted",
-      value: profile.attempts.attempted.toLocaleString(),
-      helper: `${profile.attempts.solved.toLocaleString()} solved`,
-      icon: <Activity className="h-4 w-4 text-secondary" />,
-    },
-    {
-      label: "Acceptance rate",
-      value: `${Math.round(profile.stats.acceptanceRate * 100)}%`,
-      helper: profile.stats.firstAcceptedAt ? `First AC ${new Date(profile.stats.firstAcceptedAt).getFullYear()}` : "",
-      icon: <ShieldCheck className="h-4 w-4 text-emerald-500" />,
-    },
-    {
-      label: "Current streak",
-      value: `${profile.stats.streak.current} days`,
-      helper: `Best ${profile.stats.streak.best} days`,
-      icon: <Flame className="h-4 w-4 text-amber-500" />,
-    },
-  ];
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.label}>
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-full bg-muted p-3 text-muted-foreground">{card.icon}</div>
-            <div>
-              <p className="text-xs uppercase text-muted-foreground">{card.label}</p>
-              <p className="text-2xl font-semibold tracking-tight">{card.value}</p>
-              {card.helper ? <p className="text-xs text-muted-foreground">{card.helper}</p> : null}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 function ChartsSection({ profile }: { profile: ProfileDetail }) {
   const difficultyData = profile.stats.solvedByDifficulty.map((entry) => ({
     difficulty: entry.difficulty,
@@ -231,44 +232,36 @@ function ChartsSection({ profile }: { profile: ProfileDetail }) {
   const tagData = profile.stats.solvedByTag;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Solved by difficulty</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer className="h-64" config={{ count: { label: "Problems", color: "var(--chart-1)" } }}>
-            <BarChart data={difficultyData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="label" stroke="currentColor" fontSize={12} tickLine={false} axisLine={false} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-1)" />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Top tags</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {tagData.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Tags will appear once this solver has public solves.</p>
-          ) : (
-            <div className="space-y-3">
-              {tagData.map((tag) => (
-                <div key={tag.slug} className="flex items-center justify-between rounded-xl border border-border/60 p-3">
-                  <div>
-                    <p className="font-medium">#{tag.slug}</p>
-                    <p className="text-xs text-muted-foreground">{tag.name}</p>
-                  </div>
-                  <Badge variant="secondary">{tag.count.toLocaleString()}</Badge>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Solved by Difficulty</h3>
+        <ChartContainer className="h-64" config={{ count: { label: "Problems", color: "var(--chart-1)" } }}>
+          <BarChart data={difficultyData}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+            <XAxis dataKey="label" stroke="currentColor" fontSize={12} tickLine={false} axisLine={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-1)" />
+          </BarChart>
+        </ChartContainer>
+      </div>
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Top Tags</h3>
+        {tagData.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Tags will appear once this solver has public solves.</p>
+        ) : (
+          <div className="space-y-3">
+            {tagData.map((tag) => (
+              <div key={tag.slug} className="flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 smooth-transition hover:border-border">
+                <div>
+                  <p className="font-medium">#{tag.slug}</p>
+                  <p className="text-xs text-muted-foreground">{tag.name}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <Badge variant="secondary" className="rounded-full">{tag.count.toLocaleString()}</Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -282,39 +275,31 @@ function ActivitySection({ profile }: { profile: ProfileDetail }) {
   }));
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Streak calendar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-[repeat(24,minmax(0,1fr))] gap-1 text-[0px]">
-            {heatCells.map((cell) => (
-              <div
-                key={cell.date}
-                title={`${new Date(cell.date).toLocaleDateString()} — ${cell.count} solves`}
-                className={cn("h-4 w-full rounded-sm", heatColor(cell.count, maxHeat))}
-              />
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">Past {heatCells.length} days</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Time-of-day focus</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer className="h-64" config={{ count: { label: "Solves", color: "var(--chart-5)" } }}>
-            <BarChart data={hourlyData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="hour" tickLine={false} axisLine={false} stroke="currentColor" fontSize={11} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-5)" />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Streak Calendar</h3>
+        <div className="grid grid-cols-[repeat(24,minmax(0,1fr))] gap-1 text-[0px]">
+          {heatCells.map((cell) => (
+            <div
+              key={cell.date}
+              title={`${new Date(cell.date).toLocaleDateString()} — ${cell.count} solves`}
+              className={cn("h-4 w-full rounded-sm smooth-transition hover:scale-110", heatColor(cell.count, maxHeat))}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Past {heatCells.length} days</p>
+      </div>
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Time-of-Day Focus</h3>
+        <ChartContainer className="h-64" config={{ count: { label: "Solves", color: "var(--chart-5)" } }}>
+          <BarChart data={hourlyData}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+            <XAxis dataKey="hour" tickLine={false} axisLine={false} stroke="currentColor" fontSize={11} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-5)" />
+          </BarChart>
+        </ChartContainer>
+      </div>
     </div>
   );
 }
@@ -325,21 +310,19 @@ function RecentSolves({ profile }: { profile: ProfileDetail }) {
     return null;
   }
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Recent accepted submissions</CardTitle>
-            <p className="text-sm text-muted-foreground">Highlights from the last few solves</p>
-          </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/submissions">View submissions</Link>
-          </Button>
+    <div className="premium-card space-y-4 rounded-2xl p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Recent Accepted Submissions</h3>
+          <p className="text-sm text-muted-foreground">Highlights from the last few solves</p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+        <Button variant="ghost" size="sm" asChild className="rounded-xl">
+          <Link href="/submissions">View All</Link>
+        </Button>
+      </div>
+      <div className="space-y-3">
         {solves.map((solve) => (
-          <div key={solve.id} className="rounded-xl border border-border/70 p-3">
+          <div key={solve.id} className="rounded-xl border border-border/70 bg-card/50 p-4 smooth-transition hover:border-border">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <Link href={`/problems/${solve.problem.slug}`} className="text-sm font-medium text-primary hover:underline">
@@ -349,12 +332,12 @@ function RecentSolves({ profile }: { profile: ProfileDetail }) {
                   {formatDistanceToNow(new Date(solve.createdAt), { addSuffix: true })}
                 </div>
               </div>
-              <Badge variant="secondary">{solve.languageCode}</Badge>
+              <Badge variant="secondary" className="rounded-full">{solve.languageCode}</Badge>
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -363,19 +346,17 @@ function BadgesSection({ profile }: { profile: ProfileDetail }) {
     return null;
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Badges</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-wrap gap-3">
+    <div className="premium-card space-y-4 rounded-2xl p-6">
+      <h3 className="text-lg font-semibold">Badges</h3>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {profile.badges.map((badge) => (
-          <div key={badge.slug} className="rounded-xl border border-border/70 bg-card/70 px-4 py-3 shadow-sm">
-            <p className="font-medium">{badge.name}</p>
-            {badge.description ? <p className="text-xs text-muted-foreground">{badge.description}</p> : null}
+          <div key={badge.slug} className="rounded-xl border border-border/70 bg-gradient-to-br from-card to-card/50 p-4 shadow-sm smooth-transition hover:border-border hover:shadow-md">
+            <p className="font-semibold">{badge.name}</p>
+            {badge.description ? <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p> : null}
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -385,22 +366,35 @@ function StaffInsights({
   insights: NonNullable<ProfileDetail["staffInsights"]>;
 }) {
   return (
-    <Card className="border-destructive/40 bg-destructive/5">
-      <CardHeader className="flex flex-row items-center gap-3">
-        <ShieldAlert className="h-5 w-5 text-destructive" />
-        <div>
-          <CardTitle className="text-destructive">Staff insights</CardTitle>
-          <p className="text-xs text-muted-foreground">Visible only to staff and moderators.</p>
+    <div className="premium-card space-y-4 rounded-2xl border-destructive/20 p-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+          <ShieldAlert className="h-5 w-5 text-destructive" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <p>
-          Rapid solve spike: <span className={insights.rapidSolveSpike ? "text-destructive" : "text-muted-foreground"}>{insights.rapidSolveSpike ? "Yes" : "No"}</span>
-        </p>
-        <p>Manual reviews pending: {insights.manualReviewCount}</p>
-        <p>Status: {insights.shadowBanned ? "Shadow banned" : "Active"}</p>
-      </CardContent>
-    </Card>
+        <div>
+          <h3 className="text-lg font-semibold text-destructive">Staff Insights</h3>
+          <p className="text-xs text-muted-foreground">Visible only to staff and moderators</p>
+        </div>
+      </div>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <span>Rapid solve spike:</span>
+          <span className={insights.rapidSolveSpike ? "font-semibold text-destructive" : "text-muted-foreground"}>
+            {insights.rapidSolveSpike ? "Yes" : "No"}
+          </span>
+        </div>
+        <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <span>Manual reviews pending:</span>
+          <span className="font-semibold">{insights.manualReviewCount}</span>
+        </div>
+        <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <span>Account status:</span>
+          <span className={insights.shadowBanned ? "font-semibold text-destructive" : "font-semibold text-success"}>
+            {insights.shadowBanned ? "Shadow Banned" : "Active"}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -416,55 +410,61 @@ function ProfilePrivacyCard({ handle, settings }: { handle: string; settings: Pr
 
   const mutation = trpc.profile.updateSettings.useMutation({
     onSuccess: () => {
-      toast.success("Preferences updated");
+      toast.success("Preferences updated", {
+        description: "Your privacy settings have been saved",
+      });
       utils.profile.detail.invalidate({ handle });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => {
+      toast.error("Failed to update", {
+        description: error.message,
+      });
+    },
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Privacy & sharing</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} className="space-y-6">
-            <div className="space-y-4">
-              {renderToggle(form, "shareAcceptedCode", "Share accepted code", "Opt-in to displaying AC snippets on your profile.")}
-              {renderToggle(form, "showOnLeaderboard", "Appear on leaderboards", "Opt-out removes you from public rankings.")}
-              {renderToggle(form, "showCountry", "Show country", "Controls whether your flag is visible to others.")}
-              {renderToggle(form, "showSocials", "Show social links", "Hide or reveal linked accounts on your profile.")}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {(["github", "linkedin", "twitter", "website"] as const).map((key) => (
-                <FormField
-                  key={key}
-                  control={form.control}
-                  name={`socials.${key}` as const}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="capitalize">{key}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={`https://${key}.com/you`}
-                          value={field.value ?? ""}
-                          onChange={(event) => field.onChange(event.target.value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-            <Button type="submit" disabled={mutation.isPending} className="w-full md:w-auto">
-              {mutation.isPending ? "Saving..." : "Save preferences"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <div className="premium-card space-y-6 rounded-2xl p-8">
+      <div>
+        <h3 className="text-lg font-semibold">Privacy & Sharing</h3>
+        <p className="text-sm text-muted-foreground">Control what information is visible on your profile</p>
+      </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} className="space-y-6">
+          <div className="space-y-3">
+            {renderToggle(form, "shareAcceptedCode", "Share Accepted Code", "Opt-in to displaying AC snippets on your profile")}
+            {renderToggle(form, "showOnLeaderboard", "Appear on Leaderboards", "Opt-out removes you from public rankings")}
+            {renderToggle(form, "showCountry", "Show Country", "Controls whether your flag is visible to others")}
+            {renderToggle(form, "showSocials", "Show Social Links", "Hide or reveal linked accounts on your profile")}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(["github", "linkedin", "twitter", "website"] as const).map((key) => (
+              <FormField
+                key={key}
+                control={form.control}
+                name={`socials.${key}` as const}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-semibold capitalize">{key}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={`https://${key}.com/you`}
+                        value={field.value ?? ""}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        className="rounded-xl"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
+          <Button type="submit" disabled={mutation.isPending} className="rounded-xl">
+            {mutation.isPending ? "Saving..." : "Save Preferences"}
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 }
 
@@ -481,9 +481,9 @@ function renderToggle(
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem className="flex items-center justify-between rounded-xl border border-border/60 p-3">
-          <div>
-            <FormLabel>{label}</FormLabel>
+        <FormItem className="flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-4">
+          <div className="space-y-0.5">
+            <FormLabel className="text-sm font-semibold">{label}</FormLabel>
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
           <FormControl>

@@ -53,11 +53,11 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export interface DataTableColumn<TData, TValue> extends ColumnDef<TData, TValue> {
+export type DataTableColumn<TData, TValue = unknown> = ColumnDef<TData, TValue> & {
   accessorKey?: string;
   enableSorting?: boolean;
   enableHiding?: boolean;
-}
+};
 
 interface DataTableProps<TData, TValue> {
   columns: DataTableColumn<TData, TValue>[];

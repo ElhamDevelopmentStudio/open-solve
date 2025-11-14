@@ -262,37 +262,28 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
       <a href="#problem-library-results" className="skip-link sr-only focus:not-sr-only">
         Skip to results
       </a>
-      <div className="space-y-6">
-        <header className="space-y-4">
-          <Breadcrumb>
-            <BreadcrumbList className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/problems" className="font-medium">Problems</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              {mergedFilters.tags[0] ? (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="font-medium">#{mergedFilters.tags[0]}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              ) : null}
-            </BreadcrumbList>
-          </Breadcrumb>
+      <div className="space-y-8">
+        <header className="space-y-6">
+          <div className="space-y-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Problem Library</p>
+            <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Browse Problems</h1>
+            <p className="max-w-2xl text-base text-muted-foreground">
+              Explore our curated collection of coding challenges across various topics and difficulty levels
+            </p>
+          </div>
+          
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative flex-1 min-w-[280px]">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search problems"
+                placeholder="Search problems by title or description..."
                 aria-label="Search problems"
-                className="pl-9 pr-20"
+                className="h-11 rounded-xl pl-11 pr-24 focus-ring"
               />
               <span
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
                 aria-live="polite"
               >
                 {results?.total ?? 0} results
@@ -308,7 +299,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                   handleFilterChange({ sort: value as ProblemFiltersInput["sort"] })
                 }
               >
-                <SelectTrigger id="sort" className="w-[170px]">
+                <SelectTrigger id="sort" className="w-[170px] rounded-xl focus-ring">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,12 +312,12 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
               </Select>
               <Drawer open={filtersOpen} onOpenChange={setFiltersOpen} direction="bottom">
                 <DrawerTrigger asChild>
-                  <Button variant="outline" size="sm" className="lg:hidden">
-                    <Filter className="mr-2 h-4 w-4" /> Filters
+                  <Button variant="outline" size="sm" className="gap-2 rounded-xl lg:hidden">
+                    <Filter className="h-4 w-4" /> Filters
                     {hasActiveFilters && (
-                      <span className="ml-2 inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-primary/10 px-1 text-xs text-primary">
+                      <Badge variant="secondary" className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold">
                         {activeFilterCount}
-                      </span>
+                      </Badge>
                     )}
                   </Button>
                 </DrawerTrigger>
