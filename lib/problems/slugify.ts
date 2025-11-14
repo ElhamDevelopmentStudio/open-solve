@@ -14,7 +14,7 @@ export async function generateUniqueProblemSlug(
   const base = slugify(candidate) || "problem";
   let slug = base;
   let counter = 1;
-  // eslint-disable-next-line no-constant-condition
+   
   while (await exists(slug)) {
     counter += 1;
     slug = `${base}-${counter}`;

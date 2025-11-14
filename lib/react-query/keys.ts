@@ -111,6 +111,12 @@ export const trpcProcedures = {
   trails: {
     getForProblem: "trails.getForProblem" as ProcedureName,
   },
+  contests: {
+    overview: "contests.overview" as ProcedureName,
+    detail: "contests.detail" as ProcedureName,
+    standings: "contests.standings" as ProcedureName,
+    clarifications: "contests.clarifications" as ProcedureName,
+  },
 } as const;
 
 export type QueryTag =
@@ -126,7 +132,8 @@ export type QueryTag =
   | "leaderboard"
   | "discussions"
   | "editorials"
-  | "trails";
+  | "trails"
+  | "contests";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
@@ -157,4 +164,10 @@ export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   ],
   editorials: [trpcProcedures.editorials.getByProblem],
   trails: [trpcProcedures.trails.getForProblem],
+  contests: [
+    trpcProcedures.contests.overview,
+    trpcProcedures.contests.detail,
+    trpcProcedures.contests.standings,
+    trpcProcedures.contests.clarifications,
+  ],
 };
