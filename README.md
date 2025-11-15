@@ -149,6 +149,14 @@ Vitest will clone the schema into `test_<worker>` automatically, apply migration
 
 ---
 
+## 📈 Metrics & Observability
+
+- scrape `GET /api/internal/metrics` with `Authorization: Bearer $METRICS_ACCESS_TOKEN`.
+- Exposes `opensolve_trpc_duration_seconds`, `opensolve_submission_events_total`, `opensolve_judge_queue_messages`, and contest gauges.
+- Deployments should call this endpoint after rolling out to ensure judge queues and tRPC calls are healthy.
+
+---
+
 ## 🛡️ Creating an admin account
 
 Roles gate problem authoring, publishing, and moderation tools. To promote one of your users to `ADMIN`:

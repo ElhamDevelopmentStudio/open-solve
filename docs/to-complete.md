@@ -219,25 +219,16 @@ Only the client consumption layer changes, detailed below.
 modes.
 
 _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and a staff console for manual verdicts._
--   **Queue:** **RabbitMQ** (durable **quorum queues**), exchanges: `judge.submissions`, `judge.rejudge`, `judge.manual`, DLX: `judge.DLX`.
-    
--   **Modes:**
-    
-    -   **Autonomic Judge** — automated via sandbox runners.
-        
-    -   **Manual Judge** — routed to staff for review.
-        
--   **Isolation:** Docker-per-run; strict CPU/memory/time caps per language; **no network**.
-    
--   **Languages (phase 1):** Python, C++, Java, JavaScript/Node.
-    
--   **Runners:** unified contract: compile → run → capture stdout/stderr → compare (or checker script).
-    
--   **Verdicts:** AC, WA, TLE, MLE, RE, CE, **MANUAL_PENDING**, **MANUAL_ACCEPTED**, **MANUAL_REJECTED**, **MANUAL_PARTIAL**.
-    
--   **Retries:** TTL + **DLX** backoff tiers, **idempotency by `submissionId`**.
-    
--   **Telemetry:** queue depth/latency, container failures, node health.  
+- **Queue:** **RabbitMQ** (durable **quorum queues**), exchanges: `judge.submissions`, `judge.rejudge`, `judge.manual`, DLX: `judge.DLX`.
+- **Modes:**
+  - **Autonomic Judge** — automated via sandbox runners.
+  - **Manual Judge** — routed to staff for review.
+- **Isolation:** Docker-per-run; strict CPU/memory/time caps per language; **no network**.
+- **Languages (phase 1):** Python, C++, Java, JavaScript/Node.
+- **Runners:** unified contract: compile → run → capture stdout/stderr → compare (or checker script).
+- **Verdicts:** AC, WA, TLE, MLE, RE, CE, **MANUAL_PENDING**, **MANUAL_ACCEPTED**, **MANUAL_REJECTED**, **MANUAL_PARTIAL**.
+- **Retries:** TTL + **DLX** backoff tiers, **idempotency by `submissionId`**.
+- **Telemetry:** queue depth/latency, container failures, node health.
     **DoD:** ≥ **1K submissions/hour per node**, reproducible verdicts, no cross-tenant leaks.
 
 ---
@@ -310,7 +301,22 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 14) Performance & Caching
+---
+
+
+## 14) User Interaction Analytics
+
+**Goals:** Understand real user behavior to improve problem quality and UX.
+
+- **Signals:** page visit, time-on-question, active coding time, “Solve/Run/Submit” clicks, hint/editorial usage, abandon rates.
+- **Method:** lightweight, fire-and-forget **beacon requests** sent on interactions and pagehide; no UX impact.
+- **Processing:** backend logs events to analytics table; aggregate for problem difficulty, funnel metrics, and UX insights.
+- **Privacy:** no code content collected; only minimal event metadata.  
+    **DoD:** events reliably captured across navigation/unload; dashboards show per-problem engagement metrics.
+
+---
+
+## 15) Performance & Caching
 
 **Goals:** Snappy UX at scale.
 
@@ -321,7 +327,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 15) Docs & Developer Experience
+## 16) Docs & Developer Experience
 
 **Goals:** Attract contributors.
 
@@ -332,7 +338,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 16) Deployment & Operations
+## 17) Deployment & Operations
 
 **Goals:** Reproducible environments.
 
@@ -345,7 +351,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 17) Launch & Growth
+## 18) Launch & Growth
 
 **Goals:** Community momentum.
 
