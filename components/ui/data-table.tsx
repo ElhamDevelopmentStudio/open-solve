@@ -13,19 +13,17 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Eye,
-  EyeOff,
-  Search,
-  X,
-} from "lucide-react";
+  ArrowDown01Icon,
+  ArrowLeft01Icon,
+  ArrowLeftDoubleIcon,
+  ArrowRight01Icon,
+  ArrowRightDoubleIcon,
+  ArrowUp01Icon,
+  ArrowUpDownIcon,
+  Cancel01Icon,
+  EyeIcon,
+  Search01Icon,
+} from "hugeicons-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -128,7 +126,7 @@ export function DataTable<TData, TValue>({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {searchKey && (
           <div className="relative flex-1 sm:max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search01Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
               value={searchValue}
@@ -142,7 +140,7 @@ export function DataTable<TData, TValue>({
                 className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
                 onClick={handleClearSearch}
               >
-                <X className="h-3.5 w-3.5" />
+                <Cancel01Icon className="h-3.5 w-3.5" />
                 <span className="sr-only">Clear search</span>
               </Button>
             )}
@@ -153,12 +151,12 @@ export function DataTable<TData, TValue>({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="ml-auto h-9">
                 {columnVisibility && Object.values(columnVisibility).filter((v) => !v).length > 0 ? (
-                  <EyeOff className="mr-2 h-4 w-4" />
+                  <Cancel01Icon className="mr-2 h-4 w-4" />
                 ) : (
-                  <Eye className="mr-2 h-4 w-4" />
+                  <EyeIcon className="mr-2 h-4 w-4" />
                 )}
                 Columns
-                <ChevronDown className="ml-2 h-4 w-4" />
+                <ArrowDown01Icon className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -272,7 +270,7 @@ export function DataTable<TData, TValue>({
                   disabled={!table.getCanPreviousPage()}
                 >
                   <span className="sr-only">Go to first page</span>
-                  <ChevronsLeft className="h-4 w-4" />
+                  <ArrowLeftDoubleIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
@@ -282,7 +280,7 @@ export function DataTable<TData, TValue>({
                   disabled={!table.getCanPreviousPage()}
                 >
                   <span className="sr-only">Go to previous page</span>
-                  <ChevronLeft className="h-4 w-4" />
+                  <ArrowLeft01Icon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
@@ -292,7 +290,7 @@ export function DataTable<TData, TValue>({
                   disabled={!table.getCanNextPage()}
                 >
                   <span className="sr-only">Go to next page</span>
-                  <ChevronRight className="h-4 w-4" />
+                  <ArrowRight01Icon className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
@@ -302,7 +300,7 @@ export function DataTable<TData, TValue>({
                   disabled={!table.getCanNextPage()}
                 >
                   <span className="sr-only">Go to last page</span>
-                  <ChevronsRight className="h-4 w-4" />
+                  <ArrowRightDoubleIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -336,14 +334,13 @@ export function DataTableColumnHeader<TData, TValue>({
       >
         <span className="text-xs font-medium uppercase">{title}</span>
         {column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-3.5 w-3.5" />
+          <ArrowDown01Icon className="ml-2 h-3.5 w-3.5" />
         ) : column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-3.5 w-3.5" />
+          <ArrowUp01Icon className="ml-2 h-3.5 w-3.5" />
         ) : (
-          <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-50" />
+          <ArrowUpDownIcon className="ml-2 h-3.5 w-3.5 opacity-50" />
         )}
       </Button>
     </div>
   );
 }
-
