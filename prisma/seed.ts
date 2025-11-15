@@ -7,6 +7,8 @@ import {
   ContestType,
   ContestVisibility,
   ContestRegistrationStatus,
+  IncidentSeverity,
+  IncidentStatus,
   ProblemProposalStatus,
   ProblemState,
   ProblemVisibility,
@@ -1648,6 +1650,180 @@ async function main() {
   });
 
   console.info("✅ Contest + leaderboard seeded");
+
+  console.info("Seeding admin control surfaces...");
+  const systemSettingSeeds: Array<{
+    key: string;
+    label: string;
+    description: string;
+    value: Prisma.InputJsonValue;
+  }> = [
+    {
+      key: "maintenance_mode",
+      label: "Maintenance Mode",
+      description: "Gate the platform behind a banner and optional read-only mode.",
+      value: {
+        enabled: false,
+        message: "",
+        allowSubmissions: true,
+        lastToggledBy: adminUser?.handle ?? "admin",
+      },
+    },
+    {
+      key: "submission_limits",
+      label: "Submission Limits",
+      description: "Global rate limit overrides for Judge capacity planning.",
+      value: {
+        perMinute: 25,
+        perHour: 250,
+        contestMultiplier: 2,
+      },
+    },
+  ];
+
+  for (const setting of systemSettingSeeds) {
+    await prisma.systemSetting.upsert({
+      where: { key: setting.key },
+      update: {
+        label: setting.label,
+        description: setting.description,
+        value: setting.value,
+        updatedById: adminUser?.id,
+      },
+      create: {
+        key: setting.key,
+        label: setting.label,
+        description: setting.description,
+        value: setting.value,
+        createdById: adminUser?.id,
+        updatedById: adminUser?.id,
+      },
+    });
+  }
+
+  const featureFlagSeeds: Array<{
+    key: string;
+    name: string;
+    description: string;
+    enabled: boolean;
+    rolloutPercentage: number;
+    targeting: Prisma.InputJsonValue | null;
+  }> = [
+    {
+      key: "editor.v2",
+      name: "Monaco Editor v2",
+      description: "Ships the new Monaco-based solving experience.",
+      enabled: true,
+      rolloutPercentage: 40,
+      targeting: {
+        roles: ["ADMIN", "PROBLEM_CURATOR"],
+      },
+    },
+    {
+      key: "discussions.trails",
+      name: "Approach Trails",
+      description: "Enables the collaborative solution trail explorer.",
+      enabled: true,
+      rolloutPercentage: 65,
+      targeting: {
+        minimumSolved: 5,
+      },
+    },
+    {
+      key: "judge.lowpower-mode",
+      name: "Judge Low Power Mode",
+      description: "Slow down the queue when infrastructure is constrained.",
+      enabled: false,
+      rolloutPercentage: 0,
+      targeting: null,
+    },
+  ];
+
+  for (const flag of featureFlagSeeds) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {
+        name: flag.name,
+        description: flag.description,
+        enabled: flag.enabled,
+        rolloutPercentage: flag.rolloutPercentage,
+        targeting: flag.targeting as Prisma.InputJsonValue,
+        updatedById: adminUser?.id,
+      },
+      create: {
+        key: flag.key,
+        name: flag.name,
+        description: flag.description,
+        enabled: flag.enabled,
+        rolloutPercentage: flag.rolloutPercentage,
+        targeting: flag.targeting as Prisma.InputJsonValue,
+        createdById: adminUser?.id,
+        updatedById: adminUser?.id,
+      },
+    });
+  }
+
+  const incidentSeeds: Array<{
+    title: string;
+    summary: string;
+    status: IncidentStatus;
+    severity: IncidentSeverity;
+    impact?: string;
+    timeline?: Prisma.InputJsonValue;
+    resolvedAt?: Date | null;
+  }> = [
+    {
+      title: "Judge backlog spike",
+      summary: "Submissions queue exceeded SLA; load-shedding enabled.",
+      status: IncidentStatus.INVESTIGATING,
+      severity: IncidentSeverity.SEV2,
+      impact: "Average wait time increased to 8 minutes.",
+      timeline: [
+        { at: new Date(Date.now() - 1000 * 60 * 45), note: "Alert fired for queue depth > 500." },
+        { at: new Date(Date.now() - 1000 * 60 * 20), note: "Scaled runners + enabled low power mode." },
+      ] as Prisma.InputJsonValue,
+    },
+    {
+      title: "Payment provider webhook delays",
+      summary: "Webhooks delayed, contest registrations pending review.",
+      status: IncidentStatus.MONITORING,
+      severity: IncidentSeverity.SEV3,
+      impact: "Sign-ups succeeds but badges delayed by up to 15 minutes.",
+      timeline: [
+        { at: new Date(Date.now() - 1000 * 60 * 120), note: "Provider incident acknowledged." },
+        { at: new Date(Date.now() - 1000 * 60 * 70), note: "Backfill job executed." },
+      ] as Prisma.InputJsonValue,
+      resolvedAt: null,
+    },
+  ];
+
+  for (const incident of incidentSeeds) {
+    await prisma.incident.upsert({
+      where: { title: incident.title },
+      update: {
+        summary: incident.summary,
+        status: incident.status,
+        severity: incident.severity,
+        impact: incident.impact,
+        timeline: incident.timeline as Prisma.InputJsonValue,
+        resolvedAt: incident.resolvedAt ?? undefined,
+        updatedById: adminUser?.id,
+      },
+      create: {
+        title: incident.title,
+        summary: incident.summary,
+        status: incident.status,
+        severity: incident.severity,
+        impact: incident.impact,
+        timeline: incident.timeline as Prisma.InputJsonValue,
+        resolvedAt: incident.resolvedAt ?? undefined,
+        createdById: adminUser?.id,
+        updatedById: adminUser?.id,
+      },
+    });
+  }
+
+  console.info("✅ Admin control surfaces seeded");
 
   console.info("\nSeeding complete ✅\n");
 }
