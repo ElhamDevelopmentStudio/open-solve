@@ -117,6 +117,31 @@ export const trpcProcedures = {
     standings: "contests.standings" as ProcedureName,
     clarifications: "contests.clarifications" as ProcedureName,
   },
+  admin: {
+    dashboard: {
+      overview: "admin.dashboard.overview" as ProcedureName,
+    },
+    users: {
+      list: "admin.users.list" as ProcedureName,
+      detail: "admin.users.detail" as ProcedureName,
+    },
+    problems: {
+      list: "admin.problems.list" as ProcedureName,
+    },
+    submissions: {
+      list: "admin.submissions.list" as ProcedureName,
+    },
+    system: {
+      overview: "admin.system.overview" as ProcedureName,
+    },
+    flags: {
+      list: "admin.flags.list" as ProcedureName,
+    },
+    audit: {
+      logs: "admin.audit.logs" as ProcedureName,
+      incidents: "admin.audit.incidents" as ProcedureName,
+    },
+  },
 } as const;
 
 export type QueryTag =

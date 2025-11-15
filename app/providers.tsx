@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeProvider, TrpcProvider } from "@/components/providers";
+import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { Toaster } from "@/components/ui/sonner";
 import { queryClientConfig } from "@/lib/react-query/config";
 import {
@@ -27,6 +28,7 @@ export function AppProviders({ children, initialQueryState }: AppProvidersProps)
         <TrpcProvider queryClient={queryClient}>
           <NuqsAdapter>
             <HydrationBoundary state={initialQueryState}>{children}</HydrationBoundary>
+            <ImpersonationBanner />
             <Toaster position="top-center" richColors closeButton toastOptions={{ duration: 4500 }} />
             {process.env.NODE_ENV === "development" ? (
               <ReactQueryDevtools position="bottom" />
