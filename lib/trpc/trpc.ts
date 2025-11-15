@@ -34,7 +34,11 @@ const hasRole = (role: UserRole) =>
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
 
-    if (ctx.user.role !== role && ctx.user.role !== "ADMIN") {
+    const userIsAdmin = ctx.user.role === "ADMIN";
+    const userHasRole = ctx.user.role === role;
+    const impersonatingAdmin = role === "ADMIN" && Boolean(ctx.session.impersonatorId);
+
+    if (!userHasRole && !userIsAdmin && !impersonatingAdmin) {
       throw new TRPCError({ code: "FORBIDDEN" });
     }
 

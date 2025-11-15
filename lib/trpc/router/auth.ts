@@ -27,10 +27,17 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const authRouter = router({
-  getSession: publicProcedure.query(({ ctx }) => {
+  getSession: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.user || !ctx.session) {
       return null;
     }
+
+    const impersonator = ctx.session.impersonatorId
+      ? await prisma.user.findUnique({
+          where: { id: ctx.session.impersonatorId },
+          select: { id: true, handle: true, email: true },
+        })
+      : null;
 
     return {
       user: {
@@ -46,7 +53,9 @@ export const authRouter = router({
       session: {
         id: ctx.session.id,
         expiresAt: ctx.session.expires,
+        impersonatorId: ctx.session.impersonatorId,
       },
+      impersonator,
     };
   }),
 
@@ -223,7 +232,7 @@ export const authRouter = router({
     }
 
     // Create session
-    await createSession(user.id, userAgent, ipAddress, input.rememberMe);
+    await createSession(user.id, userAgent, ipAddress, { rememberMe: input.rememberMe });
 
     // Update last login
     await prisma.user.update({
