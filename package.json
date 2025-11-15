@@ -86,6 +86,7 @@
     "embla-carousel-react": "^8.6.0",
     "emblor": "^1.4.8",
     "framer-motion": "^12.23.24",
+    "hugeicons-react": "^0.3.0",
     "input-otp": "^1.4.2",
     "katex": "^0.16.25",
     "lru-cache": "^11.2.2",
