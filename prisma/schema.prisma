@@ -100,12 +100,65 @@ model Session {
   ipAddress           String?
   lastUsedAt          DateTime @default(now())
   twoFactorVerified   Boolean  @default(false)
+  impersonatorId      String?
+  impersonatorSessionId String?
   expires             DateTime
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([impersonatorId])
+  @@index([impersonatorSessionId])
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  value       Json
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FeatureFlag {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  name              String
+  description       String?
+  enabled           Boolean  @default(false)
+  rolloutPercentage Int      @default(0)
+  targeting         Json?
+  createdById       String?
+  updatedById       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([enabled])
+}
+
+model Incident {
+  id           String           @id @default(cuid())
+  title        String
+  summary      String
+  status       IncidentStatus   @default(OPEN)
+  severity     IncidentSeverity @default(SEV3)
+  impact       String?
+  startedAt    DateTime         @default(now())
+  resolvedAt   DateTime?
+  timeline     Json?
+  createdById  String?
+  resolvedById String?
+  updatedById  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([status, severity])
+  @@index([startedAt])
+  @@unique([title])
 }
 
 model VerificationToken {
@@ -1156,4 +1209,29 @@ enum AuthAuditAction {
   PROVIDER_UNLINKED
   USER_BANNED
   USER_UNBANNED
+  USER_ROLE_CHANGED
+  USER_STATUS_CHANGED
+  IMPERSONATION_STARTED
+  IMPERSONATION_ENDED
+  FEATURE_FLAG_CREATED
+  FEATURE_FLAG_UPDATED
+  FEATURE_FLAG_DELETED
+  SYSTEM_SETTING_UPDATED
+  INCIDENT_CREATED
+  INCIDENT_UPDATED
+  INCIDENT_RESOLVED
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  MITIGATED
+  MONITORING
+  RESOLVED
+}
+
+enum IncidentSeverity {
+  SEV1
+  SEV2
+  SEV3
 }
