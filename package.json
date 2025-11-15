@@ -115,7 +115,8 @@
     "turndown": "^7.2.2",
     "vaul": "^1.1.2",
     "ws": "^8.18.3",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
