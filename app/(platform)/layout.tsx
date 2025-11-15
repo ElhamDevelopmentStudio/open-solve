@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { dashboardNav } from "@/config/navigation";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { getSession } from "@/lib/auth/session";
-import { Code2, Crown, User } from "lucide-react";
+import { Code2, Crown, Shield, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { PropsWithChildren } from "react";
@@ -78,6 +78,15 @@ export default async function PlatformLayout({ children }: PropsWithChildren) {
                 <span>Staff Console</span>
               </Link>
             </>
+          ) : null}
+          {session.user.role === "ADMIN" ? (
+            <Link
+              href="/admin"
+              className="mt-2 flex items-center gap-2.5 rounded-md border border-border/60 px-3 py-2 text-sm font-medium text-foreground transition hover:border-primary/40"
+            >
+              <Shield className="h-4 w-4 text-primary" />
+              <span>Admin Panel</span>
+            </Link>
           ) : null}
 
           <div className="mt-auto border-t border-border/60 pt-3">
