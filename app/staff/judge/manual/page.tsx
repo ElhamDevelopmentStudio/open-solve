@@ -3,8 +3,16 @@ import Link from "next/link";
 import { ManualJudgeQueue } from "@/components/staff/judge/manual-queue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
-export default function ManualJudgePage() {
+export const dynamic = "force-dynamic";
+
+export default async function ManualJudgePage() {
+  const session = await getSession();
+  if (!session || (session.user.role !== "MODERATOR" && session.user.role !== "ADMIN")) {
+    redirect("/staff");
+  }
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
