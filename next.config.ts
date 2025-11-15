@@ -86,6 +86,7 @@ const nextConfig: NextConfig = {
       static: 10 * 60,
     },
   },
+  serverExternalPackages: ["amqplib", "ws", "cookie"],
   async headers() {
     return [
       {
@@ -105,8 +106,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  silent: true,
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-});
+const useSentry = Boolean(process.env.SENTRY_DSN);
+const wrappedConfig = useSentry
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+    })
+  : nextConfig;
+
+export default wrappedConfig;
