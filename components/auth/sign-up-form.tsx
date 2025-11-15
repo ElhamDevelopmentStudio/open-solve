@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Button,
   Form,
@@ -16,32 +16,67 @@ import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import { signUpSchema, type SignUpInput } from "@/lib/validators/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type FormStep = 1 | 2;
+import { signUpDefaultValues, useSignUpStore } from "@/stores/sign-up-store";
 
 export function SignUpForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [step, setStep] = useState<FormStep>(1);
+  const step = useSignUpStore((state) => state.step);
+  const setStep = useSignUpStore((state) => state.setStep);
+  const updateSignUpData = useSignUpStore((state) => state.updateData);
+  const resetSignUp = useSignUpStore((state) => state.reset);
+  const initialValuesRef = useRef<SignUpInput>({ ...useSignUpStore.getState().data });
+
+  const baseResolver = useMemo(() => zodResolver(signUpSchema), []);
+  const resolver = useCallback<Resolver<SignUpInput>>(
+    (values, context, options) => {
+      const mergedValues = {
+        ...signUpDefaultValues(),
+        ...useSignUpStore.getState().data,
+        ...values,
+      };
+
+      return baseResolver(mergedValues, context, options);
+    },
+    [baseResolver],
+  );
 
   const form = useForm<SignUpInput>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      name: "",
-      handle: "",
-    },
+    resolver,
+    shouldUnregister: false,
+    defaultValues: initialValuesRef.current,
   });
+
+  useEffect(() => {
+    form.reset({ ...useSignUpStore.getState().data });
+  }, [form, step]);
+
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      const filteredValues = Object.fromEntries(
+        Object.entries(values as SignUpInput).filter(([, value]) => value !== undefined),
+      ) as Partial<SignUpInput>;
+
+      if (Object.keys(filteredValues).length === 0) {
+        return;
+      }
+
+      updateSignUpData(filteredValues);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, updateSignUpData]);
 
   const signUpMutation = trpc.auth.signUp.useMutation({
     onSuccess: (data) => {
       toast.success(data.message);
+      resetSignUp();
+      form.reset(signUpDefaultValues());
       invalidateAuthSession(queryClient);
       router.push("/dashboard");
       router.refresh();
@@ -52,13 +87,17 @@ export function SignUpForm() {
   });
 
   const handleSubmit = (data: SignUpInput) => {
-    signUpMutation.mutate(data);
+    signUpMutation.mutate({
+      ...data,
+      name: data.name?.trim() ? data.name : undefined,
+      handle: data.handle?.trim() ? data.handle : undefined,
+    });
   };
 
   const handleContinueToStep2 = async () => {
     const emailValid = await form.trigger("email");
     const passwordValid = await form.trigger("password");
-    
+
     if (emailValid && passwordValid) {
       setStep(2);
     }
@@ -203,3 +242,4 @@ export function SignUpForm() {
     </Form>
   );
 }
+
