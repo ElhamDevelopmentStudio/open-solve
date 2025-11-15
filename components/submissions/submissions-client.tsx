@@ -55,6 +55,7 @@ type SubmissionsClientProps = {
   filterMetadata: SubmissionFilterMetadata;
   lockedProblemSlug?: string;
   lockedProblemTitle?: string;
+  problemBasePath?: string;
 };
 
 export function SubmissionsClient({
@@ -63,6 +64,7 @@ export function SubmissionsClient({
   filterMetadata,
   lockedProblemSlug,
   lockedProblemTitle,
+  problemBasePath = "/workspace/problems",
 }: SubmissionsClientProps) {
   const [filterState, setFilterState] = useSubmissionFilters();
   useEffect(() => {
@@ -158,7 +160,7 @@ export function SubmissionsClient({
               Reset filters
             </Button>
             <Button variant="secondary" size="sm" asChild>
-              <Link href="/problems">
+              <Link href={problemBasePath}>
                 <ArrowUpRight className="mr-2 h-4 w-4" />
                 Browse problems
               </Link>
@@ -549,7 +551,7 @@ function EmptyState() {
         you can trace your progress over time.
       </p>
       <Button asChild>
-        <Link href="/problems">
+        <Link href={problemBasePath}>
           <ArrowUpRight className="mr-2 h-4 w-4" />
           Browse problems
         </Link>

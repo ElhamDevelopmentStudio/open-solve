@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import type { TrailInsightCategory } from "@prisma/client";
+import Link from "next/link";
 
 type TrailsBoardProps = {
   problemId: string;
@@ -25,6 +26,8 @@ const categories: Array<{ value: TrailInsightCategory; label: string }> = [
 
 export function TrailsBoard({ problemId }: TrailsBoardProps) {
   const trailsQuery = trpc.trails.getForProblem.useQuery({ problemId });
+  const sessionQuery = trpc.auth.getSession.useQuery(undefined, { staleTime: 30_000 });
+  const canContribute = Boolean(sessionQuery.data?.user);
   const utils = trpc.useUtils();
   const addMutation = trpc.trails.addInsight.useMutation({
     onSuccess: () => {
@@ -56,6 +59,7 @@ export function TrailsBoard({ problemId }: TrailsBoardProps) {
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-border/70 bg-card/80 p-6">
+        {canContribute ? (
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -107,6 +111,14 @@ export function TrailsBoard({ problemId }: TrailsBoardProps) {
             {addMutation.isPending ? "Saving…" : "Add insight"}
           </Button>
         </form>
+        ) : (
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>Sign in to publish new trail insights.</p>
+            <Button asChild size="sm">
+              <Link href="/sign-in">Sign in</Link>
+            </Button>
+          </div>
+        )}
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
