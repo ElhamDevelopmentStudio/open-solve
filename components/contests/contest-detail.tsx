@@ -258,6 +258,39 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                 ) : null}
               </div>
             </div>
+            <div className="premium-card space-y-4 rounded-2xl p-6">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">Anti-cheat</h3>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge variant="outline" className={contest.settings.antiCheat.enabled ? "border-emerald-400/40 text-emerald-500" : "border-muted text-muted-foreground"}>
+                    {contest.settings.antiCheat.enabled ? "Enabled" : "Disabled"}
+                  </Badge>
+                  {contest.settings.antiCheat.examMode?.enabled ? (
+                    <Badge className="bg-primary/10 text-primary">Exam mode</Badge>
+                  ) : null}
+                  {contest.settings.antiCheat.multiDevice.singleDeviceOnly ? (
+                    <Badge variant="outline" className="border-slate-400/40 text-slate-500">
+                      Single device lock
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-amber-400/40 text-amber-500">
+                      Multi-device flagged
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground">
+                  Focus changes, large pastes, similarity scans, and device fingerprints feed the staff dashboard.
+                </p>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>• Soft warning at {contest.settings.antiCheat.focus.softWarningTabs} tab switches</li>
+                  <li>• Flag at {contest.settings.antiCheat.focus.flagTabs} tab switches or {Math.round(contest.settings.antiCheat.focus.flagOutMs / 60000)} minutes unfocused</li>
+                  <li>• Large paste limit: {contest.settings.antiCheat.paste.perProblemLimit} per problem</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -280,7 +313,11 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
           {detail.data.problems.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {detail.data.problems.map((problem) => (
-                <div key={problem.id} className="premium-card rounded-2xl p-6">
+                <Link
+                  key={problem.id}
+                  href={`/contests/${slug}/problems/${problem.label.toLowerCase()}`}
+                  className="premium-card block rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
                   <div className="flex items-start justify-between">
                     <Badge variant="outline" className="rounded-full text-[10px] uppercase">
                       {problem.label}
@@ -291,15 +328,18 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                   </div>
                   <h3 className="mt-3 font-semibold">{problem.title}</h3>
                   <p className="text-xs text-muted-foreground">{problem.slug}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-medium">
+                    <span className="rounded-full bg-muted px-2 py-0.5">
                       {problem.points ?? 100} points
                     </span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
+                    <span className="rounded-full bg-muted px-2 py-0.5">
                       Order {problem.order + 1}
                     </span>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                      Open workspace
+                    </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -398,4 +438,3 @@ const ContestStateBadge = ({ state }: { state: string }) => {
     </span>
   );
 };
-

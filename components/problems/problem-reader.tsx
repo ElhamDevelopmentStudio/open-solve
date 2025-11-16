@@ -4,6 +4,7 @@ import "katex/dist/katex.min.css";
 
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
 import { ProblemAnalyticsProvider, useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
+import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -68,17 +69,37 @@ const sectionsOrder = [
 const formatDifficulty = (value?: string | null) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase() : "Unrated";
 
-export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
+export function ProblemReader({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
   return (
     <ProblemAnalyticsProvider problemId={problem.id}>
-      <ProblemReaderContent problem={problem} />
+      <ProblemReaderContent problem={problem} contestContext={contestContext} />
     </ProblemAnalyticsProvider>
   );
 }
 
-function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
+function ProblemReaderContent({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
   const prefersReducedMotion = useReducedMotion();
   const analytics = useProblemAnalyticsContext();
+  const contestMode = Boolean(contestContext);
+  const readerAnalyticsContext = useMemo(
+    () => ({
+      problemId: problem.id,
+      contestId: contestContext?.contestId,
+    }),
+    [contestContext?.contestId, problem.id],
+  );
   const sectionEntries = useMemo(() => {
     return sectionsOrder
       .map((section) => {
@@ -143,7 +164,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             metric: "ttfb",
             value: Number(ttfb.toFixed(2)),
           },
-          { problemId: problem.id },
+          readerAnalyticsContext,
         );
       }
       if (Number.isFinite(domReady)) {
@@ -153,7 +174,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             metric: "domReady",
             value: Number(domReady.toFixed(2)),
           },
-          { problemId: problem.id },
+          readerAnalyticsContext,
         );
       }
     }
@@ -169,7 +190,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             metric: "lcp",
             value: Number(entry.startTime.toFixed(2)),
           },
-          { problemId: problem.id },
+          readerAnalyticsContext,
         );
         observer?.disconnect();
       });
@@ -181,7 +202,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
     }
 
     return () => observer?.disconnect();
-  }, [problem.slug]);
+  }, [problem.slug, readerAnalyticsContext]);
 
   const handleAnchorClick = (id: string) => {
     const element = document.getElementById(id);
@@ -214,6 +235,18 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
                   <Link href="/problems">Problems</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
+              {contestMode ? (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={`/contests/${contestContext!.contestSlug}`}>
+                        {contestContext!.contestName}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              ) : null}
               {problem.tags[0] ? (
                 <>
                   <BreadcrumbSeparator />
@@ -231,11 +264,44 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        {contestMode ? (
+          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 shadow-inner shadow-primary/5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase text-primary">Educational contest</p>
+                <h2 className="text-3xl font-semibold tracking-tight">
+                  {contestContext!.contestName}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Solving problem {contestContext!.problemLabel}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" asChild>
+                  <Link href={`/contests/${contestContext!.contestSlug}`}>Contest overview</Link>
+                </Button>
+                <Button asChild>
+                  <Link href={`/contests/${contestContext!.contestSlug}/scoreboard`}>Scoreboard</Link>
+                </Button>
+              </div>
+            </div>
+            {contestContext?.antiCheat.examMode.enabled ? (
+              <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/15 px-4 py-3 text-xs text-amber-700 dark:text-amber-200">
+                Exam mode enabled — context menus and text selection are restricted for this workspace.
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <header className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
             </Badge>
+            {contestMode ? (
+              <Badge className="bg-primary/15 text-primary">
+                Contest {contestContext!.problemLabel}
+              </Badge>
+            ) : null}
             {problem.judgeMode !== "AUTO" ? (
               <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-200">
                 Manual Review
@@ -487,7 +553,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             </div>
           </aside>
         </div>
-        <ProblemWorkspace problem={problem} />
+        <ProblemWorkspace problem={problem} contestContext={contestContext} />
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>

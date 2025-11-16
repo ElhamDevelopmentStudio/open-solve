@@ -2,6 +2,7 @@
 
 import { CodeEditor } from "@/components/code/code-editor";
 import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
+import { Shield } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
+import { useContestAntiCheat } from "@/hooks/use-contest-anti-cheat";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { invalidateTags } from "@/lib/react-query/invalidation";
@@ -57,6 +59,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
 import { trpc } from "@/lib/trpc/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
+import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -106,7 +109,13 @@ const DEFAULT_PREFERENCES: WorkspacePreferences = {
 
 const PREFERENCE_KEY = "workspace:prefs";
 
-export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload }) {
+export function ProblemWorkspace({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
   const { resolvedTheme } = useTheme();
   const queryClient = useQueryClient();
   const utils = trpc.useUtils();
@@ -115,6 +124,15 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
   const manualOnly = problem.judgeMode === "MANUAL";
   const requiresManualReview = problem.judgeMode !== "AUTO";
   const analytics = useProblemAnalyticsContext();
+  const contestGuard = useContestAntiCheat(contestContext);
+  const baseAnalyticsContext = useMemo(
+    () => ({
+      problemId: problem.id,
+      contestId: contestContext?.contestId,
+    }),
+    [contestContext?.contestId, problem.id],
+  );
+  const examModeClass = contestGuard.enabled && contestGuard.examMode.disableSelection ? "exam-mode-locked" : "";
 
   const languageOptions = useMemo(() => {
     if (problem.languages.length > 0) {
@@ -304,12 +322,12 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
           activeMs: Math.max(0, Math.round(activeMs)),
           idleMs: Math.max(0, Math.round(idleMs)),
         },
-        { problemId: problem.id, languageCode: activeLanguage },
+        { ...baseAnalyticsContext, languageCode: activeLanguage },
       );
       lastHeartbeatAtRef.current = nowTs;
     }, 30000);
     return () => clearInterval(id);
-  }, [activeLanguage, problem.id]);
+  }, [activeLanguage, baseAnalyticsContext]);
 
   const draftsQuery = trpc.submissions.getDrafts.useQuery(
     { problemId: problem.id, languageCode: activeLanguage },
@@ -377,7 +395,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
       trackAnalyticsEvent(
         "editor.draft_saved",
         {},
-        { problemId: problem.id, languageCode: activeLanguage },
+        { ...baseAnalyticsContext, languageCode: activeLanguage },
       );
       invalidateTags(queryClient, ["submissionDrafts"]);
     },
@@ -410,11 +428,11 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
           fromLanguageCode: activeLanguage,
           toLanguageCode: next,
         },
-        { problemId: problem.id },
+        baseAnalyticsContext,
       );
       setActiveLanguage(next);
     },
-    [activeLanguage, problem.id],
+    [activeLanguage, baseAnalyticsContext],
   );
 
   const handleRun = useCallback(() => {
@@ -423,14 +441,14 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     analytics.incrementRunCount();
     runCounterRef.current += 1;
     const timeSinceOpen = Math.round(timestamp() - editorOpenedAtRef.current);
-    trackAnalyticsEvent(
-      "editor.run_clicked",
-      {
-        runIndex: runCounterRef.current,
-        timeSinceEditorOpenMs: timeSinceOpen,
-      },
-      { problemId: problem.id, languageCode: activeLanguage },
-    );
+      trackAnalyticsEvent(
+        "editor.run_clicked",
+        {
+          runIndex: runCounterRef.current,
+          timeSinceEditorOpenMs: timeSinceOpen,
+        },
+        { ...baseAnalyticsContext, languageCode: activeLanguage },
+      );
     if (isOffline) {
       const offlineResult = simulateSampleRun({
         problemId: problem.id,
@@ -470,12 +488,17 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     activeCode,
     customInput,
     problem.content.sampleTestCases,
+    baseAnalyticsContext,
   ]);
 
   const handleSubmit = useCallback(() => {
     if (!activeLanguage) return;
     if (!session?.user) {
       toast.error("Sign in to submit solutions");
+      return;
+    }
+    if (contestGuard.disqualified) {
+      toast.error("You have been disqualified from this contest.");
       return;
     }
     touchActivity();
@@ -487,15 +510,28 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
         attemptNumber: submitCounterRef.current,
         timeSinceFirstViewMs: analytics.getTimeSinceEnterMs(),
       },
-      { problemId: problem.id, languageCode: activeLanguage },
+      { ...baseAnalyticsContext, languageCode: activeLanguage },
     );
     createSubmission.mutate({
       problemId: problem.id,
+      contestId: contestContext?.contestId,
       languageCode: activeLanguage,
       sourceCode: activeCode,
       stdin: customInput,
     });
-  }, [activeLanguage, session, touchActivity, analytics, createSubmission, problem.id, activeCode, customInput]);
+  }, [
+    activeLanguage,
+    session,
+    touchActivity,
+    analytics,
+    createSubmission,
+    problem.id,
+    activeCode,
+    customInput,
+    contestContext?.contestId,
+    contestGuard.disqualified,
+    baseAnalyticsContext,
+  ]);
 
   const handleReset = () => {
     setCodeByLanguage((prev) => ({
@@ -541,7 +577,10 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     <TooltipProvider>
       <section
         id="editor"
-        className="rounded-3xl border border-dashed border-primary/40 bg-card/80 p-6 shadow-lg shadow-primary/5"
+        className={cn(
+          "rounded-3xl border border-dashed border-primary/40 bg-card/80 p-6 shadow-lg shadow-primary/5",
+          examModeClass,
+        )}
       >
         <div className="flex flex-wrap items-center gap-4">
           <div>
@@ -588,6 +627,37 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
               : "Hybrid judging enabled — the auto judge runs first, followed by a manual reviewer."}
           </div>
         ) : null}
+        {contestGuard.enabled ? (
+          <div className="mt-4 rounded-2xl border border-sky-400/60 bg-sky-500/10 px-4 py-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Shield className="h-4 w-4 text-sky-500" />
+              <span className="font-semibold text-sky-900 dark:text-sky-100">
+                Anti-cheat guard active
+              </span>
+              {contestGuard.status ? (
+                <Badge variant="outline" className="rounded-full border-sky-500/40 text-[10px] uppercase text-sky-500">
+                  {contestGuard.status.toLowerCase()}
+                </Badge>
+              ) : null}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {contestContext?.antiCheat.warnings.reminderCopy ??
+                "Tab switches, large pastes, and multi-device logins trigger reviews."}
+            </p>
+            {contestGuard.warnings.length ? (
+              <ul className="mt-2 space-y-1 text-xs text-amber-600 dark:text-amber-300">
+                {contestGuard.warnings.map((warning) => (
+                  <li key={warning}>• {warning}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+        {contestGuard.disqualified ? (
+          <div className="mt-4 rounded-2xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
+            You have been disqualified from this contest. Submissions are blocked for this window.
+          </div>
+        ) : null}
 
         <div className="mt-6">
           <ResizablePanelGroup direction="horizontal" className="h-full min-h-[560px]">
@@ -598,24 +668,25 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
                 onLanguageChange={handleLanguageChange}
                 code={activeCode}
                 onChange={(next) => {
-                  touchActivity();
-                  setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
-                }}
-                onCopy={handleCopy}
-                onReset={handleReset}
-                onSave={() => handleSaveDraft("manual")}
-                appearance={editorTheme === "dark" ? "dark" : "light"}
-                preferences={preferences}
-                customInput={customInput}
-                onInputChange={(value) => {
-                  touchActivity();
-                  setCustomInput(value);
-                }}
-                autosaveState={autosaveState}
-                runInProgress={runSample.isPending}
-                submitInProgress={createSubmission.isPending}
-                onRun={handleRun}
-                onSubmit={handleSubmit}
+              touchActivity();
+              setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
+            }}
+            onCopy={handleCopy}
+            onReset={handleReset}
+            onSave={() => handleSaveDraft("manual")}
+            appearance={editorTheme === "dark" ? "dark" : "light"}
+            preferences={preferences}
+            customInput={customInput}
+            onInputChange={(value) => {
+              touchActivity();
+              setCustomInput(value);
+            }}
+            onPaste={contestGuard.recordPaste}
+            autosaveState={autosaveState}
+            runInProgress={runSample.isPending}
+            submitInProgress={createSubmission.isPending}
+            onRun={handleRun}
+            onSubmit={handleSubmit}
                 consoleLines={consoleLines}
               />
             </ResizablePanel>
@@ -628,7 +699,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
                 result={activeResult}
                 submissionHistory={historyQuery.data?.entries ?? []}
                 onSelectSubmission={(submissionId) => {
-                  trackAnalyticsEvent("submission.timeline_open", { submissionId }, { problemId: problem.id });
+                  trackAnalyticsEvent("submission.timeline_open", { submissionId }, baseAnalyticsContext);
                   setCurrentSubmissionId(submissionId);
                   setViewMode("submission");
                 }}
@@ -675,6 +746,7 @@ function EditorColumn(props: {
   preferences: WorkspacePreferences;
   customInput: string;
   onInputChange: (value: string) => void;
+  onPaste: (length: number) => void;
   autosaveState: "idle" | "saving" | "saved";
   runInProgress: boolean;
   submitInProgress: boolean;
@@ -695,6 +767,7 @@ function EditorColumn(props: {
     preferences,
     customInput,
     onInputChange,
+    onPaste,
     autosaveState,
     runInProgress,
     submitInProgress,
@@ -749,6 +822,7 @@ function EditorColumn(props: {
           <CodeEditor
             value={code}
             onChange={onChange}
+            onPaste={onPaste}
             language={activeLanguage}
             minHeight={420}
             appearance={appearance}
