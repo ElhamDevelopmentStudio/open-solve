@@ -11,13 +11,14 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { format } from "date-fns";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 type Params = { slug: string };
 
 export default async function ProblemEditorialPage({ params }: { params: Params | Promise<Params> }) {
   const { slug } = await params;
   const caller = await createTRPCCaller();
-  const problem = await caller.problems.detail({ slug }).catch(() => null);
+  const problem = await getCachedProblemDetail(slug).catch(() => null);
   if (!problem) {
     notFound();
   }

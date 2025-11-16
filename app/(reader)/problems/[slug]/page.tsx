@@ -1,12 +1,11 @@
 import { ProblemReader } from "@/components/problems/problem-reader";
 import type { ProblemDetailPayload } from "@/lib/trpc/router/problems";
-import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 async function fetchProblem(slug: string): Promise<ProblemDetailPayload> {
-  const caller = await createTRPCCaller();
-  return caller.problems.detail({ slug });
+  return getCachedProblemDetail(slug);
 }
 
 export async function generateMetadata({
@@ -46,10 +45,9 @@ export default async function ProblemDetailPage({
   params: { slug: string } | Promise<{ slug: string }>;
 }) {
   const resolvedParams = await resolveParams(params);
-  const caller = await createTRPCCaller();
   let problem: ProblemDetailPayload | null = null;
   try {
-    problem = await caller.problems.detail({ slug: resolvedParams.slug });
+    problem = await fetchProblem(resolvedParams.slug);
   } catch (error) {
     if (
       error instanceof Error &&

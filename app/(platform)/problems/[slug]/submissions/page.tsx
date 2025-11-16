@@ -3,6 +3,7 @@ import { buildSubmissionListInputFromParams } from "@/lib/submissions/filter-uti
 import { loadSubmissionSearchParams } from "@/lib/submissions/search-params";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { notFound } from "next/navigation";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 export default async function ProblemSubmissionsPage({
   params,
@@ -23,7 +24,7 @@ export default async function ProblemSubmissionsPage({
     [initialData, filterMetadata, problem] = await Promise.all([
       caller.submissions.listMine(initialInput),
       caller.submissions.filters(),
-      caller.problems.detail({ slug: resolvedParams.slug }),
+      getCachedProblemDetail(resolvedParams.slug),
     ]);
   } catch (error) {
     if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {

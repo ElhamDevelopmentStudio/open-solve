@@ -9,6 +9,7 @@ import { DiscussionDetailShell } from "@/components/discussions/discussion-detai
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 type ProblemThreadPageParams = {
   slug: string;
@@ -27,7 +28,7 @@ export default async function ProblemThreadDetailPage({ params }: { params: Prob
   const caller = await createTRPCCaller();
 
   const [problem, thread] = await Promise.all([
-    caller.problems.detail({ slug }).catch(() => null),
+    getCachedProblemDetail(slug).catch(() => null),
     caller.discussions.thread({ id: threadId }).catch(() => null),
   ]);
 

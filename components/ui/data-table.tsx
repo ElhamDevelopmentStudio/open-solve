@@ -69,6 +69,7 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   emptyMessage?: string;
   onRowClick?: (row: TData) => void;
+  onRowHover?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -83,6 +84,7 @@ export function DataTable<TData, TValue>({
   className,
   emptyMessage = "No results found.",
   onRowClick,
+  onRowHover,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -204,6 +206,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
+                  onMouseEnter={() => onRowHover?.(row.original)}
                   className={cn(onRowClick && "cursor-pointer")}
                 >
                   {row.getVisibleCells().map((cell) => (

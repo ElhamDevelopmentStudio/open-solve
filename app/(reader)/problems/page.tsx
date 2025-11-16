@@ -3,8 +3,8 @@ import { problemSearchParams } from "@/lib/problems/search-params";
 import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import type { ProblemFiltersInput } from "@/lib/trpc/router/problems";
-import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { HydrationBoundary } from "@tanstack/react-query";
+import { getCachedProblemFilterMetadata, getCachedProblemList } from "@/lib/cache/problems";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,13 +14,12 @@ export const metadata: Metadata = {
 
 export async function renderProblemLibrary(resolvedSearchParams: Record<string, string | string[] | undefined>) {
   const filters = (await problemSearchParams.parse(resolvedSearchParams)) as ProblemFiltersInput;
-  const caller = await createTRPCCaller();
   const dehydration = await buildHydrationState([
-    prefetchTrpcQuery("problems.list", () => caller.problems.list(filters), {
+    prefetchTrpcQuery("problems.list", () => getCachedProblemList(filters), {
       input: filters,
       staleTime: publicContentQueryOptions.staleTime,
     }),
-    prefetchTrpcQuery("problems.filterMetadata", () => caller.problems.filterMetadata(), {
+    prefetchTrpcQuery("problems.filterMetadata", () => getCachedProblemFilterMetadata(), {
       staleTime: publicContentQueryOptions.staleTime,
     }),
   ]);

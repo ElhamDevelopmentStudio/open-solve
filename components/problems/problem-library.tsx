@@ -80,6 +80,7 @@ const VIRTUALIZATION_THRESHOLD = 50;
 
 export function ProblemLibraryShell({ initialFilters }: { initialFilters: ProblemFiltersInput }) {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [filters, setFilters] = useProblemFilters();
   const mergedFilters = useMemo<ProblemFiltersInput>(
     () => ({ ...DEFAULT_FILTERS, ...initialFilters, ...filters }),
@@ -136,11 +137,11 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     overscan: 8,
   });
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const prefetchedProblems = useRef(new Set<string>());
 
   useEffect(() => {
     cardRefs.current = cardRefs.current.slice(0, items.length);
   }, [items.length]);
-
   const registerCardRef = useCallback((index: number, node: HTMLDivElement | null) => {
     cardRefs.current[index] = node;
   }, []);
@@ -169,6 +170,27 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     },
     [router],
   );
+  const prefetchProblemDetail = useCallback(
+    (slug: string | undefined) => {
+      if (!slug || prefetchedProblems.current.has(slug)) {
+        return;
+      }
+      if (prefetchedProblems.current.size > 200) {
+        prefetchedProblems.current.clear();
+      }
+      prefetchedProblems.current.add(slug);
+      utils.problems.detail.prefetch(
+        { slug },
+        { staleTime: publicContentQueryOptions.staleTime },
+      );
+      router.prefetch(`/problems/${slug}`);
+    },
+    [router, utils],
+  );
+
+  useEffect(() => {
+    items.slice(0, 5).forEach((problem) => prefetchProblemDetail(problem.slug));
+  }, [items, prefetchProblemDetail]);
 
   const renderCard = useCallback(
     (problem: ProblemListItem, index: number, animationOrder = index) => (
@@ -181,9 +203,10 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
         animationOrder={animationOrder}
         onFocusRequest={focusCard}
         onOpen={openProblem}
+        onPrefetch={prefetchProblemDetail}
       />
     ),
-    [focusCard, isFetching, openProblem, registerCardRef],
+    [focusCard, isFetching, openProblem, prefetchProblemDetail, registerCardRef],
   );
 
   const handleFilterChange = (patch: Partial<ProblemFiltersInput>, resetPage = true) => {
@@ -195,7 +218,6 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   const handleClearAll = () => {
     setFilters(DEFAULT_FILTERS);
-    router.push("/problems");
   };
 
   const listIsEmpty = !isPending && items.length === 0;
@@ -452,10 +474,11 @@ type ProblemCardProps = {
   animationOrder?: number;
   onFocusRequest: (index: number) => void;
   onOpen: (slug: string) => void;
+  onPrefetch?: (slug: string) => void;
 };
 
 const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function ProblemCard(
-  { problem, isFetching, index, animationOrder = 0, onFocusRequest, onOpen },
+  { problem, isFetching, index, animationOrder = 0, onFocusRequest, onOpen, onPrefetch },
   ref,
 ) {
   const acceptance =
@@ -481,6 +504,8 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
   };
   const animationDelay = Math.min(animationOrder, 5) * 20;
 
+  const triggerPrefetch = () => onPrefetch?.(problem.slug);
+
   return (
     <div
       ref={ref}
@@ -488,6 +513,8 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
       tabIndex={0}
       aria-labelledby={titleId}
       onKeyDown={handleKeyDown}
+      onMouseEnter={triggerPrefetch}
+      onFocus={triggerPrefetch}
       className={cn(
         "group rounded-2xl border border-border/50 bg-card/90 p-5 shadow-sm backdrop-blur-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
         "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200",

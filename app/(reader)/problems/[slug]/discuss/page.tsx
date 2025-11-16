@@ -4,6 +4,7 @@ import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server
 import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { ProblemDiscussionPanel } from "@/components/discussions/problem-discussion-panel";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 import type { Metadata } from "next";
 
 type DiscussPageParams = { slug: string };
@@ -18,9 +19,12 @@ export async function generateMetadata({ params }: { params: Promise<DiscussPage
 export default async function ProblemDiscussPage({ params }: { params: Promise<DiscussPageParams> | DiscussPageParams }) {
   const { slug } = await params;
   const caller = await createTRPCCaller();
-  const problem = await caller.problems
-    .detail({ slug })
-    .catch(() => null);
+  let problem = null;
+  try {
+    problem = await getCachedProblemDetail(slug);
+  } catch {
+    problem = null;
+  }
   if (!problem) {
     notFound();
   }
