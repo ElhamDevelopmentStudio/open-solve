@@ -107,6 +107,10 @@ export function getAnalyticsDeviceSnapshot(): DeviceSnapshot {
   return ensureDeviceInfo();
 }
 
+export function getAnalyticsSessionId() {
+  return ensureSessionId();
+}
+
 function ensureDeviceInfo(): DeviceSnapshot {
   if (cachedDeviceInfo) {
     return cachedDeviceInfo;

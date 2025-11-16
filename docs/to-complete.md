@@ -315,7 +315,26 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 15) Performance & Caching
+## 15) Educational Contest Anti-Cheat
+
+**Goals:** Reduce cheating, encourage fair play.
+
+- **Environment tracking:** device type, browser family, viewport, coarse IP hash; detect multi-device or concurrent sessions.
+    
+- **Focus monitoring:** count tab changes, focus/blur events, out-of-focus duration; configurable warn/flag/DQ thresholds.
+    
+- **Editor safeguards:** track large paste events, rapid AC patterns, suspicious timing, and language switching spikes.
+    
+- **Similarity checks:** detect near-identical submissions across contestants; cluster analysis for mass cheating.
+    
+- **Contest controls:** optional Exam Mode (disable right-click/text-selection), single-device lock, restricted feedback, activity logging.
+    
+- **Admin tools:** per-user anti-cheat timeline, alerts, flags, cluster review, manual/auto DQ options.  
+  **DoD:** Cheating becomes detectable and risky; admins can confidently validate contest integrity.
+
+---
+
+## 16) Performance & Caching
 
 **Goals:** Snappy UX at scale.
 
@@ -326,7 +345,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 16) Docs & Developer Experience
+## 17) Docs & Developer Experience
 
 **Goals:** Attract contributors.
 
@@ -337,7 +356,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 17) Deployment & Operations
+## 18) Deployment & Operations
 
 **Goals:** Reproducible environments.
 
@@ -350,7 +369,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 18) Launch & Growth
+## 19) Launch & Growth
 
 **Goals:** Community momentum.
 
