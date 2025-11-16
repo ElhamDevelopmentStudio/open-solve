@@ -338,7 +338,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 **Goals:** Snappy UX at scale.
 
-- **SWR strategy:** sensible cache TTLs; prefetch lists on nav; mutate after submit.
+- **React query strategy:** sensible cache TTLs; prefetch lists on nav; mutate after submit.
 - **Server caching:** problem lists & details edge-cached (tagged revalidation on publish).
 - **DB performance:** key indexes (problem slug, tags, difficulty, user/problem composite keys).
   **DoD:** P95 page interactive \<1.5s on mid-tier cloud; DB dashboards clean.

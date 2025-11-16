@@ -23,6 +23,30 @@
 | `submissions.getShare`    | `['trpc','submissions.getShare', publicId]`     | `0s / 5m`                     | Automatic via share enable/disable                                              | No           |
 | `submissions.filters`     | `['trpc','submissions.filters']`                | `5m / 30m`                    | `invalidateTags(['submissions'])` when attempts change                          | No           |
 | `submissions.getDrafts`   | `['trpc','submissions.getDrafts', key]`         | `0s / 10m`                    | `invalidateTags(['submissionDrafts'])` on save/delete                           | No           |
+| `profile.detail`          | `['trpc','profile.detail', handle]`             | `5m / 30m`                    | `invalidateTags(['profile'])` after profile edits                              | No           |
+| `leaderboard.overview`    | `['trpc','leaderboard.overview']`               | `60s / 5m (30s refetch)`      | `invalidateTags(['leaderboard'])` when stats recompute                         | No           |
+| `leaderboard.global`      | `['trpc','leaderboard.global', stableHash(params),'infinite']` | `60s / 5m (30s refetch)` | `invalidateTags(['leaderboard'])` or contest rating updates                    | Yes          |
+| `leaderboard.difficulty`  | `['trpc','leaderboard.difficulty', stableHash(params),'infinite']` | `60s / 5m (30s refetch)` | `invalidateTags(['leaderboard'])`                                             | Yes          |
+| `leaderboard.tag`         | `['trpc','leaderboard.tag', stableHash(params),'infinite']` | `60s / 5m (30s refetch)` | `invalidateTags(['leaderboard'])`                                             | Yes          |
+| `discussions.listByProblem` | `['trpc','discussions.listByProblem', stableHash(filters),'infinite']` | `30s / 10m`           | `invalidateTags(['discussions'])` on new thread/vote/report                    | Yes          |
+| `discussions.listGlobal`  | `['trpc','discussions.listGlobal', stableHash(filters),'infinite']` | `30s / 10m`           | `invalidateTags(['discussions'])`                                             | Yes          |
+| `discussions.thread`      | `['trpc','discussions.thread', threadId]`       | `30s / 10m`                   | `invalidateTags(['discussions'])` or targeted invalidation                     | No           |
+| `discussions.replies`     | `['trpc','discussions.replies', threadId,'infinite']` | `30s / 10m`               | `invalidateTags(['discussions'])`                                             | Yes          |
+| `editorials.getByProblem` | `['trpc','editorials.getByProblem', slug]`      | `5m / 30m`                    | `invalidateTags(['editorials'])` after release schedule updates                | No           |
+| `trails.getForProblem`    | `['trpc','trails.getForProblem', problemId]`    | `30s / 10m`                   | `invalidateTags(['trails'])` after new insight submissions                     | No           |
+| `contests.overview`       | `['trpc','contests.overview']`                  | `60s / 10m`                   | `invalidateTags(['contests'])` on registration or schedule change              | No           |
+| `contests.detail`         | `['trpc','contests.detail', slug]`              | `15s / 5m`                    | `invalidateTags(['contests'])` on registration, settings, staff edits          | No           |
+| `contests.standings`      | `['trpc','contests.standings', stableHash(params),'infinite']` | `0s / 5m (15s refetch)` | `invalidateTags(['contests'])` or judge events                                 | Yes          |
+| `contests.clarifications` | `['trpc','contests.clarifications', contestId]` | `30s / 5m`                    | `invalidateTags(['contests'])` after clarification answer/submit               | No           |
+| `admin.dashboard.overview`| `['trpc','admin.dashboard.overview']`           | `30s / 5m`                    | Manual admin refresh or system events                                          | No           |
+| `admin.users.list`        | `['trpc','admin.users.list', stableHash(filters)]` | `30s / 5m`                 | Admin mutations touching users                                                | No           |
+| `admin.users.detail`      | `['trpc','admin.users.detail', userId]`         | `30s / 5m`                    | Admin user edit/delete                                                         | No           |
+| `admin.problems.list`     | `['trpc','admin.problems.list', stableHash(filters)]` | `30s / 5m`               | Admin problem edits                                                            | No           |
+| `admin.submissions.list`  | `['trpc','admin.submissions.list', stableHash(filters)]` | `30s / 5m`             | Admin actions / judge events                                                   | No           |
+| `admin.system.overview`   | `['trpc','admin.system.overview']`              | `30s / 5m`                    | System health updates                                                          | No           |
+| `admin.flags.list`        | `['trpc','admin.flags.list']`                   | `30s / 5m`                    | Moderation actions                                                             | No           |
+| `admin.audit.logs`        | `['trpc','admin.audit.logs', stableHash(filters)]` | `30s / 5m`                | New audit log entries                                                          | No           |
+| `admin.audit.incidents`   | `['trpc','admin.audit.incidents']`              | `30s / 5m`                    | Incident status changes                                                        | No           |
 
 ## Mutation → Invalidation Matrix
 
@@ -39,6 +63,11 @@
 | `submissions.create`, `submissions.resubmit`, judge events                          | `invalidateTags(['submissions'])`                                              |
 | `submissions.shareEnable`, `submissions.shareDisable`, `submissions.hideFromProfile`| `invalidateTags(['submissions'])`                                              |
 | `submissions.saveDraft`, `submissions.getDrafts`                                    | `invalidateTags(['submissionDrafts'])`                                         |
+| `discussions.create`, `discussions.reply`, `discussions.vote`                       | `invalidateTags(['discussions'])`                                              |
+| `contests.register`, `contests.unregister`                                          | `invalidateTags(['contests'])`                                                 |
+| `contests.submitClarification`, staff responses                                     | `invalidateTags(['contests'])`                                                 |
+| `trails.createInsight`, `trails.vote`                                               | `invalidateTags(['trails'])`                                                   |
+| Rating sync / judge score updates                                                   | `invalidateTags(['leaderboard'])`                                              |
 
 ## Notes
 
@@ -50,3 +79,7 @@
   mutation naturally affects a whole group of procedures.
 - Infinite queries tack on `'infinite'` as the final segment (e.g.,
   `['trpc','problems.list', stableHash(filters), 'infinite']`). The helper already handles this shape.
+- Public problem list/detail/filter metadata are also cached at the Next.js layer via `unstable_cache`
+  with cache tags such as `problem:list`, `problem:<slug>`, `tag:<slug>`, and `difficulty:<code>`.
+  Staff publish/archive flows call `revalidateTag` to keep those server caches in sync with the TRPC
+  cache.
