@@ -379,7 +379,7 @@ model Problem {
   antiCheatEvents            ContestAntiCheatEvent[]
   antiCheatClusters          ContestAntiCheatCluster[]
 
-  @@index([state, visibility, difficultyId, createdAt])
+  @@index([state, visibility, difficultyId, createdAt(sort: Desc)])
 }
 
 model ProblemVersion {
@@ -420,6 +420,7 @@ model ProblemTag {
   tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([problemId, tagId])
+  @@index([tagId, problemId])
 }
 
 model ProblemCompany {
@@ -642,6 +643,8 @@ model Submission {
   @@index([problemId, verdictCode, createdAt])
   @@index([codeHash])
   @@index([status, requiresManualReview])
+  @@index([contestId, userId])
+  @@index([contestId, problemId, userId])
 }
 
 model SubmissionCaseResult {
