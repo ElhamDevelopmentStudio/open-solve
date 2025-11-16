@@ -97,21 +97,37 @@ export const authRouter = router({
     }
 
     // Generate handle if not provided
-    let handle = input.handle;
-    if (!handle) {
-      handle = generateHandle(input.name || email.split("@")[0]);
-    }
+    const providedHandle = input.handle?.trim();
+    const handleSeed = input.name || email.split("@")[0];
+    let handle = providedHandle && providedHandle.length > 0 ? providedHandle : generateHandle(handleSeed);
 
-    // Check if handle is taken
-    const handleExists = await prisma.user.findUnique({
+    // Check if handle is taken and regenerate automatically when it was not user-provided
+    let handleExists = await prisma.user.findUnique({
       where: { handle },
     });
 
     if (handleExists) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "This handle is already taken",
-      });
+      if (providedHandle) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This handle is already taken",
+        });
+      }
+
+      const MAX_HANDLE_ATTEMPTS = 5;
+      let attempts = 0;
+      while (handleExists && attempts < MAX_HANDLE_ATTEMPTS) {
+        handle = generateHandle(handleSeed);
+        handleExists = await prisma.user.findUnique({ where: { handle } });
+        attempts += 1;
+      }
+
+      if (handleExists) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unable to generate an available handle, please choose one manually.",
+        });
+      }
     }
 
     // Create user
