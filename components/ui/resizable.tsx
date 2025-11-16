@@ -1,10 +1,9 @@
 "use client";
-
 import * as React from "react";
-import { GripVerticalIcon } from "@/components/icons";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";
+import { GripVerticalIcon } from "@/components/icons";
 
 function ResizablePanelGroup({
   className,
@@ -48,4 +47,4 @@ function ResizableHandle({
   );
 }
 
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup };

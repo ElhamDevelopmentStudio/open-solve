@@ -249,13 +249,19 @@ export function ContestCreationWizard({
 
   useEffect(() => {
     if (isPageVariant) {
-      resetBuilder();
+      const id = window.setTimeout(() => {
+        resetBuilder();
+      }, 0);
+      return () => window.clearTimeout(id);
     }
   }, [isPageVariant, resetBuilder]);
 
   useEffect(() => {
     if (!isPageVariant && open) {
-      resetBuilder();
+      const id = window.setTimeout(() => {
+        resetBuilder();
+      }, 0);
+      return () => window.clearTimeout(id);
     }
   }, [isPageVariant, open, resetBuilder]);
 

@@ -53,7 +53,8 @@ import {
 } from "@/lib/react-query/policies";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
 import type { SampleRunResult, SubmissionDetailPayload, SubmissionHistoryEntry } from "@/lib/submissions/types";
-import { trackEvent } from "@/lib/telemetry/client";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import { useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
 import { trpc } from "@/lib/trpc/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
@@ -113,6 +114,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
   const userId = session?.user?.id ?? null;
   const manualOnly = problem.judgeMode === "MANUAL";
   const requiresManualReview = problem.judgeMode !== "AUTO";
+  const analytics = useProblemAnalyticsContext();
 
   const languageOptions = useMemo(() => {
     if (problem.languages.length > 0) {
@@ -165,6 +167,14 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     },
     [utils],
   );
+  const editorOpenedAtRef = useRef(timestamp());
+  const lastActivityAtRef = useRef(timestamp());
+  const lastHeartbeatAtRef = useRef(timestamp());
+  const runCounterRef = useRef(0);
+  const submitCounterRef = useRef(0);
+  const touchActivity = useCallback(() => {
+    lastActivityAtRef.current = timestamp();
+  }, []);
   useSubmissionRealtime({
     submissionId: currentSubmissionId,
     onUpdate: realtimeHandler,
@@ -275,6 +285,32 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     return () => window.removeEventListener("keydown", handler);
   });
 
+  useEffect(() => {
+    analytics.registerEditorOpen();
+    editorOpenedAtRef.current = timestamp();
+  }, [analytics]);
+
+  useEffect(() => {
+    lastHeartbeatAtRef.current = timestamp();
+    const id = setInterval(() => {
+      const nowTs = timestamp();
+      const lastActive = lastActivityAtRef.current ?? editorOpenedAtRef.current;
+      const idleMs = Math.max(0, nowTs - lastActive);
+      const elapsed = nowTs - lastHeartbeatAtRef.current;
+      const activeMs = Math.max(0, elapsed - idleMs);
+      trackAnalyticsEvent(
+        "editor.activity_heartbeat",
+        {
+          activeMs: Math.max(0, Math.round(activeMs)),
+          idleMs: Math.max(0, Math.round(idleMs)),
+        },
+        { problemId: problem.id, languageCode: activeLanguage },
+      );
+      lastHeartbeatAtRef.current = nowTs;
+    }, 30000);
+    return () => clearInterval(id);
+  }, [activeLanguage, problem.id]);
+
   const draftsQuery = trpc.submissions.getDrafts.useQuery(
     { problemId: problem.id, languageCode: activeLanguage },
     {
@@ -310,7 +346,6 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
       setSampleResult(enriched);
       setViewMode("run");
       setConsoleLines(data.console);
-      trackEvent("submission.runSample", { problemId: problem.id, language: activeLanguage });
     },
     onError: (error) => {
       toast.error(error.message || "Unable to run samples");
@@ -328,7 +363,6 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
             ? ["Auto judge running…", "Manual review will follow once auto checks finish."]
             : ["Submission queued…", "Judge will update shortly."];
       setConsoleLines(intro);
-      trackEvent("submission.create", { problemId: problem.id, language: activeLanguage });
       invalidateTags(queryClient, ["submissions"]);
     },
     onError: (error) => {
@@ -340,7 +374,11 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     onSuccess: () => {
       draftsQuery.refetch();
       toast.success("Draft synced");
-      trackEvent("submission.draft.saved", { problemId: problem.id, language: activeLanguage });
+      trackAnalyticsEvent(
+        "editor.draft_saved",
+        {},
+        { problemId: problem.id, languageCode: activeLanguage },
+      );
       invalidateTags(queryClient, ["submissionDrafts"]);
     },
     onError: (error) => {
@@ -355,15 +393,44 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
     const finalVerdict = payload.verdictCode ?? payload.summary?.verdictCode;
     if (finalVerdict === "AC" || finalVerdict === "MANUAL_ACCEPTED") {
       maybeCelebrate(userId, problem.id, historyQuery.data?.entries ?? []);
+      analytics.markAccepted(payload.languageCode ?? activeLanguage);
     }
     const pendingStatuses = ["QUEUED", "RUNNING", "RETRYING", "MANUAL_PENDING"];
     if (!pendingStatuses.includes(payload.status)) {
       setLastSubmission(payload);
     }
-  }, [submissionDetailQuery.data, historyQuery.data, problem.id, userId]);
+  }, [analytics, activeLanguage, submissionDetailQuery.data, historyQuery.data, problem.id, userId]);
+
+  const handleLanguageChange = useCallback(
+    (next: SupportedLanguage) => {
+      if (next === activeLanguage) return;
+      trackAnalyticsEvent(
+        "editor.language_switch",
+        {
+          fromLanguageCode: activeLanguage,
+          toLanguageCode: next,
+        },
+        { problemId: problem.id },
+      );
+      setActiveLanguage(next);
+    },
+    [activeLanguage, problem.id],
+  );
 
   const handleRun = useCallback(() => {
     if (!activeLanguage) return;
+    touchActivity();
+    analytics.incrementRunCount();
+    runCounterRef.current += 1;
+    const timeSinceOpen = Math.round(timestamp() - editorOpenedAtRef.current);
+    trackAnalyticsEvent(
+      "editor.run_clicked",
+      {
+        runIndex: runCounterRef.current,
+        timeSinceEditorOpenMs: timeSinceOpen,
+      },
+      { problemId: problem.id, languageCode: activeLanguage },
+    );
     if (isOffline) {
       const offlineResult = simulateSampleRun({
         problemId: problem.id,
@@ -393,7 +460,17 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
       sourceCode: activeCode,
       stdin: customInput,
     });
-  }, [activeLanguage, isOffline, runSample, problem.id, activeCode, customInput, problem.content.sampleTestCases]);
+  }, [
+    activeLanguage,
+    analytics,
+    touchActivity,
+    isOffline,
+    runSample,
+    problem.id,
+    activeCode,
+    customInput,
+    problem.content.sampleTestCases,
+  ]);
 
   const handleSubmit = useCallback(() => {
     if (!activeLanguage) return;
@@ -401,13 +478,24 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
       toast.error("Sign in to submit solutions");
       return;
     }
+    touchActivity();
+    analytics.incrementSubmitCount();
+    submitCounterRef.current += 1;
+    trackAnalyticsEvent(
+      "editor.submit_clicked",
+      {
+        attemptNumber: submitCounterRef.current,
+        timeSinceFirstViewMs: analytics.getTimeSinceEnterMs(),
+      },
+      { problemId: problem.id, languageCode: activeLanguage },
+    );
     createSubmission.mutate({
       problemId: problem.id,
       languageCode: activeLanguage,
       sourceCode: activeCode,
       stdin: customInput,
     });
-  }, [activeLanguage, session, createSubmission, problem.id, activeCode, customInput]);
+  }, [activeLanguage, session, touchActivity, analytics, createSubmission, problem.id, activeCode, customInput]);
 
   const handleReset = () => {
     setCodeByLanguage((prev) => ({
@@ -432,6 +520,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
         toast.info("Sign in to sync drafts");
         return;
       }
+      touchActivity();
       saveDraftMutation.mutate({
         problemId: problem.id,
         languageCode: activeLanguage,
@@ -440,7 +529,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
         savedVia,
       });
     },
-    [session?.user, saveDraftMutation, problem.id, activeLanguage, activeCode],
+    [session?.user, touchActivity, saveDraftMutation, problem.id, activeLanguage, activeCode],
   );
 
   const activeResult =
@@ -506,18 +595,22 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
               <EditorColumn
                 activeLanguage={activeLanguage}
                 languageOptions={languageOptions}
-                onLanguageChange={setActiveLanguage}
+                onLanguageChange={handleLanguageChange}
                 code={activeCode}
-                onChange={(next) =>
-                  setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }))
-                }
+                onChange={(next) => {
+                  touchActivity();
+                  setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
+                }}
                 onCopy={handleCopy}
                 onReset={handleReset}
                 onSave={() => handleSaveDraft("manual")}
                 appearance={editorTheme === "dark" ? "dark" : "light"}
                 preferences={preferences}
                 customInput={customInput}
-                onInputChange={setCustomInput}
+                onInputChange={(value) => {
+                  touchActivity();
+                  setCustomInput(value);
+                }}
                 autosaveState={autosaveState}
                 runInProgress={runSample.isPending}
                 submitInProgress={createSubmission.isPending}
@@ -535,10 +628,7 @@ export function ProblemWorkspace({ problem }: { problem: ProblemDetailPayload })
                 result={activeResult}
                 submissionHistory={historyQuery.data?.entries ?? []}
                 onSelectSubmission={(submissionId) => {
-                  trackEvent("submission.timeline.open", {
-                    problemId: problem.id,
-                    submissionId,
-                  });
+                  trackAnalyticsEvent("submission.timeline_open", { submissionId }, { problemId: problem.id });
                   setCurrentSubmissionId(submissionId);
                   setViewMode("submission");
                 }}
@@ -1028,4 +1118,11 @@ function createClientId() {
     }
   }
   return `client-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
+}
+
+function timestamp() {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return performance.now();
+  }
+  return Date.now();
 }

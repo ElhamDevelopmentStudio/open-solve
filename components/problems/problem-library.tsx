@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProblemFilters } from "@/hooks/use-problem-filters";
 import { publicContentQueryOptions } from "@/lib/react-query/policies";
-import { trackEvent } from "@/lib/telemetry/client";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { trpc } from "@/lib/trpc/client";
 import type {
   ProblemFiltersInput,
@@ -202,14 +202,14 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   useEffect(() => {
     if (!mergedFilters.q) return;
-    trackEvent("problems.search", { query: mergedFilters.q });
+    trackAnalyticsEvent("library.search", { query: mergedFilters.q });
   }, [mergedFilters.q]);
 
   useEffect(() => {
     if (previousFiltersHash.current === filtersHash) {
       return;
     }
-    trackEvent("problems.filters.change", { filters: mergedFilters });
+    trackAnalyticsEvent("library.filters_change", { filters: mergedFilters });
     previousFiltersHash.current = filtersHash;
   }, [filtersHash, mergedFilters]);
 
@@ -217,7 +217,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     if (!listIsEmpty) return;
     if (zeroResultHashes.current.has(filtersHash)) return;
     zeroResultHashes.current.add(filtersHash);
-    trackEvent("problems.zeroResults", { filters: mergedFilters });
+    trackAnalyticsEvent("library.zero_results", { filters: mergedFilters });
   }, [filtersHash, listIsEmpty, mergedFilters]);
 
   useEffect(() => {
@@ -231,10 +231,18 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     if (nav) {
       const ttfb = nav.responseStart - nav.requestStart;
       const domReady = nav.domContentLoadedEventEnd - nav.startTime;
-      trackEvent("problems.performance", {
-        ttfb: Number.isFinite(ttfb) ? Number(ttfb.toFixed(2)) : undefined,
-        domReady: Number.isFinite(domReady) ? Number(domReady.toFixed(2)) : undefined,
-      });
+      if (Number.isFinite(ttfb)) {
+        trackAnalyticsEvent("library.performance_metric", {
+          metric: "ttfb",
+          value: Number(ttfb.toFixed(2)),
+        });
+      }
+      if (Number.isFinite(domReady)) {
+        trackAnalyticsEvent("library.performance_metric", {
+          metric: "domReady",
+          value: Number(domReady.toFixed(2)),
+        });
+      }
     }
 
     let observer: PerformanceObserver | null = null;
@@ -242,8 +250,9 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
       observer = new PerformanceObserver((entryList) => {
         const entry = entryList.getEntries().at(-1);
         if (!entry) return;
-        trackEvent("problems.performance", {
-          lcp: Number(entry.startTime.toFixed(2)),
+        trackAnalyticsEvent("library.performance_metric", {
+          metric: "lcp",
+          value: Number(entry.startTime.toFixed(2)),
         });
         observer?.disconnect();
       });

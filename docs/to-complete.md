@@ -303,7 +303,6 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-
 ## 14) User Interaction Analytics
 
 **Goals:** Understand real user behavior to improve problem quality and UX.

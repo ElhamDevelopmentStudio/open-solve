@@ -7,6 +7,7 @@ import Link from "next/link";
 
 const adminNav = [
   { title: "Overview", href: "/admin", icon: "dashboard", exact: true },
+  { title: "Analytics", href: "/admin/analytics", icon: "analytics" },
   { title: "Users & Roles", href: "/admin/users", icon: "users" },
   { title: "Problems", href: "/admin/problems", icon: "problems" },
   { title: "Submissions & Judge", href: "/admin/submissions", icon: "submissions" },

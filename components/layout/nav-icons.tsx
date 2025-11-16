@@ -27,6 +27,7 @@ const iconMap: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   trophy: Award02Icon,
   contests: Award02Icon,
   sparkles: SparklesIcon,
+  analytics: SparklesIcon,
   users: UserGroupIcon,
   user: UserCheck01Icon,
   discussions: Message01Icon,

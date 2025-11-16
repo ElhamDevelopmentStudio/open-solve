@@ -371,6 +371,8 @@ model Problem {
   trailInsights              TrailInsight[]
   trailEdges                 TrailEdge[]
   leaderboardRealtimeSolves  LeaderboardRealtimeSolve[]
+  analyticsSnapshots         ProblemAnalyticsSnapshot[]
+  analyticsEvents            AnalyticsEvent[]
 
   @@index([state, visibility, difficultyId, createdAt])
 }
@@ -918,6 +920,46 @@ model LeaderboardRealtimeSolve {
   @@index([submissionId])
 }
 
+model ProblemAnalyticsSnapshot {
+  id          String   @id @default(cuid())
+  problemId   String
+  windowHours Int      @default(168)
+  metrics     Json     @default("{}")
+  computedAt  DateTime @default(now())
+  problem     Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, windowHours])
+  @@index([computedAt])
+}
+
+model AnalyticsEvent {
+  id             String   @id @default(cuid())
+  eventName      String
+  version        Int      @default(1)
+  userId         String?
+  sessionId      String?
+  problemId      String?
+  contestId      String?
+  languageCode   String?
+  deviceType     String?
+  osFamily       String?
+  browserFamily  String?
+  route          String?
+  viewportWidth  Int?
+  viewportHeight Int?
+  context        Json     @default("{}")
+  payload        Json     @default("{}")
+  createdAt      DateTime @default(now())
+  problem        Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+  contest        Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
+
+  @@index([eventName, createdAt])
+  @@index([problemId, createdAt])
+  @@index([contestId, createdAt])
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+}
+
 model Contest {
   id                       String                 @id @default(cuid())
   slug                     String                 @unique
@@ -944,6 +986,7 @@ model Contest {
   submissions              Submission[]
   clarifications           ContestClarification[]
   snapshots                ContestSnapshot[]
+  analyticsEvents          AnalyticsEvent[]
 
   @@index([state, startsAt])
 }
