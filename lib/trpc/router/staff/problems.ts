@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { generateUniqueProblemSlug } from "@/lib/problems/slugify";
 import { staffProcedure, router } from "@/lib/trpc/trpc";
+import { revalidateProblemContent } from "@/lib/cache/revalidate";
 import {
   Prisma,
   ProblemJudgeMode,
@@ -666,6 +667,15 @@ export const staffProblemsRouter = router({
           versions: {
             orderBy: { versionNumber: "desc" },
           },
+          tags: {
+            where: { deletedAt: null },
+            select: {
+              tag: {
+                select: { slug: true },
+              },
+            },
+          },
+          difficulty: { select: { code: true } },
         },
       });
       if (!problem) {
@@ -698,16 +708,34 @@ export const staffProblemsRouter = router({
           updatedById: ctx.user.id,
         },
       });
+      revalidateProblemContent(problem);
       return true;
     }),
   archive: staffProcedure
     .input(z.object({ problemId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertProblemAccess(input.problemId, ctx.user.id, ctx.user.role);
+      const problem = await prisma.problem.findUnique({
+        where: { id: input.problemId },
+        select: {
+          slug: true,
+          difficulty: { select: { code: true } },
+          tags: {
+            where: { deletedAt: null },
+            select: {
+              tag: { select: { slug: true } },
+            },
+          },
+        },
+      });
+      if (!problem) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
       await prisma.problem.update({
         where: { id: input.problemId },
         data: { state: ProblemState.ARCHIVED, updatedById: ctx.user.id },
       });
+      revalidateProblemContent(problem);
       return true;
     }),
 });
