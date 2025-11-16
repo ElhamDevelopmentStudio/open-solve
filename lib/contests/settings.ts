@@ -49,12 +49,46 @@ export const defaultContestSettings: ContestSettings = {
     hideFailedCaseDetails: true,
   },
   antiCheat: {
+    enabled: false,
     lockDiscussions: true,
     lockProfiles: true,
     lockTrails: true,
     enforceIp: true,
     similarityReview: true,
     throttlePerMinute: 3,
+    examMode: {
+      enabled: false,
+      disableSelection: true,
+      disableContextMenu: true,
+      stickyReminder: true,
+    },
+    focus: {
+      softWarningTabs: 3,
+      flagTabs: 6,
+      autoDQTabs: 12,
+      softWarningOutMs: 60_000,
+      flagOutMs: 180_000,
+    },
+    multiDevice: {
+      singleDeviceOnly: true,
+      allowSecondaryFlagged: false,
+      requireLock: false,
+    },
+    paste: {
+      largePasteThreshold: 120,
+      perProblemLimit: 3,
+      perContestLimit: 12,
+    },
+    heuristics: {
+      enableTiming: true,
+      enableSimilarity: true,
+      enableClusters: true,
+      enableSuspiciousTimeline: true,
+    },
+    warnings: {
+      reminderCopy: "Anti-cheat guard active.",
+      showParticipantBanner: true,
+    },
   },
   problemSet: {
     randomizeOrder: false,
