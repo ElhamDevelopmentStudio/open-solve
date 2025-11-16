@@ -703,3 +703,5 @@ ALTER TABLE "ContestRegistration" ADD CONSTRAINT "ContestRegistration_contestId_
 -- AddForeignKey
 ALTER TABLE "ContestRegistration" ADD CONSTRAINT "ContestRegistration_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "AnalyticsEvent" ADD CONSTRAINT "AnalyticsEvent_contestId_fkey" FOREIGN KEY ("contestId") REFERENCES "Contest"("id") ON DELETE SET NULL ON UPDATE CASCADE;

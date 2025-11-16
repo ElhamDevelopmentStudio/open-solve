@@ -68,6 +68,8 @@ model User {
   trailReportsResolved      TrailReport[]              @relation("TrailReportResolver")
   leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
   answeredClarifications    ContestClarification[]     @relation("ClarificationAnswerer")
+  antiCheatSessions         ContestAntiCheatSession[]
+  antiCheatFlags            ContestAntiCheatFlag[]
 
   @@index([handle])
   @@index([status, role])
@@ -373,6 +375,9 @@ model Problem {
   leaderboardRealtimeSolves  LeaderboardRealtimeSolve[]
   analyticsSnapshots         ProblemAnalyticsSnapshot[]
   analyticsEvents            AnalyticsEvent[]
+  antiCheatFocus             ContestAntiCheatFocusMetric[]
+  antiCheatEvents            ContestAntiCheatEvent[]
+  antiCheatClusters          ContestAntiCheatCluster[]
 
   @@index([state, visibility, difficultyId, createdAt])
 }
@@ -631,6 +636,7 @@ model Submission {
   verdict                   Verdict?                   @relation(fields: [verdictCode], references: [code])
   caseResults               SubmissionCaseResult[]
   leaderboardRealtimeSolves LeaderboardRealtimeSolve[]
+  antiCheatClusterMemberships ContestAntiCheatClusterMember[]
 
   @@index([userId, problemId, createdAt])
   @@index([problemId, verdictCode, createdAt])
@@ -987,6 +993,11 @@ model Contest {
   clarifications           ContestClarification[]
   snapshots                ContestSnapshot[]
   analyticsEvents          AnalyticsEvent[]
+  antiCheatSessions        ContestAntiCheatSession[]
+  antiCheatEvents          ContestAntiCheatEvent[]
+  antiCheatFlags           ContestAntiCheatFlag[]
+  antiCheatClusters        ContestAntiCheatCluster[]
+  antiCheatFocus           ContestAntiCheatFocusMetric[]
 
   @@index([state, startsAt])
 }
@@ -1033,6 +1044,10 @@ model ContestRegistration {
   updatedAt         DateTime                  @updatedAt
   contest           Contest                   @relation(fields: [contestId], references: [id], onDelete: Cascade)
   user              User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  antiCheatSessions ContestAntiCheatSession[]
+  antiCheatFocus    ContestAntiCheatFocusMetric[]
+  antiCheatEvents   ContestAntiCheatEvent[]
+  antiCheatFlag     ContestAntiCheatFlag?
 
   @@unique([contestId, userId])
 }
@@ -1069,6 +1084,140 @@ model ContestClarification {
 
   @@index([contestId, status])
   @@index([userId, createdAt])
+}
+
+model ContestAntiCheatSession {
+  id              String                         @id @default(cuid())
+  contestId       String
+  registrationId  String
+  userId          String
+  sessionId       String
+  deviceType      String
+  osFamily        String?
+  browserFamily   String?
+  viewportWidth   Int?
+  viewportHeight  Int?
+  connectionType  String?
+  ipHash          String?
+  geoRegion       String?
+  startedAt       DateTime                       @default(now())
+  lastSeenAt      DateTime                       @default(now())
+  endedAt         DateTime?
+  status          ContestAntiCheatSessionStatus  @default(ACTIVE)
+  violationCount  Int                            @default(0)
+  contest         Contest                        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  registration    ContestRegistration            @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  user            User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  focusWindows    ContestAntiCheatFocusMetric[]
+  events          ContestAntiCheatEvent[]
+
+  @@unique([contestId, sessionId])
+  @@index([registrationId])
+  @@index([userId, contestId])
+}
+
+model ContestAntiCheatFocusMetric {
+  id                   String                   @id @default(cuid())
+  contestId            String
+  registrationId       String
+  sessionId            String
+  userId               String
+  problemId            String?
+  tabSwitchCount       Int                      @default(0)
+  totalOutOfFocusMs    Int                      @default(0)
+  maxConsecutiveOutMs  Int                      @default(0)
+  warningsIssued       Int                      @default(0)
+  flagsIssued          Int                      @default(0)
+  lastEventAt          DateTime                 @default(now())
+  contest              Contest                  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  registration         ContestRegistration      @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  session              ContestAntiCheatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  problem              Problem?                 @relation(fields: [problemId], references: [id], onDelete: SetNull)
+
+  @@index([contestId, registrationId])
+  @@index([problemId])
+  @@unique([contestId, registrationId, sessionId, problemId])
+}
+
+model ContestAntiCheatFlag {
+  id                 String                       @id @default(cuid())
+  contestId          String
+  registrationId     String                       @unique
+  userId             String
+  status             ContestAntiCheatFlagStatus   @default(CLEAN)
+  riskScore          Int                          @default(0)
+  tabSwitchCount     Int                          @default(0)
+  totalOutOfFocusMs  Int                          @default(0)
+  largePasteCount    Int                          @default(0)
+  suspiciousSessions Int                          @default(0)
+  lastEventAt        DateTime?
+  note               String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  contest            Contest                      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  registration       ContestRegistration          @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  user               User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clusterMemberships ContestAntiCheatClusterMember[]
+  events             ContestAntiCheatEvent[]
+
+  @@index([status])
+}
+
+model ContestAntiCheatEvent {
+  id             String                      @id @default(cuid())
+  contestId      String
+  registrationId String?
+  sessionId      String?
+  flagId         String?
+  userId         String?
+  problemId      String?
+  type           ContestAntiCheatEventType
+  severity       ContestAntiCheatSeverity   @default(INFO)
+  note           String?
+  payload        Json?
+  occurredAt     DateTime                   @default(now())
+  contest        Contest                    @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  registration   ContestRegistration?       @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  session        ContestAntiCheatSession?   @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  flag           ContestAntiCheatFlag?      @relation(fields: [flagId], references: [id], onDelete: SetNull)
+  problem        Problem?                   @relation(fields: [problemId], references: [id], onDelete: SetNull)
+
+  @@index([contestId, occurredAt])
+  @@index([registrationId])
+  @@index([flagId])
+  @@index([sessionId])
+  @@index([problemId])
+}
+
+model ContestAntiCheatCluster {
+  id              String                        @id @default(cuid())
+  contestId       String
+  problemId       String
+  similarityScore Float
+  size            Int
+  status          ContestAntiCheatClusterStatus @default(OPEN)
+  summary         String?
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+  contest         Contest                       @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem         Problem                       @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  members         ContestAntiCheatClusterMember[]
+
+  @@index([contestId, problemId])
+}
+
+model ContestAntiCheatClusterMember {
+  id           String                     @id @default(cuid())
+  clusterId    String
+  flagId       String
+  submissionId String?
+  similarity   Float?
+  createdAt    DateTime                   @default(now())
+  cluster      ContestAntiCheatCluster    @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  flag         ContestAntiCheatFlag       @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  submission   Submission?                @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+
+  @@unique([clusterId, flagId])
 }
 
 enum UserRole {
@@ -1202,6 +1351,47 @@ enum ClarificationStatus {
   ANSWERED
   ANNOUNCED
   CLOSED
+}
+
+enum ContestAntiCheatSessionStatus {
+  ACTIVE
+  TERMINATED
+}
+
+enum ContestAntiCheatEventType {
+  SESSION_START
+  SESSION_END
+  FOCUS_GAIN
+  FOCUS_LOSS
+  TAB_SWITCH
+  WINDOW_HIDDEN
+  LARGE_PASTE
+  MULTI_DEVICE
+  TIMING_SPIKE
+  SIMILARITY_CLUSTER
+  FLAG_STATUS
+  SYSTEM_WARNING
+}
+
+enum ContestAntiCheatSeverity {
+  INFO
+  WARNING
+  FLAG
+  CRITICAL
+}
+
+enum ContestAntiCheatFlagStatus {
+  CLEAN
+  WARNING
+  UNDER_REVIEW
+  SUSPICIOUS
+  DISQUALIFIED
+}
+
+enum ContestAntiCheatClusterStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
 }
 
 enum BadgeAwardSource {
