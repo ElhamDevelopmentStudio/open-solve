@@ -49,6 +49,8 @@ import { uploadImageToMinio } from "@/lib/storage/minio-upload";
 import TurndownService from "turndown";
 import { marked } from "marked";
 import { TagInput, type Tag as EmblorTag } from "emblor";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateTags } from "@/lib/react-query/invalidation";
 
 type TestCaseRow = {
   id?: string;
@@ -109,67 +111,73 @@ const JUDGE_MODE_OPTIONS: Array<{
 
 export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
+  const invalidateProblemCaches = () => {
+    void invalidateProblemCaches();
+    void utils.staff.problems.list.invalidate();
+    invalidateTags(queryClient, ["problems", "problemDetail", "tags", "staffProblems"]);
+  };
   const { data, isLoading } = trpc.staff.problems.get.useQuery({ id: problemId });
   const { data: metadata } = trpc.problems.filterMetadata.useQuery();
   const { data: languageCatalog } = trpc.staff.problems.languagesCatalog.useQuery();
 
   const saveContent = trpc.staff.problems.saveContent.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Content saved");
     },
   });
   const saveMetadata = trpc.staff.problems.saveMetadata.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Metadata saved");
     },
   });
   const saveTests = trpc.staff.problems.updateTests.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Tests updated");
     },
   });
   const submitForReview = trpc.staff.problems.submitForReview.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Sent to review");
     },
   });
   const requestChanges = trpc.staff.problems.requestChanges.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Returned to draft");
     },
   });
   const approve = trpc.staff.problems.approve.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Approved");
     },
   });
   const publish = trpc.staff.problems.publish.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Published");
     },
   });
   const updateLanguagesMutation = trpc.staff.problems.updateLanguages.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Languages saved");
     },
   });
   const addCurator = trpc.staff.problems.addCurator.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Curator added");
     },
   });
   const removeCurator = trpc.staff.problems.removeCurator.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Curator removed");
     },
   });

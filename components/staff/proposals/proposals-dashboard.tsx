@@ -49,9 +49,8 @@ const statusStyles: Record<ProblemProposalStatus, string> = {
 
 export function StaffProposalsDashboard() {
   const [statusFilter, setStatusFilter] = useState<ProblemProposalStatus | "ALL">("ALL");
-  const proposalsQuery = trpc.proposals.staffList.useQuery({
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-  });
+  const filters = statusFilter === "ALL" ? undefined : { status: statusFilter };
+  const proposalsQuery = trpc.proposals.staffList.useQuery(filters);
   const proposals = proposalsQuery.data ?? [];
   const metrics = useMemo(() => buildProposalMetrics(proposals), [proposals]);
   const columns = useProposalColumns();
