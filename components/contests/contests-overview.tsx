@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  contestDetailQueryOptions,
+  contestOverviewQueryOptions,
+} from "@/lib/react-query/policies";
 import type { ContestSummary } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -12,11 +16,31 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ArrowRight, Clock, Sparkles, Trophy, Users } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 export const ContestsOverview = () => {
   const router = useRouter();
-  const overview = trpc.contests.overview.useQuery();
+  const utils = trpc.useUtils();
+  const overview = trpc.contests.overview.useQuery(undefined, contestOverviewQueryOptions);
+  const prefetchedSlugs = useRef(new Set<string>());
+
+  const prefetchContestDetail = useCallback(
+    (slug: string | undefined) => {
+      if (!slug || prefetchedSlugs.current.has(slug)) {
+        return;
+      }
+      if (prefetchedSlugs.current.size > 100) {
+        prefetchedSlugs.current.clear();
+      }
+      prefetchedSlugs.current.add(slug);
+      utils.contests.detail.prefetch(
+        { slug },
+        { staleTime: contestDetailQueryOptions.staleTime },
+      );
+      router.prefetch(`/contests/${slug}`);
+    },
+    [router, utils],
+  );
 
   const contestRows = useMemo(() => {
     if (!overview.data) return [];
@@ -31,6 +55,10 @@ export const ContestsOverview = () => {
     
     return rows;
   }, [overview.data]);
+
+  useEffect(() => {
+    contestRows.slice(0, 3).forEach((contest) => prefetchContestDetail(contest.slug));
+  }, [contestRows, prefetchContestDetail]);
 
   const contestColumns = useMemo<DataTableColumn<ContestSummary, unknown>[]>(() => {
     return [
@@ -105,6 +133,7 @@ export const ContestsOverview = () => {
               e.stopPropagation();
               router.push(`/contests/${row.original.slug}`);
             }}
+            onMouseEnter={() => prefetchContestDetail(row.original.slug)}
             className="h-8 rounded-lg"
           >
             View
@@ -113,7 +142,7 @@ export const ContestsOverview = () => {
         ),
       },
     ];
-  }, [router]);
+  }, [prefetchContestDetail, router]);
 
   if (overview.isLoading) {
     return (
@@ -186,7 +215,10 @@ export const ContestsOverview = () => {
             </div>
 
             <Button asChild size="lg" className="rounded-xl md:flex-shrink-0">
-              <Link href={`/contests/${featuredContest.slug}`}>
+              <Link
+                href={`/contests/${featuredContest.slug}`}
+                onMouseEnter={() => prefetchContestDetail(featuredContest.slug)}
+              >
                 View Contest
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -218,6 +250,7 @@ export const ContestsOverview = () => {
           searchPlaceholder="Search contests..."
           pageSize={10}
           onRowClick={(row) => router.push(`/contests/${row.slug}`)}
+          onRowHover={(row) => prefetchContestDetail(row.slug)}
           emptyMessage="No contests available at the moment."
         />
       </div>
@@ -246,4 +279,3 @@ const ContestStateBadge = ({ state }: { state: string }) => {
     </span>
   );
 };
-

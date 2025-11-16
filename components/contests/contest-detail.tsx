@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { contestDetailQueryOptions, sessionQueryOptions } from "@/lib/react-query/policies";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
@@ -17,8 +18,8 @@ type ContestDetailProps = {
 
 export const ContestDetail = ({ slug }: ContestDetailProps) => {
   const utils = trpc.useUtils();
-  const detail = trpc.contests.detail.useQuery({ slug });
-  const session = trpc.auth.getSession.useQuery();
+  const detail = trpc.contests.detail.useQuery({ slug }, contestDetailQueryOptions);
+  const session = trpc.auth.getSession.useQuery(undefined, sessionQueryOptions);
 
   const registerMutation = trpc.contests.register.useMutation({
     onSuccess: () => {

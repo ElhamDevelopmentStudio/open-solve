@@ -13,6 +13,7 @@ import { AlertCircle, ArrowLeft, Loader2, MessageCircle } from "@/components/ico
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { contestDetailQueryOptions } from "@/lib/react-query/policies";
 
 type ContestClarificationsProps = {
   slug: string;
@@ -20,10 +21,14 @@ type ContestClarificationsProps = {
 
 export const ContestClarifications = ({ slug }: ContestClarificationsProps) => {
   const utils = trpc.useUtils();
-  const detail = trpc.contests.detail.useQuery({ slug });
+  const detail = trpc.contests.detail.useQuery({ slug }, contestDetailQueryOptions);
   const clarifications = trpc.contests.clarifications.useQuery(
     { contestId: detail.data?.contest.id ?? "" },
-    { enabled: Boolean(detail.data?.contest.id) }
+    {
+      enabled: Boolean(detail.data?.contest.id),
+      staleTime: contestDetailQueryOptions.staleTime,
+      gcTime: contestDetailQueryOptions.gcTime,
+    },
   );
 
   const [clarificationQuestion, setClarificationQuestion] = useState("");
@@ -269,5 +274,4 @@ const ClarificationStatusBadge = ({ status }: { status: string }) => {
     </span>
   );
 };
-
 

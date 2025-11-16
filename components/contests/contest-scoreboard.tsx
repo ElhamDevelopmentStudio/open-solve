@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { contestDetailQueryOptions, contestStandingsQueryOptions } from "@/lib/react-query/policies";
 import type { ContestStandingProblemCell } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -17,13 +18,14 @@ type ContestScoreboardProps = {
 };
 
 export const ContestScoreboard = ({ slug }: ContestScoreboardProps) => {
-  const detail = trpc.contests.detail.useQuery({ slug });
+  const detail = trpc.contests.detail.useQuery({ slug }, contestDetailQueryOptions);
   const standings = trpc.contests.standings.useInfiniteQuery(
     { slug, limit: 50 },
     {
+      ...contestStandingsQueryOptions,
       enabled: Boolean(slug),
       getNextPageParam: (page) => page.cursor,
-    }
+    },
   );
 
   const scoreboardProblems = detail.data?.problems ?? [];
@@ -212,5 +214,3 @@ const ProblemCell = ({ entry }: { entry?: ContestStandingProblemCell }) => {
     </div>
   );
 };
-
-

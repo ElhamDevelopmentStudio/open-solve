@@ -73,7 +73,8 @@ export function ContestAntiCheatDashboard({
   const columns = useMemo<DataTableColumn<ParticipantRow>[]>(
     () => [
       {
-        accessorKey: "participant.handle",
+        id: "participantHandle",
+        accessorFn: (row) => row.participant.handle,
         header: ({ column }) => <DataTableColumnHeader column={column} title="Participant" />,
         cell: ({ row }) => (
           <div>
@@ -174,7 +175,7 @@ export function ContestAntiCheatDashboard({
             <DataTable
               columns={columns}
               data={participants}
-              searchKey="participant.handle"
+              searchKey="participantHandle"
               pageSize={8}
               onRowClick={(row) => setSelectedRegistrationId(row.registrationId)}
               emptyMessage="No participants have telemetry yet."

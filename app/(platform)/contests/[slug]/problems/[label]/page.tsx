@@ -4,6 +4,7 @@ import { isStaffRole } from "@/lib/auth/permissions";
 import { getSession } from "@/lib/auth/session";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { notFound, redirect } from "next/navigation";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function ContestProblemWorkspacePage({
   if (!contestProblem) {
     notFound();
   }
-  const problem = await caller.problems.detail({ slug: contestProblem.slug });
+  const problem = await getCachedProblemDetail(contestProblem.slug);
   const contestContext: ContestProblemAntiCheatContext | undefined = viewerRegistration
     ? {
         contestId: contestDetail.contest.id,
