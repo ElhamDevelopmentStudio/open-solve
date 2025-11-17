@@ -484,15 +484,22 @@ async function enqueueSubmission(params: {
       reason: "MANUAL_ONLY",
     });
   } else {
-    await dispatchSubmissionToJudge({
-      submissionId: submission.id,
-      problemId: submission.problemId,
-      problemVersionId: submission.problemVersionId!,
-      languageCode: submission.languageCode,
-      requiresManualReview,
-      manualOnly: false,
-      userId: submission.userId,
-    });
+    try {
+      await dispatchSubmissionToJudge({
+        submissionId: submission.id,
+        problemId: submission.problemId,
+        problemVersionId: submission.problemVersionId!,
+        languageCode: submission.languageCode,
+        requiresManualReview,
+        manualOnly: false,
+        userId: submission.userId,
+      });
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Judge queue is unavailable. Please retry in a moment.",
+      });
+    }
   }
 
   return submission.id;

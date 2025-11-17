@@ -1,7 +1,10 @@
+import { createAuditLog } from "@/lib/auth/audit";
+import { env } from "@/lib/env";
+import { getDeploymentMeta } from "@/lib/deployment";
+import { runCoreChecks } from "@/lib/health";
+import { inspectJudgeQueues } from "@/lib/judge/queue";
 import { prisma } from "@/lib/prisma";
 import { adminProcedure, router } from "@/lib/trpc/trpc";
-import { runCoreChecks } from "@/lib/health";
-import { createAuditLog } from "@/lib/auth/audit";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
@@ -26,7 +29,14 @@ const parseSetting = <T,>(value: Prisma.JsonValue | null | undefined, fallback: 
 
 export const adminSystemRouter = router({
   overview: adminProcedure.query(async () => {
-    const [maintenanceSetting, submissionLimitSetting, queueCounts, systemHealth, activeSessions] =
+    const [
+      maintenanceSetting,
+      submissionLimitSetting,
+      submissionStatusCounts,
+      systemHealth,
+      activeSessions,
+      judgeQueues,
+    ] =
       await Promise.all([
         prisma.systemSetting.findUnique({ where: { key: "maintenance_mode" } }),
         prisma.systemSetting.findUnique({ where: { key: "submission_limits" } }),
@@ -36,6 +46,7 @@ export const adminSystemRouter = router({
         }),
         runCoreChecks(),
         prisma.session.count(),
+        inspectJudgeQueues(),
       ]);
 
     return {
@@ -49,9 +60,18 @@ export const adminSystemRouter = router({
         perHour: 250,
         contestMultiplier: 2,
       }),
-      queueCounts,
+      submissionStatusCounts,
+      judgeQueues:
+        judgeQueues ??
+        (["submissions", "rejudge", "manual"] as const).map((name) => ({
+          name,
+          messages: 0,
+          consumers: 0,
+        })),
       systemHealth,
       activeSessions,
+      deployment: getDeploymentMeta(),
+      environment: env.DEPLOYMENT_ENVIRONMENT,
     };
   }),
 

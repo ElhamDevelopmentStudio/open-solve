@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { generateUniqueProblemSlug } from "@/lib/problems/slugify";
-import { staffProcedure, router } from "@/lib/trpc/trpc";
+import { curatorProcedure, router } from "@/lib/trpc/trpc";
 import { revalidateProblemContent } from "@/lib/cache/revalidate";
 import {
   Prisma,
@@ -87,7 +87,7 @@ async function assertCuratorManager(problemId: string, userId: string, role: Use
 }
 
 export const staffProblemsRouter = router({
-  list: staffProcedure
+  list: curatorProcedure
     .input(
       z
         .object({
@@ -107,7 +107,7 @@ export const staffProblemsRouter = router({
       });
       return problems;
     }),
-  create: staffProcedure
+  create: curatorProcedure
     .input(
       z.object({
         title: z.string().min(8).max(80),
@@ -163,7 +163,7 @@ export const staffProblemsRouter = router({
       });
       return problem;
     }),
-  get: staffProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+  get: curatorProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const problem = await prisma.problem.findFirst({
       where: {
         id: input.id,
@@ -305,7 +305,7 @@ export const staffProblemsRouter = router({
       reviews: problem.reviews,
     };
   }),
-  saveContent: staffProcedure
+  saveContent: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -346,7 +346,7 @@ export const staffProblemsRouter = router({
       });
       return true;
     }),
-  saveMetadata: staffProcedure
+  saveMetadata: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -411,7 +411,7 @@ export const staffProblemsRouter = router({
       });
       return true;
     }),
-  updateTests: staffProcedure
+  updateTests: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -460,7 +460,7 @@ export const staffProblemsRouter = router({
 
       return true;
     }),
-  updateLanguages: staffProcedure
+  updateLanguages: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -512,7 +512,7 @@ export const staffProblemsRouter = router({
       });
       return true;
     }),
-  addCurator: staffProcedure
+  addCurator: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -556,7 +556,7 @@ export const staffProblemsRouter = router({
       });
       return true;
     }),
-  removeCurator: staffProcedure
+  removeCurator: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -576,7 +576,7 @@ export const staffProblemsRouter = router({
       }
       return true;
     }),
-  languagesCatalog: staffProcedure.query(async () => {
+  languagesCatalog: curatorProcedure.query(async () => {
     const languages = await prisma.language.findMany({
       where: { deletedAt: null, isEnabled: true },
       orderBy: { displayName: "asc" },
@@ -584,7 +584,7 @@ export const staffProblemsRouter = router({
     });
     return languages;
   }),
-  submitForReview: staffProcedure
+  submitForReview: curatorProcedure
     .input(z.object({ problemId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertProblemAccess(input.problemId, ctx.user.id, ctx.user.role);
@@ -598,7 +598,7 @@ export const staffProblemsRouter = router({
       });
       return true;
     }),
-  requestChanges: staffProcedure
+  requestChanges: curatorProcedure
     .input(z.object({ problemId: z.string(), notes: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertProblemAccess(input.problemId, ctx.user.id, ctx.user.role);
@@ -618,7 +618,7 @@ export const staffProblemsRouter = router({
       }
       return true;
     }),
-  approve: staffProcedure
+  approve: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -649,7 +649,7 @@ export const staffProblemsRouter = router({
 
       return true;
     }),
-  publish: staffProcedure
+  publish: curatorProcedure
     .input(
       z.object({
         problemId: z.string(),
@@ -711,7 +711,7 @@ export const staffProblemsRouter = router({
       revalidateProblemContent(problem);
       return true;
     }),
-  archive: staffProcedure
+  archive: curatorProcedure
     .input(z.object({ problemId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertProblemAccess(input.problemId, ctx.user.id, ctx.user.role);

@@ -1,4 +1,4 @@
-import { router, staffProcedure } from "@/lib/trpc/trpc";
+import { moderatorProcedure, router } from "@/lib/trpc/trpc";
 import { z } from "zod";
 import {
   updateDiscussionState,
@@ -8,19 +8,19 @@ import {
 } from "@/lib/discussions/service";
 
 export const staffDiscussionsRouter = router({
-  hide: staffProcedure
+  hide: moderatorProcedure
     .input(z.object({ discussionId: z.string().cuid() }))
     .mutation(({ input }) => updateDiscussionState({ discussionId: input.discussionId, state: "HIDDEN" })),
-  unhide: staffProcedure
+  unhide: moderatorProcedure
     .input(z.object({ discussionId: z.string().cuid() }))
     .mutation(({ input }) => updateDiscussionState({ discussionId: input.discussionId, state: "VISIBLE" })),
-  lockThread: staffProcedure
+  lockThread: moderatorProcedure
     .input(z.object({ threadId: z.string().cuid(), locked: z.boolean() }))
     .mutation(({ input, ctx }) => setThreadLock({ threadId: input.threadId, locked: input.locked, moderatorId: ctx.user.id })),
-  shadowBan: staffProcedure
+  shadowBan: moderatorProcedure
     .input(z.object({ userId: z.string().cuid() }))
     .mutation(({ input }) => shadowBanUser(input.userId)),
-  resolveReport: staffProcedure
+  resolveReport: moderatorProcedure
     .input(
       z.object({
         reportId: z.string().cuid(),

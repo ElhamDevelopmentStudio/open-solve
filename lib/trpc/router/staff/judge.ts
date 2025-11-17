@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { staffProcedure, router } from "@/lib/trpc/trpc";
+import { moderatorProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus } from "@prisma/client";
 import { z } from "zod";
 import { dispatchSubmissionToJudge } from "@/lib/judge/dispatcher";
@@ -8,7 +8,7 @@ import type { JudgeSummary } from "@/lib/submissions/types";
 import { notifySubmissionUpdate } from "@/lib/realtime/notifications";
 
 export const staffJudgeRouter = router({
-  manualQueue: staffProcedure
+  manualQueue: moderatorProcedure
     .input(
       z
         .object({
@@ -51,7 +51,7 @@ export const staffJudgeRouter = router({
         };
       });
     }),
-  manualSetVerdict: staffProcedure
+  manualSetVerdict: moderatorProcedure
     .input(
       z.object({
         submissionId: z.string().cuid(),
@@ -102,7 +102,7 @@ export const staffJudgeRouter = router({
       await notifySubmissionUpdate(submission.id);
       return { ok: true };
     }),
-  rejudge: staffProcedure
+  rejudge: moderatorProcedure
     .input(
       z.object({
         submissionId: z.string().cuid(),
