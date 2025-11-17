@@ -203,3 +203,32 @@ export const createConsumerChannel = async () => {
   await setupInfrastructure(channel);
   return channel;
 };
+
+export type JudgeQueueSnapshot = {
+  name: keyof typeof JUDGE_QUEUES;
+  messages: number;
+  consumers: number;
+};
+
+export const inspectJudgeQueues = async (): Promise<JudgeQueueSnapshot[] | null> => {
+  try {
+    const result = await withJudgeChannel(async (channel) => {
+      const orderedQueues: Array<keyof typeof JUDGE_QUEUES> = ["submissions", "rejudge", "manual"];
+      const snapshots = await Promise.all(
+        orderedQueues.map(async (name) => {
+          const state = await channel.checkQueue(JUDGE_QUEUES[name]);
+          return {
+            name,
+            messages: state.messageCount,
+            consumers: state.consumerCount,
+          };
+        }),
+      );
+      return snapshots;
+    });
+    return result;
+  } catch (error) {
+    logger.error({ error }, "failed to inspect judge queues");
+    return null;
+  }
+};

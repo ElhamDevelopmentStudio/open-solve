@@ -2,6 +2,8 @@ import { publishManualMessage, publishSubmissionMessage } from "@/lib/judge/queu
 import { runInlineJudge } from "@/lib/judge/inline-runner";
 import type { JudgeSubmissionMessage, ManualJudgeMessage } from "@/lib/judge/messages";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { SubmissionStatus } from "@prisma/client";
 
 type DispatchParams = {
   submissionId: string;
@@ -54,7 +56,17 @@ export const dispatchSubmissionToJudge = async ({
   }
 
   logger.warn({ submissionId }, "queue unavailable, falling back to inline judge");
-  await runInlineJudge(submissionId);
+  try {
+    await runInlineJudge(submissionId);
+  } catch (error) {
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        status: SubmissionStatus.RETRYING,
+      },
+    });
+    throw error;
+  }
 };
 
 export const publishManualReviewMessage = async ({

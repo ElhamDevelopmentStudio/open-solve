@@ -5,6 +5,7 @@ import { simulateJudgeRun } from "@/lib/submissions/simulator";
 import type { JudgeSimulationTestCase, JudgeSummary } from "@/lib/submissions/types";
 import { resolveTestcaseIO, resolveSubmissionSource } from "@/lib/judge/testcases";
 import { publishManualMessage } from "@/lib/judge/queue";
+import { notifySubmissionUpdate } from "@/lib/realtime/notifications";
 
 export const runInlineJudge = async (submissionId: string) => {
   const submission = await prisma.submission.findUnique({
@@ -51,6 +52,7 @@ export const runInlineJudge = async (submissionId: string) => {
       startedAt: new Date(),
     },
   });
+  await notifySubmissionUpdate(submission.id).catch(() => {});
 
   const testCases: JudgeSimulationTestCase[] = [];
   for (const test of submission.problemVersion.testCases) {
@@ -120,6 +122,7 @@ export const runInlineJudge = async (submissionId: string) => {
       stderrRef: caseResult.stderr,
     })),
   });
+  await notifySubmissionUpdate(submission.id).catch(() => {});
 
   if (submission.requiresManualReview) {
     await publishManualMessage({
