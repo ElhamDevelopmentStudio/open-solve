@@ -33,9 +33,18 @@ import {
 import { cn } from "@/lib/utils";
 import { Target01Icon } from "hugeicons-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Fragment, useMemo, type ComponentType, type ReactNode, type SVGProps } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Fragment,
+  useMemo,
+  useState,
+  createContext,
+  type ComponentType,
+  type ReactNode,
+  type SVGProps,
+} from "react";
 import { resolveNavIcon } from "./nav-icons";
+import { trpc } from "@/lib/trpc/client";
 
 export type SidebarNavItem = {
   href: string;
@@ -74,6 +83,13 @@ type SidebarShellProps = {
   children: ReactNode;
 };
 
+type HeaderContextValue = {
+  setHeader: (node: ReactNode | null) => void;
+};
+
+const HeaderContext = createContext<HeaderContextValue | null>(null);
+export const SidebarHeaderContext = HeaderContext;
+
 export function SidebarShell({
   user,
   nav,
@@ -86,10 +102,14 @@ export function SidebarShell({
   const pathname = usePathname() || "/";
   const breadcrumbs = buildBreadcrumbs(pathname);
   const navSignature = useMemo(() => JSON.stringify(nav.map((group) => group.items.map((item) => item.href))), [nav]);
+  const [pageHeader, setPageHeader] = useState<ReactNode | null>(null);
+
+  const headerContextValue = useMemo(() => ({ setHeader: setPageHeader }), [setPageHeader]);
 
   return (
-    <SidebarProvider defaultOpen>
-      <div className="bg-muted/40 flex min-h-screen w-full">
+    <HeaderContext.Provider value={headerContextValue}>
+      <SidebarProvider defaultOpen>
+        <div className="bg-muted/40 flex min-h-screen w-full">
         <Sidebar
           variant="inset"
           collapsible="icon"
@@ -123,43 +143,47 @@ export function SidebarShell({
         <SidebarInset>
           <div className="flex min-h-svh flex-col">
             <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
-              <div className="flex h-16 items-center justify-between px-4">
-                <div className="flex items-center gap-4">
-                  <SidebarTrigger />
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{environmentLabel}</p>
-                    <nav className="flex items-center gap-1 text-sm font-medium text-foreground">
-                      {breadcrumbs.map((crumb, index) => (
-                        <Fragment key={crumb.href}>
-                          {index > 0 ? <span className="text-muted-foreground">/</span> : null}
-                          <Link
-                            href={crumb.href}
-                            className={cn(
-                              "capitalize",
-                              index === breadcrumbs.length - 1
-                                ? "text-foreground"
-                                : "text-muted-foreground transition-colors hover:text-foreground",
-                            )}
-                          >
-                            {crumb.label}
-                          </Link>
-                        </Fragment>
-                      ))}
-                    </nav>
+              <div className="flex flex-col gap-2 px-4 py-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <SidebarTrigger />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{environmentLabel}</p>
+                      <nav className="flex items-center gap-1 text-sm font-medium text-foreground">
+                        {breadcrumbs.map((crumb, index) => (
+                          <Fragment key={crumb.href}>
+                            {index > 0 ? <span className="text-muted-foreground">/</span> : null}
+                            <Link
+                              href={crumb.href}
+                              className={cn(
+                                "capitalize",
+                                index === breadcrumbs.length - 1
+                                  ? "text-foreground"
+                                  : "text-muted-foreground transition-colors hover:text-foreground",
+                              )}
+                            >
+                              {crumb.label}
+                            </Link>
+                          </Fragment>
+                        ))}
+                      </nav>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {headerBadge}
+                    <ThemeToggle />
+                    <UserMenu user={user} />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {headerBadge}
-                  <ThemeToggle />
-                  <UserMenu user={user} />
-                </div>
+                {pageHeader ? <div className="flex flex-wrap items-center gap-3">{pageHeader}</div> : null}
               </div>
             </header>
             <div className="flex-1 px-4 py-8 sm:px-8">{children}</div>
           </div>
         </SidebarInset>
-      </div>
-    </SidebarProvider>
+        </div>
+      </SidebarProvider>
+    </HeaderContext.Provider>
   );
 }
 
@@ -228,6 +252,18 @@ function SidebarNavLink({ item, isActive }: { item: SidebarNavItem; isActive: bo
 }
 
 function UserMenu({ user }: { user: UserIdentity }) {
+  const router = useRouter();
+  const signOut = trpc.auth.signOut.useMutation({
+    onSuccess: () => {
+      router.push("/sign-in");
+    },
+  });
+
+  const handleSignOut = () => {
+    if (signOut.isPending) return;
+    signOut.mutate();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -267,8 +303,15 @@ function UserMenu({ user }: { user: UserIdentity }) {
           <Link href="/settings/account">Settings</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
-          <Link href="/api/auth/signout">Sign out</Link>
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={(event) => {
+            event.preventDefault();
+            handleSignOut();
+          }}
+          disabled={signOut.isPending}
+        >
+          {signOut.isPending ? "Signing out…" : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
