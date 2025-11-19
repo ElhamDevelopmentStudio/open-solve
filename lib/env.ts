@@ -25,7 +25,10 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     DIRECT_URL: z.string().url().optional(),
-    SESSION_SECRET: z.string().min(32),
+    SESSION_SECRET: z
+      .string()
+      .min(32)
+      .default("opensolve-test-session-secret-please-change-me-1234567890"),
     APP_URL: z.string().url(),
     DEPLOYMENT_ENVIRONMENT: z
       .enum(["development", "staging", "production", "preview"])
