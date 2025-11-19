@@ -34,3 +34,18 @@
   - `opensolve_submission_events_total` counter (enqueued / processed / failed).
   - `opensolve_contests_running_total` gauge (live contests) and `opensolve_contests_frozen_total` (freeze).
   - `opensolve_judge_worker_failures_total` counter.
+
+## CI / Deployment Failure
+1. Inspect the GitHub Actions workflow (`CI`) to see which stage failed (quality, e2e, docker, staging, prod).
+2. For lint/test failures: reproduce locally with `npm run lint`, `npm run test`, or `npx playwright test`.
+3. For docker/build failures: run `docker build --target runner .` locally to confirm.
+4. For staging/prod jobs: re-run the compose or Fly deployment using the manifests/artifacts bundled in the workflow (see `ops/docker/docker-compose.*.yml` and `fly.toml`).
+5. Retag images (`docker buildx imagetools create ghcr.io/<owner>/opensolve-web:<sha> --tag ghcr.io/<owner>/opensolve-web:staging`) if a previous promotion is required.
+
+## Rapid Rollback / Blue-Green
+1. Identify the last known-good commit SHA from GitHub Releases.
+2. Retag both images to `staging`/`latest` using `docker buildx imagetools create ghcr.io/<owner>/opensolve-web:<sha> --tag ...`.
+3. Re-run the appropriate compose/Fly deployment (`docker compose -f ops/docker/docker-compose.prod.yml ...` or `flyctl deploy --image <tag>`).
+4. To perform a blue/green cutover with Docker hosts, run a second stack under a different project directory/compose file, test it, then swap your reverse proxy to the new port/host. On Fly, deploy to a new app, verify, and update DNS.
+
+See [`ops/infra/prod-deployment.md`](../../ops/infra/prod-deployment.md) and [`ops/infra/rollouts.md`](../../ops/infra/rollouts.md) for detailed deployment steps.

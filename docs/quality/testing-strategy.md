@@ -42,4 +42,7 @@
   3. `npm run typecheck`
   4. `npm run test`
   5. `npm run build`
+  6. `npx playwright test` (against a `npm run start` server)
+  7. Docker Buildx (`docker buildx build --target runner/judge-worker`)
+  8. Compose/Fly deploys gated through GitHub environments (`ops/docker/docker-compose.*.yml`, `fly.toml`)
 - Production deploys scrape `/api/internal/metrics` after health checks to verify the new histograms emit data.
