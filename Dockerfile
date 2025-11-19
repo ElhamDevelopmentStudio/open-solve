@@ -9,7 +9,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 FROM base AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 FROM base AS builder
