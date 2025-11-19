@@ -1,6 +1,6 @@
 import { PROBLEM_STATUS_FILTERS } from "@/lib/problems/constants";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Hourglass, Minus } from "lucide-react";
+import { CheckCircle2, Hourglass, Minus } from "@/components/icons";
 
 type ProblemStatus = (typeof PROBLEM_STATUS_FILTERS)[number];
 

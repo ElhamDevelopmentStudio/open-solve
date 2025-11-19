@@ -90,6 +90,58 @@ export const trpcProcedures = {
     saveDraft: "submissions.saveDraft" as ProcedureName,
     getDrafts: "submissions.getDrafts" as ProcedureName,
   },
+  profile: {
+    detail: "profile.detail" as ProcedureName,
+  },
+  leaderboard: {
+    overview: "leaderboard.overview" as ProcedureName,
+    global: "leaderboard.global" as ProcedureName,
+    difficulty: "leaderboard.difficulty" as ProcedureName,
+    tag: "leaderboard.tag" as ProcedureName,
+  },
+  discussions: {
+    listByProblem: "discussions.listByProblem" as ProcedureName,
+    listGlobal: "discussions.listGlobal" as ProcedureName,
+    thread: "discussions.thread" as ProcedureName,
+    replies: "discussions.replies" as ProcedureName,
+  },
+  editorials: {
+    getByProblem: "editorials.getByProblem" as ProcedureName,
+  },
+  trails: {
+    getForProblem: "trails.getForProblem" as ProcedureName,
+  },
+  contests: {
+    overview: "contests.overview" as ProcedureName,
+    detail: "contests.detail" as ProcedureName,
+    standings: "contests.standings" as ProcedureName,
+    clarifications: "contests.clarifications" as ProcedureName,
+  },
+  admin: {
+    dashboard: {
+      overview: "admin.dashboard.overview" as ProcedureName,
+    },
+    users: {
+      list: "admin.users.list" as ProcedureName,
+      detail: "admin.users.detail" as ProcedureName,
+    },
+    problems: {
+      list: "admin.problems.list" as ProcedureName,
+    },
+    submissions: {
+      list: "admin.submissions.list" as ProcedureName,
+    },
+    system: {
+      overview: "admin.system.overview" as ProcedureName,
+    },
+    flags: {
+      list: "admin.flags.list" as ProcedureName,
+    },
+    audit: {
+      logs: "admin.audit.logs" as ProcedureName,
+      incidents: "admin.audit.incidents" as ProcedureName,
+    },
+  },
 } as const;
 
 export type QueryTag =
@@ -100,7 +152,13 @@ export type QueryTag =
   | "staffProblems"
   | "proposals"
   | "submissions"
-  | "submissionDrafts";
+  | "submissionDrafts"
+  | "profile"
+  | "leaderboard"
+  | "discussions"
+  | "editorials"
+  | "trails"
+  | "contests";
 
 export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
   problems: [trpcProcedures.problems.list],
@@ -116,4 +174,25 @@ export const queryTagMap: Record<QueryTag, ProcedureName[]> = {
     trpcProcedures.submissions.filters,
   ],
   submissionDrafts: [trpcProcedures.submissions.getDrafts],
+  profile: [trpcProcedures.profile.detail],
+  leaderboard: [
+    trpcProcedures.leaderboard.overview,
+    trpcProcedures.leaderboard.global,
+    trpcProcedures.leaderboard.difficulty,
+    trpcProcedures.leaderboard.tag,
+  ],
+  discussions: [
+    trpcProcedures.discussions.listByProblem,
+    trpcProcedures.discussions.listGlobal,
+    trpcProcedures.discussions.thread,
+    trpcProcedures.discussions.replies,
+  ],
+  editorials: [trpcProcedures.editorials.getByProblem],
+  trails: [trpcProcedures.trails.getForProblem],
+  contests: [
+    trpcProcedures.contests.overview,
+    trpcProcedures.contests.detail,
+    trpcProcedures.contests.standings,
+    trpcProcedures.contests.clarifications,
+  ],
 };

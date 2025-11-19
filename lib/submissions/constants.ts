@@ -17,8 +17,15 @@ export const SUBMISSION_VERDICTS = [
   "MANUAL_ACCEPTED",
   "MANUAL_REJECTED",
   "MANUAL_PARTIAL",
- ] as const satisfies JudgeVerdictCode[];
+] as const satisfies JudgeVerdictCode[];
 
 export const ACCEPTED_VERDICTS: JudgeVerdictCode[] = ["AC", "MANUAL_ACCEPTED", "MANUAL_PARTIAL"];
 
-export const FAILURE_VERDICTS: JudgeVerdictCode[] = ["WA", "TLE", "MLE", "RE", "CE", "MANUAL_REJECTED"];
+export const FAILURE_VERDICTS: JudgeVerdictCode[] = [
+  "WA",
+  "TLE",
+  "MLE",
+  "RE",
+  "CE",
+  "MANUAL_REJECTED",
+];

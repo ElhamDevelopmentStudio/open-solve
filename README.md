@@ -123,7 +123,6 @@ Phase 7 introduces a standalone judge worker that consumes RabbitMQ queues and r
    ```
 
 2. **Start RabbitMQ + worker**
-
    - Dev mode: `docker compose --profile judge up rabbitmq judge-worker`
    - Bare metal: run `npm run judge:worker` alongside `npm run dev`
 
@@ -149,6 +148,14 @@ Vitest will clone the schema into `test_<worker>` automatically, apply migration
 
 ---
 
+## 📈 Metrics & Observability
+
+- scrape `GET /api/internal/metrics` with `Authorization: Bearer $METRICS_ACCESS_TOKEN`.
+- Exposes `opensolve_trpc_duration_seconds`, `opensolve_submission_events_total`, `opensolve_judge_queue_messages`, and contest gauges.
+- Deployments should call this endpoint after rolling out to ensure judge queues and tRPC calls are healthy.
+
+---
+
 ## 🛡️ Creating an admin account
 
 Roles gate problem authoring, publishing, and moderation tools. To promote one of your users to `ADMIN`:
@@ -167,3 +174,12 @@ npx prisma db execute --script "UPDATE \"User\" SET role = 'ADMIN' WHERE email =
 ```
 
 Remember: admins can publish/archive problems, edit roles, and bypass reviewer restrictions, so keep these accounts limited.
+
+---
+
+## 🛠 Deployment & Ops
+
+- **Environment parity:** `ops/env/*.env` hold canonical dev/staging/prod configs. Pair them with the compose files under `ops/docker/`.
+- **CI/CD pipeline:** `.github/workflows/ci-cd.yml` runs lint → tests → Playwright → Docker builds → image pushes → staged releases.
+- **Deploy targets:** use the docker-compose stacks under `ops/docker/` for dev/staging/VM setups or the [`fly.toml`](fly.toml) spec for Fly.io. Secrets live in `ops/env/*.env`.
+- **Runbooks:** outages, judge issues, DB slowdowns, and restore drills live under [`docs/quality`](docs/quality).

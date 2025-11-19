@@ -25,12 +25,21 @@ import { protectedProcedure, publicProcedure, router } from "@/lib/trpc/trpc";
 import * as authSchemas from "@/lib/validators/auth";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { buildProtectedEmailFields, hashEmail } from "@/lib/security/email";
+import { buildDeletedUserProfile } from "@/lib/security/user";
 
 export const authRouter = router({
-  getSession: publicProcedure.query(({ ctx }) => {
+  getSession: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.user || !ctx.session) {
       return null;
     }
+
+    const impersonator = ctx.session.impersonatorId
+      ? await prisma.user.findUnique({
+          where: { id: ctx.session.impersonatorId },
+          select: { id: true, handle: true, email: true },
+        })
+      : null;
 
     return {
       user: {
@@ -46,7 +55,9 @@ export const authRouter = router({
       session: {
         id: ctx.session.id,
         expiresAt: ctx.session.expires,
+        impersonatorId: ctx.session.impersonatorId,
       },
+      impersonator,
     };
   }),
 
@@ -75,7 +86,7 @@ export const authRouter = router({
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { emailHash: hashEmail(email) },
     });
 
     if (existingUser) {
@@ -86,28 +97,47 @@ export const authRouter = router({
     }
 
     // Generate handle if not provided
-    let handle = input.handle;
-    if (!handle) {
-      handle = generateHandle(input.name || email.split("@")[0]);
-    }
+    const providedHandle = input.handle?.trim();
+    const handleSeed = input.name || email.split("@")[0];
+    let handle =
+      providedHandle && providedHandle.length > 0 ? providedHandle : generateHandle(handleSeed);
 
-    // Check if handle is taken
-    const handleExists = await prisma.user.findUnique({
+    // Check if handle is taken and regenerate automatically when it was not user-provided
+    let handleExists = await prisma.user.findUnique({
       where: { handle },
     });
 
     if (handleExists) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "This handle is already taken",
-      });
+      if (providedHandle) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This handle is already taken",
+        });
+      }
+
+      const MAX_HANDLE_ATTEMPTS = 5;
+      let attempts = 0;
+      while (handleExists && attempts < MAX_HANDLE_ATTEMPTS) {
+        handle = generateHandle(handleSeed);
+        handleExists = await prisma.user.findUnique({ where: { handle } });
+        attempts += 1;
+      }
+
+      if (handleExists) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unable to generate an available handle, please choose one manually.",
+        });
+      }
     }
 
     // Create user
     const hashedPassword = await hashPassword(input.password);
+    const emailFields = buildProtectedEmailFields(email);
     const user = await prisma.user.create({
       data: {
         email,
+        ...emailFields,
         hashedPassword,
         name: input.name,
         handle,
@@ -158,9 +188,8 @@ export const authRouter = router({
     }
 
     const email = normalizeEmail(input.email);
-
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { emailHash: hashEmail(email) },
     });
 
     if (!user || !user.hashedPassword) {
@@ -223,7 +252,7 @@ export const authRouter = router({
     }
 
     // Create session
-    await createSession(user.id, userAgent, ipAddress, input.rememberMe);
+    await createSession(user.id, userAgent, ipAddress, { rememberMe: input.rememberMe });
 
     // Update last login
     await prisma.user.update({
@@ -440,7 +469,7 @@ export const authRouter = router({
       }
 
       const email = normalizeEmail(input.email);
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.user.findUnique({ where: { emailHash: hashEmail(email) } });
 
       // Always return success to prevent email enumeration
       if (!user) {
@@ -510,7 +539,7 @@ export const authRouter = router({
       }
 
       const user = await prisma.user.findUnique({
-        where: { email: verificationToken.identifier },
+        where: { emailHash: hashEmail(normalizeEmail(verificationToken.identifier)) },
       });
 
       if (!user) {
@@ -565,7 +594,7 @@ export const authRouter = router({
       }
 
       const email = normalizeEmail(input.email);
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.user.findUnique({ where: { emailHash: hashEmail(email) } });
 
       if (!user) {
         // Return success to prevent email enumeration
@@ -623,7 +652,7 @@ export const authRouter = router({
 
     if (verificationToken.type === "email_verification") {
       const user = await prisma.user.findUnique({
-        where: { email: verificationToken.identifier },
+        where: { emailHash: hashEmail(normalizeEmail(verificationToken.identifier)) },
       });
 
       if (!user) {
@@ -651,11 +680,12 @@ export const authRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "User not found" });
       }
       const oldEmail = user.email;
-      const newEmail = verificationToken.identifier;
+      const newEmail = normalizeEmail(verificationToken.identifier);
+      const emailFields = buildProtectedEmailFields(newEmail);
 
       await prisma.user.update({
         where: { id: user.id },
-        data: { email: newEmail, emailVerified: new Date() },
+        data: { email: newEmail, ...emailFields, emailVerified: new Date() },
       });
 
       await prisma.verificationToken.delete({ where: { token: input.token } });
@@ -683,7 +713,9 @@ export const authRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "This link has expired" });
       }
 
-      const user = await prisma.user.findUnique({ where: { email: record.identifier } });
+      const user = await prisma.user.findUnique({
+        where: { emailHash: hashEmail(normalizeEmail(record.identifier)) },
+      });
       if (!user) {
         await prisma.verificationToken.delete({ where: { token: input.token } });
         throw new TRPCError({ code: "BAD_REQUEST", message: "User not found" });
@@ -1014,7 +1046,7 @@ export const authRouter = router({
 
       // Check if email is already taken
       const existingUser = await prisma.user.findUnique({
-        where: { email: newEmail },
+        where: { emailHash: hashEmail(newEmail) },
       });
 
       if (existingUser) {
@@ -1134,29 +1166,27 @@ export const authRouter = router({
         });
       }
 
-      // Delete all related data
+      const tombstone = buildDeletedUserProfile(ctx.user.id);
       await prisma.$transaction([
-        // Delete sessions
         prisma.session.deleteMany({ where: { userId: ctx.user.id } }),
-        // Delete 2FA data
         prisma.twoFactorSecret.deleteMany({ where: { userId: ctx.user.id } }),
         prisma.twoFactorRecoveryCode.deleteMany({ where: { userId: ctx.user.id } }),
-        // Delete OAuth accounts
         prisma.account.deleteMany({ where: { userId: ctx.user.id } }),
-        // Keep audit logs but set userId to null
         prisma.authAuditLog.updateMany({
           where: { userId: ctx.user.id },
           data: { userId: null },
         }),
-        // Delete user
-        prisma.user.delete({ where: { id: ctx.user.id } }),
+        prisma.user.update({
+          where: { id: ctx.user.id },
+          data: tombstone,
+        }),
       ]);
 
       await createAuditLog({
-        action: "USER_BANNED",
+        action: "USER_SELF_DELETED",
         ipAddress,
         userAgent,
-        metadata: { reason: "self_deletion", userId: ctx.user.id },
+        metadata: { userId: ctx.user.id },
       });
 
       await deleteSession();

@@ -5,12 +5,16 @@ import {
   PROBLEM_SORT_OPTIONS,
   PROBLEM_STATUS_FILTERS,
 } from "@/lib/problems/constants";
-import { parseProblemSamples, type ProblemSample as ParsedProblemSample } from "@/lib/problems/samples";
+import {
+  parseProblemSamples,
+  type ProblemSample as ParsedProblemSample,
+} from "@/lib/problems/samples";
 import { prisma } from "@/lib/prisma";
 import { publicProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus, TestCaseKind, ProblemJudgeMode } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { resolveEditorialRelease } from "@/lib/editorials/release";
 
 const problemFiltersInput = z.object({
   q: z.string().default(""),
@@ -93,6 +97,8 @@ export type ProblemDetailPayload = {
       kind: "SAMPLE" | "HIDDEN";
     }>;
   };
+  editorialReleaseAt: Date | null;
+  editorialIsReleased: boolean;
   relatedProblems: Array<{
     slug: string;
     title: string;
@@ -111,6 +117,14 @@ export type ProblemFilterMetadata = {
 export type ProblemSample = ParsedProblemSample;
 
 const DIFFICULTY_DEFAULTS: ProblemFiltersInput["difficulty"] = ["EASY", "MEDIUM", "HARD"];
+const canonicalDifficultySet = new Set<string>(DIFFICULTY_DEFAULTS);
+
+function normalizeDifficultyCode(code: string) {
+  const normalized = code.toUpperCase();
+  return canonicalDifficultySet.has(normalized)
+    ? (normalized as ProblemFiltersInput["difficulty"][number])
+    : null;
+}
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATION_LIMIT;
 
@@ -442,6 +456,12 @@ export const problemsRouter = router({
             },
           },
         },
+        contestProblems: {
+          take: 1,
+          include: {
+            contest: { select: { endsAt: true } },
+          },
+        },
         currentVersion: {
           include: {
             testCases: {
@@ -556,6 +576,8 @@ export const problemsRouter = router({
       }));
     }
 
+    const editorialState = resolveEditorialRelease(problem);
+
     const payload: ProblemDetailPayload = {
       id: problem.id,
       slug: problem.slug,
@@ -590,9 +612,11 @@ export const problemsRouter = router({
                 output: test.outputBlobRef,
                 explanation: test.strength ? `${test.strength} pts` : undefined,
               })),
-        editorial: problem.currentVersion.editorial,
+        editorial: editorialState.isReleased ? problem.currentVersion.editorial : null,
         sampleTestCases: sampleTestCasesForDisplay,
       },
+      editorialReleaseAt: editorialState.releaseAt,
+      editorialIsReleased: editorialState.isReleased,
       relatedProblems,
       createdAt: problem.createdAt,
     };
@@ -620,10 +644,11 @@ export const problemsRouter = router({
       }),
     ]);
 
-    const difficulties =
-      difficultyRows.length > 0
-        ? (difficultyRows.map((row) => row.code) as ProblemFiltersInput["difficulty"])
-        : DIFFICULTY_DEFAULTS;
+    const normalizedCodes = difficultyRows
+      .map((row) => normalizeDifficultyCode(row.code ?? ""))
+      .filter((code): code is NonNullable<typeof code> => Boolean(code));
+
+    const difficulties = normalizedCodes.length > 0 ? normalizedCodes : DIFFICULTY_DEFAULTS;
 
     const tags = tagRows.map((tag) => ({
       slug: tag.slug,

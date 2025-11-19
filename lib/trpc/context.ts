@@ -37,4 +37,11 @@ export async function createCallerContext() {
   });
 }
 
+export async function createPublicCallerContext() {
+  return createInnerTRPCContext({
+    headers: new Headers(),
+    session: null,
+  });
+}
+
 export type TRPCContext = inferAsyncReturnType<typeof createTRPCContext>;

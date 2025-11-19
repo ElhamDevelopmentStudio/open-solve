@@ -5,14 +5,16 @@ import { trpc } from "@/lib/trpc/client";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "@/components/icons";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") || "";
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    token ? "loading" : "error",
+  );
 
   const verifyMutation = trpc.auth.verifyEmail.useMutation({
     onSuccess: (data) => {
@@ -25,13 +27,14 @@ export default function VerifyEmailPage() {
     },
   });
 
+  const { mutate } = verifyMutation;
+
   useEffect(() => {
-    if (token) {
-      verifyMutation.mutate({ token });
-    } else {
-      setStatus("error");
+    if (!token) {
+      return;
     }
-  }, [token]);
+    mutate({ token });
+  }, [token, mutate]);
 
   if (status === "loading") {
     return (
@@ -85,4 +88,3 @@ export default function VerifyEmailPage() {
     </Card>
   );
 }
-

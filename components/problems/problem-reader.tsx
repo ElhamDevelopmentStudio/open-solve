@@ -3,6 +3,11 @@
 import "katex/dist/katex.min.css";
 
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
+import {
+  ProblemAnalyticsProvider,
+  useProblemAnalyticsContext,
+} from "@/components/problems/problem-analytics-provider";
+import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,11 +21,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { trackEvent } from "@/lib/telemetry/client";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Bookmark, Copy, Flag, Link2, Share2 } from "lucide-react";
+import {
+  ArrowUpRight01Icon,
+  Bookmark01Icon,
+  Copy01Icon,
+  Flag02Icon,
+  Link01Icon,
+  Share01Icon,
+  MessageMultiple02Icon,
+} from "hugeicons-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -59,8 +72,37 @@ const sectionsOrder = [
 const formatDifficulty = (value?: string | null) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase() : "Unrated";
 
-export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
+export function ProblemReader({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
+  return (
+    <ProblemAnalyticsProvider problemId={problem.id}>
+      <ProblemReaderContent problem={problem} contestContext={contestContext} />
+    </ProblemAnalyticsProvider>
+  );
+}
+
+function ProblemReaderContent({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
   const prefersReducedMotion = useReducedMotion();
+  const analytics = useProblemAnalyticsContext();
+  const contestMode = Boolean(contestContext);
+  const readerAnalyticsContext = useMemo(
+    () => ({
+      problemId: problem.id,
+      contestId: contestContext?.contestId,
+    }),
+    [contestContext?.contestId, problem.id],
+  );
   const sectionEntries = useMemo(() => {
     return sectionsOrder
       .map((section) => {
@@ -77,6 +119,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
   const defaultSectionId = sectionEntries[0]?.id ?? "statement";
   const [activeSection, setActiveSection] = useState<string>(defaultSectionId);
   const contentRef = useRef<HTMLDivElement>(null);
+  const hintsLoggedRef = useRef(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -84,6 +127,10 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setActiveSection(entry.target.id);
+            if (!hintsLoggedRef.current && entry.target.id === "notes") {
+              hintsLoggedRef.current = true;
+              analytics.markHintOpen();
+            }
           }
         });
       },
@@ -100,9 +147,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
     return () => {
       observer.disconnect();
     };
-  }, [sectionEntries]);
-
-
+  }, [analytics, sectionEntries]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof performance === "undefined") return;
@@ -113,11 +158,26 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
     if (nav) {
       const ttfb = nav.responseStart - nav.requestStart;
       const domReady = nav.domContentLoadedEventEnd - nav.startTime;
-      trackEvent("problemDetail.performance", {
-        slug: problem.slug,
-        ttfb: Number.isFinite(ttfb) ? Number(ttfb.toFixed(2)) : undefined,
-        domReady: Number.isFinite(domReady) ? Number(domReady.toFixed(2)) : undefined,
-      });
+      if (Number.isFinite(ttfb)) {
+        trackAnalyticsEvent(
+          "problem.performance_metric",
+          {
+            metric: "ttfb",
+            value: Number(ttfb.toFixed(2)),
+          },
+          readerAnalyticsContext,
+        );
+      }
+      if (Number.isFinite(domReady)) {
+        trackAnalyticsEvent(
+          "problem.performance_metric",
+          {
+            metric: "domReady",
+            value: Number(domReady.toFixed(2)),
+          },
+          readerAnalyticsContext,
+        );
+      }
     }
 
     let observer: PerformanceObserver | null = null;
@@ -125,10 +185,14 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
       observer = new PerformanceObserver((entryList) => {
         const entry = entryList.getEntries().at(-1);
         if (!entry) return;
-        trackEvent("problemDetail.performance", {
-          slug: problem.slug,
-          lcp: Number(entry.startTime.toFixed(2)),
-        });
+        trackAnalyticsEvent(
+          "problem.performance_metric",
+          {
+            metric: "lcp",
+            value: Number(entry.startTime.toFixed(2)),
+          },
+          readerAnalyticsContext,
+        );
         observer?.disconnect();
       });
       try {
@@ -139,21 +203,17 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
     }
 
     return () => observer?.disconnect();
-  }, [problem.slug]);
+  }, [problem.slug, readerAnalyticsContext]);
 
   const handleAnchorClick = (id: string) => {
     const element = document.getElementById(id);
     if (!element) return;
-    trackEvent("problemDetail.anchor", { slug: problem.slug, target: id });
     element.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" });
   };
 
   const acceptancePercent = problem.stats?.acceptanceRate
     ? Math.round(problem.stats.acceptanceRate * 100)
     : null;
-
-  const progressValue =
-    problem.status === "SOLVED" ? 100 : problem.status === "ATTEMPTED" ? 55 : 20;
 
   const lastSubmissionLabel = problem.lastSubmissionAt
     ? formatDistanceToNow(new Date(problem.lastSubmissionAt), { addSuffix: true })
@@ -173,6 +233,18 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                   <Link href="/problems">Problems</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
+              {contestMode ? (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={`/contests/${contestContext!.contestSlug}`}>
+                        {contestContext!.contestName}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              ) : null}
               {problem.tags[0] ? (
                 <>
                   <BreadcrumbSeparator />
@@ -190,11 +262,47 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        {contestMode ? (
+          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 shadow-inner shadow-primary/5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase text-primary">Educational contest</p>
+                <h2 className="text-3xl font-semibold tracking-tight">
+                  {contestContext!.contestName}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Solving problem {contestContext!.problemLabel}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" asChild>
+                  <Link href={`/contests/${contestContext!.contestSlug}`}>Contest overview</Link>
+                </Button>
+                <Button asChild>
+                  <Link href={`/contests/${contestContext!.contestSlug}/scoreboard`}>
+                    Scoreboard
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            {contestContext?.antiCheat.examMode.enabled ? (
+              <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/15 px-4 py-3 text-xs text-amber-700 dark:text-amber-200">
+                Exam mode enabled — context menus and text selection are restricted for this
+                workspace.
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <header className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
             </Badge>
+            {contestMode ? (
+              <Badge className="bg-primary/15 text-primary">
+                Contest {contestContext!.problemLabel}
+              </Badge>
+            ) : null}
             {problem.judgeMode !== "AUTO" ? (
               <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-200">
                 Manual Review
@@ -225,36 +333,52 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                 ))}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="icon">
-                <Bookmark className="h-4 w-4" />
+                <Bookmark01Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => shareProblem(problem.slug, problem.title)}
+                onClick={() => shareProblem(problem.id, problem.slug, problem.title)}
                 aria-label="Share problem"
               >
-                <Share2 className="h-4 w-4" />
+                <Share01Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => reportProblem(problem.slug, problem.title)}
+                onClick={() => reportProblem(problem.id, problem.slug, problem.title)}
                 aria-label="Report issue"
               >
-                <Flag className="h-4 w-4" />
+                <Flag02Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
+              <Button variant="outline" size="sm" className="gap-2" asChild>
+                <Link
+                  href={`/problems/${problem.slug}/discuss`}
+                  onClick={() => analytics.markDiscussOpen()}
+                >
+                  <MessageMultiple02Icon className="h-4 w-4" strokeWidth={2} /> Discuss
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/problems/${problem.slug}/trails`}>Trails</Link>
+              </Button>
+              {problem.editorialIsReleased ? (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link
+                    href={`/problems/${problem.slug}/editorial`}
+                    onClick={() => analytics.markEditorialOpen()}
+                  >
+                    Editorial
+                  </Link>
+                </Button>
+              ) : null}
             </div>
             <Button className="flex items-center gap-2" asChild>
-              <a
-                href="#editor"
-                onClick={() =>
-                  trackEvent("problemDetail.startSolving", { slug: problem.slug, source: "header" })
-                }
-              >
+              <a href="#editor" onClick={() => analytics.markSolveClick("header")}>
                 Start solving
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight01Icon className="h-4 w-4" strokeWidth={2.5} />
               </a>
             </Button>
           </div>
@@ -280,7 +404,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
               <ProblemSection id="statement" title="Statement">
                 <Markdown
                   content={problem.content.statement}
-                  slug={problem.slug}
+                  problemId={problem.id}
                   field="Statement"
                 />
               </ProblemSection>
@@ -290,7 +414,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
               <ProblemSection id="constraints" title="Constraints">
                 <Markdown
                   content={problem.content.constraints}
-                  slug={problem.slug}
+                  problemId={problem.id}
                   field="Constraints"
                 />
               </ProblemSection>
@@ -304,7 +428,7 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                       key={`${sample.input}-${index}`}
                       sample={sample}
                       index={index}
-                      slug={problem.slug}
+                      problemId={problem.id}
                     />
                   ))}
                 </div>
@@ -313,7 +437,11 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
 
             {problem.content.hints ? (
               <ProblemSection id="notes" title="Notes & Hints">
-                <Markdown content={problem.content.hints} slug={problem.slug} field="Notes" />
+                <Markdown
+                  content={problem.content.hints}
+                  problemId={problem.id}
+                  field="Notes"
+                />
               </ProblemSection>
             ) : null}
 
@@ -327,14 +455,14 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                         <CopyField
                           label="Input"
                           value={test.input}
-                          slug={problem.slug}
+                          problemId={problem.id}
                           field={`Sample ${test.ordinal} Input`}
                           isHidden={test.kind === "HIDDEN"}
                         />
                         <CopyField
                           label="Output"
                           value={test.output}
-                          slug={problem.slug}
+                          problemId={problem.id}
                           field={`Sample ${test.ordinal} Output`}
                           isHidden={test.kind === "HIDDEN"}
                         />
@@ -389,9 +517,11 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
                           href={`/problems/${related.slug}`}
                           className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 transition-colors hover:bg-muted"
                           onClick={() =>
-                            trackEvent("problemDetail.relatedClick", {
-                              slug: problem.slug,
-                              target: related.slug,
+                            trackAnalyticsEvent("navigation.path", {
+                              from: `/problems/${problem.slug}`,
+                              to: `/problems/${related.slug}`,
+                              timeOnFromMs: analytics.getTimeSinceEnterMs(),
+                              origin: "related-problem",
                             })
                           }
                         >
@@ -418,19 +548,11 @@ export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
             </div>
           </aside>
         </div>
-        <ProblemWorkspace problem={problem} />
+        <ProblemWorkspace problem={problem} contestContext={contestContext} />
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>
-          <a
-            href="#editor"
-            onClick={() =>
-              trackEvent("problemDetail.startSolving", {
-                slug: problem.slug,
-                source: "mobile-sticky",
-              })
-            }
-          >
+          <a href="#editor" onClick={() => analytics.markSolveClick("mobile-sticky")}>
             Start solving
           </a>
         </Button>
@@ -451,6 +573,7 @@ function ProblemSection({
   collapsible?: boolean;
 }) {
   const [open, setOpen] = useState(true);
+  const analytics = useProblemAnalyticsContext();
 
   const copyAnchor = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -459,10 +582,16 @@ function ProblemSection({
     );
     if (success) {
       toast.success("Section link copied");
+      trackAnalyticsEvent("problem.copy_action", { field: id }, { problemId: analytics.problemId });
     } else {
       toast.error("Clipboard unavailable");
     }
-  }, [id]);
+  }, [analytics.problemId, id]);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    analytics.markSectionToggle(id, next ? "expand" : "collapse");
+  };
 
   const heading = (
     <div className="group flex items-center gap-2">
@@ -473,7 +602,7 @@ function ProblemSection({
         onClick={copyAnchor}
         aria-label={`Copy link to ${title}`}
       >
-        <Link2 className="h-4 w-4" />
+        <Link01Icon className="h-4 w-4" strokeWidth={2} />
       </button>
       {collapsible ? (
         <CollapsibleTrigger asChild>
@@ -494,7 +623,7 @@ function ProblemSection({
   if (collapsible) {
     return (
       <section id={id} className="scroll-mt-28">
-        <Collapsible open={open} onOpenChange={setOpen}>
+        <Collapsible open={open} onOpenChange={handleOpenChange}>
           <div className="rounded-3xl border border-white/10 bg-card/90 p-6 shadow-lg shadow-black/40">
             {heading}
             <CollapsibleContent className="mt-4 overflow-hidden data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
@@ -516,7 +645,15 @@ function ProblemSection({
   );
 }
 
-function Markdown({ content, slug, field }: { content: string; slug: string; field: string }) {
+function Markdown({
+  content,
+  problemId,
+  field,
+}: {
+  content: string;
+  problemId: string;
+  field: string;
+}) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkMath]}
@@ -538,10 +675,13 @@ function Markdown({ content, slug, field }: { content: string; slug: string; fie
                   text={text}
                   className="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100"
                   onCopy={() =>
-                    trackEvent("problemDetail.copy", {
-                      slug,
-                      field: `${field} code block`,
-                    })
+                    trackAnalyticsEvent(
+                      "problem.copy_action",
+                      {
+                        field: `${field} code block`,
+                      },
+                      { problemId },
+                    )
                   }
                 />
                 <code>{text}</code>
@@ -559,11 +699,11 @@ function Markdown({ content, slug, field }: { content: string; slug: string; fie
 function SampleCard({
   sample,
   index,
-  slug,
+  problemId,
 }: {
   sample: ProblemDetailPayload["content"]["samples"][number];
   index: number;
-  slug: string;
+  problemId: string;
 }) {
   return (
     <div className="group rounded-2xl border border-white/10 bg-card/80 p-4 shadow-sm shadow-black/30">
@@ -575,13 +715,13 @@ function SampleCard({
         <CopyField
           label="Input"
           value={sample.input}
-          slug={slug}
+          problemId={problemId}
           field={`Example ${index + 1} Input`}
         />
         <CopyField
           label="Output"
           value={sample.output}
-          slug={slug}
+          problemId={problemId}
           field={`Example ${index + 1} Output`}
         />
       </div>
@@ -595,13 +735,13 @@ function SampleCard({
 function CopyField({
   label,
   value,
-  slug,
+  problemId,
   field,
   isHidden,
 }: {
   label: string;
   value: string;
-  slug: string;
+  problemId: string;
   field: string;
   isHidden?: boolean;
 }) {
@@ -629,7 +769,7 @@ function CopyField({
           text={value}
           size="xs"
           className="opacity-0 transition group-hover:opacity-100"
-          onCopy={() => trackEvent("problemDetail.copy", { slug, field })}
+          onCopy={() => trackAnalyticsEvent("problem.copy_action", { field }, { problemId })}
         />
       </div>
       <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap font-mono text-sm text-foreground">
@@ -669,12 +809,12 @@ function CopyButton({
       onClick={handleCopy}
       aria-label={label}
     >
-      <Copy className="h-4 w-4" />
+      <Copy01Icon className="h-4 w-4" strokeWidth={2} />
     </Button>
   );
 }
 
-async function shareProblem(slug: string, title: string) {
+async function shareProblem(problemId: string, slug: string, title: string) {
   if (typeof window === "undefined") return;
   const url = `${window.location.origin}/problems/${slug}`;
   const nav = window.navigator;
@@ -687,16 +827,16 @@ async function shareProblem(slug: string, title: string) {
     } else {
       throw new Error("share unsupported");
     }
-    trackEvent("problemDetail.share", { slug });
+    trackAnalyticsEvent("problem.share_link", {}, { problemId });
   } catch (error) {
     console.log("PROBLEM READER SHARE ERROR", error);
     toast.error("Unable to share");
   }
 }
 
-function reportProblem(slug: string, title: string) {
+function reportProblem(problemId: string, slug: string, title: string) {
   if (typeof window === "undefined") return;
-  trackEvent("problemDetail.report", { slug });
+  trackAnalyticsEvent("problem.report_issue", {}, { problemId });
   const mailto = `mailto:support@opensolve.dev?subject=${encodeURIComponent(
     `Problem issue: ${title}`,
   )}`;

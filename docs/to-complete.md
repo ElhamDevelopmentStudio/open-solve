@@ -46,7 +46,7 @@
 
 ---
 
-# 3) tRPC Router & Data-Fetching Contract (React Query edition)
+## 3) tRPC Router & Data-Fetching Contract (React Query edition)
 
 **Goals:** Stable tRPC procedure surface; React Query manages caching, prefetch, optimistic updates, and invalidation. Transport remains tRPC HTTP/Batch link. No NextAuth—auth is in-house and enforced in tRPC middleware.
 
@@ -212,33 +212,24 @@ Only the client consumption layer changes, detailed below.
 
 ---
 
-
 ## 7) Judge System (Backend Worker + Sandbox)
 
 **Goals:** Deterministic, secure, flexible judging with **Autonomic (automatic)** and **Manual (human)**  
 modes.
 
 _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and a staff console for manual verdicts._
--   **Queue:** **RabbitMQ** (durable **quorum queues**), exchanges: `judge.submissions`, `judge.rejudge`, `judge.manual`, DLX: `judge.DLX`.
-    
--   **Modes:**
-    
-    -   **Autonomic Judge** — automated via sandbox runners.
-        
-    -   **Manual Judge** — routed to staff for review.
-        
--   **Isolation:** Docker-per-run; strict CPU/memory/time caps per language; **no network**.
-    
--   **Languages (phase 1):** Python, C++, Java, JavaScript/Node.
-    
--   **Runners:** unified contract: compile → run → capture stdout/stderr → compare (or checker script).
-    
--   **Verdicts:** AC, WA, TLE, MLE, RE, CE, **MANUAL_PENDING**, **MANUAL_ACCEPTED**, **MANUAL_REJECTED**, **MANUAL_PARTIAL**.
-    
--   **Retries:** TTL + **DLX** backoff tiers, **idempotency by `submissionId`**.
-    
--   **Telemetry:** queue depth/latency, container failures, node health.  
-    **DoD:** ≥ **1K submissions/hour per node**, reproducible verdicts, no cross-tenant leaks.
+
+- **Queue:** **RabbitMQ** (durable **quorum queues**), exchanges: `judge.submissions`, `judge.rejudge`, `judge.manual`, DLX: `judge.DLX`.
+- **Modes:**
+  - **Autonomic Judge** — automated via sandbox runners.
+  - **Manual Judge** — routed to staff for review.
+- **Isolation:** Docker-per-run; strict CPU/memory/time caps per language; **no network**.
+- **Languages (phase 1):** Python, C++, Java, JavaScript/Node.
+- **Runners:** unified contract: compile → run → capture stdout/stderr → compare (or checker script).
+- **Verdicts:** AC, WA, TLE, MLE, RE, CE, **MANUAL_PENDING**, **MANUAL_ACCEPTED**, **MANUAL_REJECTED**, **MANUAL_PARTIAL**.
+- **Retries:** TTL + **DLX** backoff tiers, **idempotency by `submissionId`**.
+- **Telemetry:** queue depth/latency, container failures, node health.
+  **DoD:** ≥ **1K submissions/hour per node**, reproducible verdicts, no cross-tenant leaks.
 
 ---
 
@@ -310,18 +301,46 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 14) Performance & Caching
+---
+
+## 14) User Interaction Analytics
+
+**Goals:** Understand real user behavior to improve problem quality and UX.
+
+- **Signals:** page visit, time-on-question, active coding time, “Solve/Run/Submit” clicks, hint/editorial usage, abandon rates.
+- **Method:** lightweight, fire-and-forget **beacon requests** sent on interactions and pagehide; no UX impact.
+- **Processing:** backend logs events to analytics table; aggregate for problem difficulty, funnel metrics, and UX insights.
+- **Privacy:** no code content collected; only minimal event metadata.  
+   **DoD:** events reliably captured across navigation/unload; dashboards show per-problem engagement metrics.
+
+---
+
+## 15) Educational Contest Anti-Cheat
+
+**Goals:** Reduce cheating, encourage fair play.
+
+- **Environment tracking:** device type, browser family, viewport, coarse IP hash; detect multi-device or concurrent sessions.
+- **Focus monitoring:** count tab changes, focus/blur events, out-of-focus duration; configurable warn/flag/DQ thresholds.
+- **Editor safeguards:** track large paste events, rapid AC patterns, suspicious timing, and language switching spikes.
+- **Similarity checks:** detect near-identical submissions across contestants; cluster analysis for mass cheating.
+- **Contest controls:** optional Exam Mode (disable right-click/text-selection), single-device lock, restricted feedback, activity logging.
+- **Admin tools:** per-user anti-cheat timeline, alerts, flags, cluster review, manual/auto DQ options.  
+  **DoD:** Cheating becomes detectable and risky; admins can confidently validate contest integrity.
+
+---
+
+## 16) Performance & Caching
 
 **Goals:** Snappy UX at scale.
 
-- **SWR strategy:** sensible cache TTLs; prefetch lists on nav; mutate after submit.
+- **React query strategy:** sensible cache TTLs; prefetch lists on nav; mutate after submit.
 - **Server caching:** problem lists & details edge-cached (tagged revalidation on publish).
 - **DB performance:** key indexes (problem slug, tags, difficulty, user/problem composite keys).
   **DoD:** P95 page interactive \<1.5s on mid-tier cloud; DB dashboards clean.
 
 ---
 
-## 15) Docs & Developer Experience
+## 17) Docs & Developer Experience
 
 **Goals:** Attract contributors.
 
@@ -332,7 +351,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 16) Deployment & Operations
+## 18) Deployment & Operations
 
 **Goals:** Reproducible environments.
 
@@ -345,7 +364,7 @@ _Status (OpenSolve): RabbitMQ + Docker worker wired with manual/hybrid modes and
 
 ---
 
-## 17) Launch & Growth
+## 19) Launch & Growth
 
 **Goals:** Community momentum.
 

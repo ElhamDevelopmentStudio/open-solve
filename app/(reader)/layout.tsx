@@ -1,17 +1,20 @@
+import { ThemeToggle } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { getSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
+import { CodeIcon } from "hugeicons-react";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
-import { ThemeToggle } from "@/components/ui";
-import { Code2, Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ReaderMobileNav } from "@/components/layout/reader-mobile-nav";
 
 const navLinks = [
   { label: "Problems", href: "/problems" },
-  { label: "Easy problems", href: "/difficulty/easy" },
+  { label: "Discussions", href: "/discuss" },
+  { label: "Tags", href: "/tags" },
+  { label: "Leaderboards", href: "/leaderboards" },
   { label: "Docs", href: siteConfig.links.docs },
-  { label: "GitHub", href: siteConfig.links.github },
+  { label: "GitHub", href: siteConfig.links.github, external: true },
 ];
 
 export default async function ReaderLayout({ children }: PropsWithChildren) {
@@ -46,7 +49,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
             className="group flex items-center gap-2 text-base font-bold tracking-tight transition-all hover:scale-105"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary shadow-lg shadow-primary/20 transition-shadow group-hover:shadow-primary/40">
-              <Code2 className="h-5 w-5 text-primary-foreground" />
+              <CodeIcon className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
             <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               OpenSolve
@@ -59,6 +62,8 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
               <Link
                 key={link.href}
                 href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                   link.href === "/problems"
@@ -75,18 +80,24 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {isLoggedIn ? (
-              <Button asChild size="sm" className="hidden rounded-full shadow-lg shadow-primary/20 lg:inline-flex">
+              <Button
+                asChild
+                size="sm"
+                className="hidden rounded-full shadow-lg shadow-primary/20 lg:inline-flex"
+              >
                 <Link href="/dashboard">Workspace</Link>
               </Button>
             ) : (
-              <Button asChild variant="outline" size="sm" className="hidden rounded-full lg:inline-flex">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="hidden rounded-full lg:inline-flex"
+              >
                 <Link href="/sign-in">Sign in</Link>
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Menu</span>
-            </Button>
+            <ReaderMobileNav links={navLinks} isLoggedIn={isLoggedIn} />
           </div>
         </div>
       </header>

@@ -3,12 +3,10 @@ import { logger } from "@/lib/logger";
 
 const worker = new JudgeWorker();
 
-worker
-  .start()
-  .catch((error) => {
-    logger.error({ error }, "judge worker failed to start");
-    process.exit(1);
-  });
+worker.start().catch((error) => {
+  logger.error({ error }, "judge worker failed to start");
+  process.exit(1);
+});
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, "shutting down judge worker");

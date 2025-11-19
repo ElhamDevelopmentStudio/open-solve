@@ -1,39 +1,10 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { useProblemFilters } from "@/hooks/use-problem-filters";
 import { ProblemFiltersPanel } from "@/components/problems/problem-filters-panel";
-import type {
-  ProblemFiltersInput,
-  ProblemListItem,
-  ProblemListResponse,
-} from "@/lib/trpc/router/problems";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
-import { trpc } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Drawer,
   DrawerClose,
@@ -43,14 +14,43 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
-import { ArrowUpRight, Clock3, Filter, Search, SlidersHorizontal } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useProblemFilters } from "@/hooks/use-problem-filters";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import { trpc } from "@/lib/trpc/client";
+import type {
+  ProblemFiltersInput,
+  ProblemListItem,
+  ProblemListResponse,
+} from "@/lib/trpc/router/problems";
+import { cn } from "@/lib/utils";
+import { stableHash } from "@/lib/utils/stable-hash";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { formatDistanceToNow } from "date-fns";
+import {
+  ArrowRight01Icon,
+  Search01Icon,
+  FilterIcon,
+  SlidersHorizontalIcon,
+  Clock01Icon,
+  Cancel01Icon,
+} from "hugeicons-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { trackEvent } from "@/lib/telemetry/client";
-import { stableHash } from "@/lib/utils/stable-hash";
+import { forwardRef, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
   relevance: "Relevance",
@@ -78,8 +78,19 @@ const DEFAULT_FILTERS: ProblemFiltersInput = {
 
 const VIRTUALIZATION_THRESHOLD = 50;
 
-export function ProblemLibraryShell({ initialFilters }: { initialFilters: ProblemFiltersInput }) {
+type ProblemLibraryShellProps = {
+  initialFilters: ProblemFiltersInput;
+  viewerHasSession?: boolean;
+  problemBasePath?: string;
+};
+
+export function ProblemLibraryShell({
+  initialFilters,
+  viewerHasSession = false,
+  problemBasePath = "/problems",
+}: ProblemLibraryShellProps) {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [filters, setFilters] = useProblemFilters();
   const mergedFilters = useMemo<ProblemFiltersInput>(
     () => ({ ...DEFAULT_FILTERS, ...initialFilters, ...filters }),
@@ -88,25 +99,26 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
   const [searchValue, setSearchValue] = useState(mergedFilters.q ?? "");
 
   useEffect(() => {
-    setSearchValue(mergedFilters.q ?? "");
+    startTransition(() => setSearchValue(mergedFilters.q ?? ""));
   }, [mergedFilters.q]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       if (searchValue === mergedFilters.q) return;
-      setFilters({ q: searchValue, page: 1 });
+      startTransition(() => {
+        void setFilters({ q: searchValue, page: 1 });
+      });
     }, 250);
     return () => clearTimeout(handle);
   }, [searchValue, mergedFilters.q, setFilters]);
 
-  const {
-    data: listData,
-    isFetching,
-    isPending,
-  } = trpc.problems.list.useQuery(mergedFilters, {
+  const listQuery = trpc.problems.list.useQuery(mergedFilters, {
     placeholderData: (previousData) => previousData,
-    staleTime: publicContentQueryOptions.staleTime,
+    staleTime: viewerHasSession ? 0 : publicContentQueryOptions.staleTime,
   });
+  const listData = listQuery.data;
+  const isFetching = listQuery.isFetching;
+  const isPending = listQuery.isPending;
   const { data: metadata } = trpc.problems.filterMetadata.useQuery(undefined, {
     staleTime: publicContentQueryOptions.staleTime,
   });
@@ -117,15 +129,17 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     let count = 0;
     if (mergedFilters.q) count += 1;
     count += mergedFilters.difficulty.length;
-    count += mergedFilters.status.length;
+    if (viewerHasSession) {
+      count += mergedFilters.status.length;
+    }
     count += mergedFilters.tags.length;
     if (mergedFilters.onlyWithEditorial) count += 1;
     return count;
-  }, [mergedFilters]);
+  }, [mergedFilters, viewerHasSession]);
   const hasActiveFilters = activeFilterCount > 0;
 
   const results: ProblemListResponse | null = listData ?? null;
-  const items = results?.items ?? [];
+  const items = useMemo(() => results?.items ?? [], [results]);
   const filtersHash = useMemo(() => stableHash(mergedFilters), [mergedFilters]);
   const previousFiltersHash = useRef(filtersHash);
   const zeroResultHashes = useRef(new Set<string>());
@@ -136,11 +150,11 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     overscan: 8,
   });
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const prefetchedProblems = useRef(new Set<string>());
 
   useEffect(() => {
     cardRefs.current = cardRefs.current.slice(0, items.length);
   }, [items.length]);
-
   const registerCardRef = useCallback((index: number, node: HTMLDivElement | null) => {
     cardRefs.current[index] = node;
   }, []);
@@ -165,10 +179,28 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   const openProblem = useCallback(
     (slug: string) => {
-      router.push(`/problems/${slug}`);
+      router.push(`${problemBasePath}/${slug}`);
     },
-    [router],
+    [problemBasePath, router],
   );
+  const prefetchProblemDetail = useCallback(
+    (slug: string | undefined) => {
+      if (!slug || prefetchedProblems.current.has(slug)) {
+        return;
+      }
+      if (prefetchedProblems.current.size > 200) {
+        prefetchedProblems.current.clear();
+      }
+      prefetchedProblems.current.add(slug);
+      utils.problems.detail.prefetch({ slug }, { staleTime: publicContentQueryOptions.staleTime });
+      router.prefetch(`${problemBasePath}/${slug}`);
+    },
+    [problemBasePath, router, utils],
+  );
+
+  useEffect(() => {
+    items.slice(0, 5).forEach((problem) => prefetchProblemDetail(problem.slug));
+  }, [items, prefetchProblemDetail]);
 
   const renderCard = useCallback(
     (problem: ProblemListItem, index: number, animationOrder = index) => (
@@ -181,9 +213,10 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
         animationOrder={animationOrder}
         onFocusRequest={focusCard}
         onOpen={openProblem}
+        onPrefetch={prefetchProblemDetail}
       />
     ),
-    [focusCard, isFetching, openProblem, registerCardRef],
+    [focusCard, isFetching, openProblem, prefetchProblemDetail, registerCardRef],
   );
 
   const handleFilterChange = (patch: Partial<ProblemFiltersInput>, resetPage = true) => {
@@ -195,21 +228,22 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   const handleClearAll = () => {
     setFilters(DEFAULT_FILTERS);
-    router.push("/problems");
   };
 
-  const listIsEmpty = !isPending && items.length === 0;
+  const statusFilterBlocked = !viewerHasSession && mergedFilters.status.length > 0;
+  const listIsEmpty =
+    !isPending && items.length === 0 && !listQuery.isError && !statusFilterBlocked;
 
   useEffect(() => {
     if (!mergedFilters.q) return;
-    trackEvent("problems.search", { query: mergedFilters.q });
+    trackAnalyticsEvent("library.search", { query: mergedFilters.q });
   }, [mergedFilters.q]);
 
   useEffect(() => {
     if (previousFiltersHash.current === filtersHash) {
       return;
     }
-    trackEvent("problems.filters.change", { filters: mergedFilters });
+    trackAnalyticsEvent("library.filters_change", { filters: mergedFilters });
     previousFiltersHash.current = filtersHash;
   }, [filtersHash, mergedFilters]);
 
@@ -217,7 +251,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     if (!listIsEmpty) return;
     if (zeroResultHashes.current.has(filtersHash)) return;
     zeroResultHashes.current.add(filtersHash);
-    trackEvent("problems.zeroResults", { filters: mergedFilters });
+    trackAnalyticsEvent("library.zero_results", { filters: mergedFilters });
   }, [filtersHash, listIsEmpty, mergedFilters]);
 
   useEffect(() => {
@@ -231,10 +265,18 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     if (nav) {
       const ttfb = nav.responseStart - nav.requestStart;
       const domReady = nav.domContentLoadedEventEnd - nav.startTime;
-      trackEvent("problems.performance", {
-        ttfb: Number.isFinite(ttfb) ? Number(ttfb.toFixed(2)) : undefined,
-        domReady: Number.isFinite(domReady) ? Number(domReady.toFixed(2)) : undefined,
-      });
+      if (Number.isFinite(ttfb)) {
+        trackAnalyticsEvent("library.performance_metric", {
+          metric: "ttfb",
+          value: Number(ttfb.toFixed(2)),
+        });
+      }
+      if (Number.isFinite(domReady)) {
+        trackAnalyticsEvent("library.performance_metric", {
+          metric: "domReady",
+          value: Number(domReady.toFixed(2)),
+        });
+      }
     }
 
     let observer: PerformanceObserver | null = null;
@@ -242,8 +284,9 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
       observer = new PerformanceObserver((entryList) => {
         const entry = entryList.getEntries().at(-1);
         if (!entry) return;
-        trackEvent("problems.performance", {
-          lcp: Number(entry.startTime.toFixed(2)),
+        trackAnalyticsEvent("library.performance_metric", {
+          metric: "lcp",
+          value: Number(entry.startTime.toFixed(2)),
         });
         observer?.disconnect();
       });
@@ -262,37 +305,34 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
       <a href="#problem-library-results" className="skip-link sr-only focus:not-sr-only">
         Skip to results
       </a>
-      <div className="space-y-6">
-        <header className="space-y-4">
-          <Breadcrumb>
-            <BreadcrumbList className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/problems" className="font-medium">Problems</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              {mergedFilters.tags[0] ? (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="font-medium">#{mergedFilters.tags[0]}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              ) : null}
-            </BreadcrumbList>
-          </Breadcrumb>
+      <div className="space-y-8">
+        <header className="space-y-6">
+          <div className="space-y-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Problem Library
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Browse Problems</h1>
+            <p className="max-w-2xl text-base text-muted-foreground">
+              Explore our curated collection of coding challenges across various topics and
+              difficulty levels
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative flex-1 min-w-[280px]">
+              <Search01Icon
+                className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                strokeWidth={2}
+              />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search problems"
+                placeholder="Search problems by title or description..."
                 aria-label="Search problems"
-                className="pl-9 pr-20"
+                className="h-12 rounded-xl pl-11 pr-24 text-base transition-all focus:shadow-lg focus:shadow-primary/5"
               />
               <span
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
                 aria-live="polite"
               >
                 {results?.total ?? 0} results
@@ -308,7 +348,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                   handleFilterChange({ sort: value as ProblemFiltersInput["sort"] })
                 }
               >
-                <SelectTrigger id="sort" className="w-[170px]">
+                <SelectTrigger id="sort" className="w-[170px] rounded-xl focus-ring">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,19 +361,22 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
               </Select>
               <Drawer open={filtersOpen} onOpenChange={setFiltersOpen} direction="bottom">
                 <DrawerTrigger asChild>
-                  <Button variant="outline" size="sm" className="lg:hidden">
-                    <Filter className="mr-2 h-4 w-4" /> Filters
+                  <Button variant="outline" size="sm" className="gap-2 rounded-xl lg:hidden">
+                    <FilterIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     {hasActiveFilters && (
-                      <span className="ml-2 inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-primary/10 px-1 text-xs text-primary">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold"
+                      >
                         {activeFilterCount}
-                      </span>
+                      </Badge>
                     )}
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent className="h-[88vh] rounded-t-3xl border-t bg-background p-1 pb-4">
                   <DrawerHeader className="pb-2">
                     <DrawerTitle className="flex items-center justify-center gap-2 text-base">
-                      <SlidersHorizontal className="h-4 w-4" /> Filters
+                      <SlidersHorizontalIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     </DrawerTitle>
                   </DrawerHeader>
                   <div className="h-[calc(100%-120px)] overflow-y-auto px-5 pb-4">
@@ -343,6 +386,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                       onChange={handleFilterChange}
                       onReset={handleClearAll}
                       isMobile
+                      showStatusFilters={viewerHasSession}
                     />
                   </div>
                   <DrawerFooter className="border-t bg-background px-5">
@@ -359,6 +403,23 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
           </div>
         </header>
 
+        {listQuery.isError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Unable to load problems</AlertTitle>
+            <AlertDescription>
+              {listQuery.error?.message ?? "Something went wrong while loading the library."}
+            </AlertDescription>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => listQuery.refetch()}
+            >
+              Retry
+            </Button>
+          </Alert>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside
             className="hidden rounded-2xl border border-border/50 bg-card/80 p-4 shadow-sm backdrop-blur-sm lg:block"
@@ -369,9 +430,25 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
               metadata={metadata}
               onChange={handleFilterChange}
               onReset={handleClearAll}
+              showStatusFilters={viewerHasSession}
             />
           </aside>
           <section className="space-y-4" aria-live={isPending ? "polite" : "off"}>
+            {statusFilterBlocked ? (
+              <Alert>
+                <AlertTitle>Sign in to use status filters</AlertTitle>
+                <AlertDescription>
+                  Progress filters rely on your submission history.{" "}
+                  <Link
+                    href="/sign-in"
+                    className="font-medium text-primary underline underline-offset-4"
+                  >
+                    Sign in
+                  </Link>{" "}
+                  to filter by solved or attempted problems.
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {isPending && !results ? (
               <ProblemListSkeleton />
             ) : (
@@ -452,10 +529,11 @@ type ProblemCardProps = {
   animationOrder?: number;
   onFocusRequest: (index: number) => void;
   onOpen: (slug: string) => void;
+  onPrefetch?: (slug: string) => void;
 };
 
 const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function ProblemCard(
-  { problem, isFetching, index, animationOrder = 0, onFocusRequest, onOpen },
+  { problem, isFetching, index, animationOrder = 0, onFocusRequest, onOpen, onPrefetch },
   ref,
 ) {
   const acceptance =
@@ -481,6 +559,8 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
   };
   const animationDelay = Math.min(animationOrder, 5) * 20;
 
+  const triggerPrefetch = () => onPrefetch?.(problem.slug);
+
   return (
     <div
       ref={ref}
@@ -488,6 +568,8 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
       tabIndex={0}
       aria-labelledby={titleId}
       onKeyDown={handleKeyDown}
+      onMouseEnter={triggerPrefetch}
+      onFocus={triggerPrefetch}
       className={cn(
         "group rounded-2xl border border-border/50 bg-card/90 p-5 shadow-sm backdrop-blur-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
         "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200",
@@ -560,18 +642,18 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
         <Separator orientation="vertical" className="hidden h-5 lg:block" />
         <div>Submissions: {problem.submissionCount}</div>
         {lastSubmissionLabel ? (
-          <div className="flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" aria-hidden />
+          <div className="flex items-center gap-1.5">
+            <Clock01Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
             Last attempt {lastSubmissionLabel}
           </div>
         ) : null}
         <div className="ml-auto flex items-center gap-1">
           <Link
             href={`/problems/${problem.slug}`}
-            className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
             aria-label={`View ${problem.title}`}
           >
-            View problem <ArrowUpRight className="h-3.5 w-3.5" />
+            View problem <ArrowRight01Icon className="h-4 w-4" strokeWidth={2.5} />
           </Link>
         </div>
       </div>
@@ -597,13 +679,14 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       aria-live="polite"
     >
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-        <Search className="h-8 w-8 text-muted-foreground" />
+        <Search01Icon className="h-8 w-8 text-muted-foreground" strokeWidth={2} />
       </div>
       <p className="text-lg font-semibold text-foreground">No problems found</p>
       <p className="mt-2 text-sm text-muted-foreground">
         Try adjusting your search criteria or clearing some filters to see more results.
       </p>
       <Button className="mt-6" onClick={onReset} variant="default" size="sm">
+        <Cancel01Icon className="mr-2 h-4 w-4" strokeWidth={2} />
         Reset all filters
       </Button>
     </div>

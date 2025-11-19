@@ -56,12 +56,10 @@ export async function checkRateLimit(
 
 // Predefined rate limit configs
 export const RATE_LIMITS = {
-  SIGNUP: { interval: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
+  SIGNUP: { interval: 60 * 60 * 1000, maxRequests: 20 }, // 3 per hour
   LOGIN: { interval: 15 * 60 * 1000, maxRequests: 5 }, // 5 per 15 minutes
   PASSWORD_RESET: { interval: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
   EMAIL_VERIFY: { interval: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
   MAGIC_LINK: { interval: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
   TWO_FACTOR: { interval: 5 * 60 * 1000, maxRequests: 5 }, // 5 per 5 minutes
 };
-
-

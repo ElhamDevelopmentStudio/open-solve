@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { renderProblemLibrary } from "@/app/(reader)/problems/page";
+import {
+  renderProblemLibraryPage,
+  resolveViewerSessionFlag,
+} from "@/components/problems/problem-library-page";
 
 export async function generateMetadata({
   params,
@@ -22,7 +25,11 @@ export default async function TagProblemsPage({
     | Record<string, string | string[] | undefined>
     | Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ slug }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+  const [{ slug }, resolvedSearchParams, viewerHasSession] = await Promise.all([
+    params,
+    searchParams,
+    resolveViewerSessionFlag(),
+  ]);
 
   const existing = resolvedSearchParams.tags;
   const existingArray = Array.isArray(existing)
@@ -32,8 +39,11 @@ export default async function TagProblemsPage({
       : [];
   const tags = Array.from(new Set([...existingArray, slug]));
 
-  return renderProblemLibrary({
-    ...resolvedSearchParams,
-    tags,
+  return renderProblemLibraryPage({
+    searchParams: {
+      ...resolvedSearchParams,
+      tags,
+    },
+    viewerHasSession,
   });
 }

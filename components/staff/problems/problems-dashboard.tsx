@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "@/components/icons";
 import { formatDistanceToNow } from "date-fns";
 
 export function StaffProblemsDashboard() {
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.staff.problems.list.useQuery({ state: undefined });
+  const { data, isLoading } = trpc.staff.problems.list.useQuery(undefined);
   const createProblem = trpc.staff.problems.create.useMutation({
     onSuccess: (problem) => {
       utils.staff.problems.list.invalidate();

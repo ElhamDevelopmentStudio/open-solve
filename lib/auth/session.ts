@@ -12,17 +12,25 @@ const REMEMBER_ME_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days for session if
 export interface SessionData {
   session: Session;
   user: User;
+  impersonator?: User | null;
 }
+
+type CreateSessionOptions = {
+  rememberMe?: boolean;
+  impersonatorSessionId?: string;
+  impersonatorId?: string;
+};
 
 export async function createSession(
   userId: string,
   userAgent: string | null,
   ipAddress: string | null,
-  rememberMe = false,
+  options?: CreateSessionOptions,
 ): Promise<Session> {
   const sessionToken = generateSessionToken();
   const refreshToken = generateRefreshToken();
   const now = new Date();
+  const rememberMe = options?.rememberMe ?? false;
   const sessionExpires = new Date(
     now.getTime() + (rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION),
   );
@@ -38,6 +46,8 @@ export async function createSession(
       expires: sessionExpires,
       refreshTokenExpires: refreshExpires,
       lastUsedAt: now,
+      impersonatorId: options?.impersonatorId,
+      impersonatorSessionId: options?.impersonatorSessionId,
     },
   });
 
@@ -89,9 +99,17 @@ export async function getSession(): Promise<SessionData | null> {
     data: { lastUsedAt: new Date() },
   });
 
+  let impersonator: User | null = null;
+  if (session.impersonatorId) {
+    impersonator = await prisma.user.findUnique({
+      where: { id: session.impersonatorId },
+    });
+  }
+
   return {
     session,
     user: session.user,
+    impersonator,
   };
 }
 
@@ -184,4 +202,56 @@ export async function requireSession(): Promise<SessionData> {
     throw new Error("Unauthorized");
   }
   return session;
+}
+
+export async function restoreSession(sessionId: string): Promise<SessionData | null> {
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { user: true },
+  });
+  if (!session) {
+    return null;
+  }
+  if (session.expires < new Date()) {
+    await prisma.session
+      .delete({
+        where: { id: session.id },
+      })
+      .catch(() => {});
+    return null;
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE_NAME, session.sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    expires: session.expires,
+    path: "/",
+  });
+  cookieStore.set(REFRESH_COOKIE_NAME, session.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    expires: session.refreshTokenExpires,
+    path: "/",
+  });
+
+  await prisma.session.update({
+    where: { id: session.id },
+    data: { lastUsedAt: new Date() },
+  });
+
+  let impersonator: User | null = null;
+  if (session.impersonatorId) {
+    impersonator = await prisma.user.findUnique({
+      where: { id: session.impersonatorId },
+    });
+  }
+
+  return {
+    session,
+    user: session.user,
+    impersonator,
+  };
 }

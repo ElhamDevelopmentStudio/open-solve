@@ -1,0 +1,1 @@
+-- Migration intentionally left blank. Contest foreign keys now live in later migrations once the Contest table exists.

@@ -22,7 +22,9 @@ const ensureConnection = async () => {
     return null;
   }
   if (!connectionPromise) {
-    connectionPromise = (amqplib.connect(env.JUDGE_RABBIT_URL) as unknown as Promise<amqplib.Connection>)
+    connectionPromise = (
+      amqplib.connect(env.JUDGE_RABBIT_URL) as unknown as Promise<amqplib.Connection>
+    )
       .then((conn) => {
         conn.on("close", () => {
           infrastructureReady = false;
@@ -84,7 +86,11 @@ const setupInfrastructure = async (channel: amqplib.Channel) => {
       "x-dead-letter-routing-key": ROUTING_KEYS.retry1m,
     },
   });
-  await channel.bindQueue(JUDGE_QUEUES.submissions, JUDGE_EXCHANGES.submissions, ROUTING_KEYS.submissions);
+  await channel.bindQueue(
+    JUDGE_QUEUES.submissions,
+    JUDGE_EXCHANGES.submissions,
+    ROUTING_KEYS.submissions,
+  );
 
   await channel.assertQueue(JUDGE_QUEUES.rejudge, {
     durable: true,
@@ -172,9 +178,7 @@ export const publishManualMessage = async (payload: ManualJudgeMessage) => {
   }
 };
 
-export const withJudgeChannel = async <T>(
-  handler: (channel: amqplib.Channel) => Promise<T>,
-) => {
+export const withJudgeChannel = async <T>(handler: (channel: amqplib.Channel) => Promise<T>) => {
   const connection = await ensureConnection();
   if (!connection) {
     return null;
@@ -202,4 +206,33 @@ export const createConsumerChannel = async () => {
   const channel = await standardConnection.createChannel();
   await setupInfrastructure(channel);
   return channel;
+};
+
+export type JudgeQueueSnapshot = {
+  name: keyof typeof JUDGE_QUEUES;
+  messages: number;
+  consumers: number;
+};
+
+export const inspectJudgeQueues = async (): Promise<JudgeQueueSnapshot[] | null> => {
+  try {
+    const result = await withJudgeChannel(async (channel) => {
+      const orderedQueues: Array<keyof typeof JUDGE_QUEUES> = ["submissions", "rejudge", "manual"];
+      const snapshots = await Promise.all(
+        orderedQueues.map(async (name) => {
+          const state = await channel.checkQueue(JUDGE_QUEUES[name]);
+          return {
+            name,
+            messages: state.messageCount,
+            consumers: state.consumerCount,
+          };
+        }),
+      );
+      return snapshots;
+    });
+    return result;
+  } catch (error) {
+    logger.error({ error }, "failed to inspect judge queues");
+    return null;
+  }
 };

@@ -4,7 +4,11 @@ import {
   BadgeAwardSource,
   ContestRuleset,
   ContestState,
+  ContestType,
   ContestVisibility,
+  ContestRegistrationStatus,
+  IncidentSeverity,
+  IncidentStatus,
   ProblemProposalStatus,
   ProblemState,
   ProblemVisibility,
@@ -17,6 +21,8 @@ import {
 import { hashPassword } from "../lib/auth/password";
 import { prisma } from "../lib/prisma";
 import { getDefaultCodeStub } from "../lib/problems/editor-presets";
+import { defaultContestSettings } from "../lib/contests/settings";
+import { buildProtectedEmailFields } from "../lib/security/email";
 
 type UserSeed = {
   key: string;
@@ -28,6 +34,16 @@ type UserSeed = {
   country?: string;
   timezone?: string;
   bio?: string;
+  shareAcceptedCode?: boolean;
+  showOnLeaderboard?: boolean;
+  showCountry?: boolean;
+  showSocials?: boolean;
+  socials?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    website?: string;
+  };
   stats: {
     totalSolved: number;
     solvedEasy: number;
@@ -149,6 +165,7 @@ type ContestSeed = {
   slug: string;
   name: string;
   description: string;
+  type: ContestType;
   state: ContestState;
   visibility: ContestVisibility;
   startsAt: Date;
@@ -157,6 +174,7 @@ type ContestSeed = {
   rules: ContestRuleset;
   isRated: boolean;
   editorialReleaseAt?: Date;
+  settings?: Prisma.JsonValue;
   problems: Array<{
     problemSlug: string;
     version: number;
@@ -167,6 +185,8 @@ type ContestSeed = {
   registrations: Array<{
     userKey: string;
     isVirtual?: boolean;
+    status?: ContestRegistrationStatus;
+    isDisqualified?: boolean;
   }>;
 };
 
@@ -196,6 +216,13 @@ const userSeeds: UserSeed[] = [
     country: "US",
     timezone: "America/New_York",
     bio: "Keeps the lights on for OpenSolve.",
+    shareAcceptedCode: true,
+    showOnLeaderboard: false,
+    showSocials: false,
+    socials: {
+      github: "https://github.com/opensolve",
+      linkedin: "https://www.linkedin.com/company/opensolve",
+    },
     stats: {
       totalSolved: 512,
       solvedEasy: 220,
@@ -217,6 +244,11 @@ const userSeeds: UserSeed[] = [
     country: "BG",
     timezone: "Europe/Sofia",
     bio: "Curates graph problems with a focus on pedagogy.",
+    showSocials: true,
+    socials: {
+      twitter: "https://twitter.com/mira_q",
+      linkedin: "https://www.linkedin.com/in/mira-queue",
+    },
     stats: {
       totalSolved: 312,
       solvedEasy: 140,
@@ -259,6 +291,12 @@ const userSeeds: UserSeed[] = [
     country: "GB",
     timezone: "Europe/London",
     bio: "Building a daily streak before internship season.",
+    shareAcceptedCode: true,
+    showOnLeaderboard: true,
+    socials: {
+      github: "https://github.com/lena-dev",
+      website: "https://lena.dev",
+    },
     stats: {
       totalSolved: 188,
       solvedEasy: 110,
@@ -280,6 +318,8 @@ const userSeeds: UserSeed[] = [
     country: "US",
     timezone: "America/Chicago",
     bio: "Experimenting with unusual heuristics.",
+    showOnLeaderboard: false,
+    showCountry: false,
     stats: {
       totalSolved: 96,
       solvedEasy: 60,
@@ -301,6 +341,9 @@ const userSeeds: UserSeed[] = [
     country: "SG",
     timezone: "Asia/Singapore",
     bio: "Hard-mode grinder focused on graphs.",
+    socials: {
+      twitter: "https://twitter.com/kaicode",
+    },
     stats: {
       totalSolved: 244,
       solvedEasy: 80,
@@ -451,10 +494,7 @@ const problemSeeds: ProblemSeed[] = [
     extraCurators: ["curatorTwo"],
     tags: ["arrays", "hashing", "two-pointers"],
     companies: ["google", "uber"],
-    languages: [
-      { code: "cpp17" },
-      { code: "python3" },
-    ],
+    languages: [{ code: "cpp17" }, { code: "python3" }],
     stats: {
       acceptedCount: 1,
       submissionCount: 2,
@@ -523,11 +563,7 @@ const problemSeeds: ProblemSeed[] = [
     difficulty: "MEDIUM",
     authorKey: "curatorTwo",
     createdByKey: "curatorTwo",
-    languages: [
-      { code: "cpp17" },
-      { code: "python3" },
-      { code: "node20" },
-    ],
+    languages: [{ code: "cpp17" }, { code: "python3" }, { code: "node20" }],
     tags: ["prefix-sum", "binary-search", "greedy"],
     companies: ["amazon", "meta"],
     stats: {
@@ -708,6 +744,7 @@ const contestSeed: ContestSeed = {
   slug: "starter-sprint",
   name: "Starter Sprint 001",
   description: "A 90-minute mixed difficulty sprint to validate the contest pipeline.",
+  type: ContestType.COMPETITIVE,
   state: ContestState.RUNNING,
   visibility: ContestVisibility.PUBLIC,
   startsAt: new Date("2025-01-15T17:00:00Z"),
@@ -716,6 +753,19 @@ const contestSeed: ContestSeed = {
   rules: ContestRuleset.ICPC,
   isRated: true,
   editorialReleaseAt: new Date("2025-01-16T00:00:00Z"),
+  settings: json({
+    ...defaultContestSettings,
+    registration: {
+      ...defaultContestSettings.registration,
+      mode: "open",
+      allowVirtual: true,
+    },
+    freeze: {
+      ...defaultContestSettings.freeze,
+      enabled: true,
+      offsetMinutes: 20,
+    },
+  }),
   problems: [
     { problemSlug: "two-sum", version: 3, label: "A", order: 1, points: 100 },
     { problemSlug: "interval-maestro", version: 1, label: "B", order: 2, points: 200 },
@@ -845,6 +895,7 @@ async function main() {
   const userMap = new Map<string, Awaited<ReturnType<typeof prisma.user.upsert>>>();
 
   for (const userSeed of userSeeds) {
+    const emailFields = buildProtectedEmailFields(userSeed.email);
     const user = await prisma.user.upsert({
       where: { email: userSeed.email },
       update: {
@@ -855,9 +906,21 @@ async function main() {
         country: userSeed.country,
         timezone: userSeed.timezone,
         bio: userSeed.bio,
+        shareAcceptedCode: userSeed.shareAcceptedCode ?? false,
+        showOnLeaderboard: userSeed.showOnLeaderboard ?? true,
+        showCountry: userSeed.showCountry ?? true,
+        showSocials: userSeed.showSocials ?? true,
+        socialGithub: userSeed.socials?.github ?? null,
+        socialLinkedin: userSeed.socials?.linkedin ?? null,
+        socialTwitter: userSeed.socials?.twitter ?? null,
+        socialWebsite: userSeed.socials?.website ?? null,
+        emailHash: emailFields.emailHash,
+        emailEncrypted: emailFields.emailEncrypted,
       },
       create: {
         email: userSeed.email,
+        emailHash: emailFields.emailHash,
+        emailEncrypted: emailFields.emailEncrypted,
         name: userSeed.name,
         handle: userSeed.handle,
         role: userSeed.role,
@@ -865,6 +928,14 @@ async function main() {
         country: userSeed.country,
         timezone: userSeed.timezone,
         bio: userSeed.bio,
+        shareAcceptedCode: userSeed.shareAcceptedCode ?? false,
+        showOnLeaderboard: userSeed.showOnLeaderboard ?? true,
+        showCountry: userSeed.showCountry ?? true,
+        showSocials: userSeed.showSocials ?? true,
+        socialGithub: userSeed.socials?.github ?? null,
+        socialLinkedin: userSeed.socials?.linkedin ?? null,
+        socialTwitter: userSeed.socials?.twitter ?? null,
+        socialWebsite: userSeed.socials?.website ?? null,
         hashedPassword: defaultPasswordHash,
       },
     });
@@ -1095,8 +1166,7 @@ async function main() {
           checksum: contentHash(seed.slug, testCase.ordinal, testCase.input, testCase.output),
           timeLimitMs: testCase.timeLimitMs,
           memoryLimitMb: testCase.memoryLimitMb,
-          strength:
-            testCase.kind === TestCaseKind.SAMPLE ? 0 : Math.max(testCase.strength ?? 0, 0),
+          strength: testCase.kind === TestCaseKind.SAMPLE ? 0 : Math.max(testCase.strength ?? 0, 0),
           createdById: createdBy.id,
           updatedById: createdBy.id,
         })),
@@ -1149,8 +1219,12 @@ async function main() {
 
     await prisma.problemCurator.deleteMany({ where: { problemId: problem.id } });
     if (seed.extraCurators && seed.extraCurators.length > 0) {
-      const curatorData: Array<{ problemId: string; userId: string; createdById: string; updatedById: string }> =
-        [];
+      const curatorData: Array<{
+        problemId: string;
+        userId: string;
+        createdById: string;
+        updatedById: string;
+      }> = [];
       for (const key of new Set(seed.extraCurators)) {
         const curator = userMap.get(key);
         if (!curator || curator.id === author.id) {
@@ -1252,7 +1326,7 @@ async function main() {
 
   console.info("✅ Proposal seeds ready");
 
-  for (const [slug, tagRecord] of tagMap.entries()) {
+  for (const [, tagRecord] of tagMap.entries()) {
     await prisma.tagStats.upsert({
       where: { tagId: tagRecord.id },
       update: {
@@ -1270,7 +1344,7 @@ async function main() {
     });
   }
 
-  for (const [slug, companyRecord] of companyMap.entries()) {
+  for (const [, companyRecord] of companyMap.entries()) {
     await prisma.companyStats.upsert({
       where: { companyId: companyRecord.id },
       update: {
@@ -1338,6 +1412,7 @@ async function main() {
     update: {
       name: contestSeed.name,
       description: contestSeed.description,
+      type: contestSeed.type,
       state: contestSeed.state,
       visibility: contestSeed.visibility,
       startsAt: contestSeed.startsAt,
@@ -1346,12 +1421,14 @@ async function main() {
       rules: contestSeed.rules,
       isRated: contestSeed.isRated,
       editorialReleaseAt: contestSeed.editorialReleaseAt,
+      settings: contestSeed.settings ?? json(defaultContestSettings),
       updatedById: adminUser.id,
     },
     create: {
       slug: contestSeed.slug,
       name: contestSeed.name,
       description: contestSeed.description,
+      type: contestSeed.type,
       state: contestSeed.state,
       visibility: contestSeed.visibility,
       startsAt: contestSeed.startsAt,
@@ -1360,6 +1437,7 @@ async function main() {
       rules: contestSeed.rules,
       isRated: contestSeed.isRated,
       editorialReleaseAt: contestSeed.editorialReleaseAt,
+      settings: contestSeed.settings ?? json(defaultContestSettings),
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
@@ -1379,6 +1457,7 @@ async function main() {
         label: problem.label,
         order: problem.order,
         points: problem.points,
+        settings: json({}),
         createdById: adminUser.id,
         updatedById: adminUser.id,
       };
@@ -1396,6 +1475,13 @@ async function main() {
         contestId: contest.id,
         userId: user.id,
         isVirtual: registration.isVirtual ?? false,
+        status: registration.status ?? ContestRegistrationStatus.REGISTERED,
+        isDisqualified: registration.isDisqualified ?? false,
+        disqualifiedAt: null,
+        dqReason: null,
+        deviceFingerprint: null,
+        ipHash: null,
+        inviteCode: null,
         createdById: user.id,
         updatedById: user.id,
       };
@@ -1566,6 +1652,183 @@ async function main() {
   });
 
   console.info("✅ Contest + leaderboard seeded");
+
+  console.info("Seeding admin control surfaces...");
+  const systemSettingSeeds: Array<{
+    key: string;
+    label: string;
+    description: string;
+    value: Prisma.InputJsonValue;
+  }> = [
+    {
+      key: "maintenance_mode",
+      label: "Maintenance Mode",
+      description: "Gate the platform behind a banner and optional read-only mode.",
+      value: {
+        enabled: false,
+        message: "",
+        allowSubmissions: true,
+        lastToggledBy: adminUser?.handle ?? "admin",
+      },
+    },
+    {
+      key: "submission_limits",
+      label: "Submission Limits",
+      description: "Global rate limit overrides for Judge capacity planning.",
+      value: {
+        perMinute: 25,
+        perHour: 250,
+        contestMultiplier: 2,
+      },
+    },
+  ];
+
+  for (const setting of systemSettingSeeds) {
+    await prisma.systemSetting.upsert({
+      where: { key: setting.key },
+      update: {
+        label: setting.label,
+        description: setting.description,
+        value: setting.value,
+        updatedById: adminUser?.id,
+      },
+      create: {
+        key: setting.key,
+        label: setting.label,
+        description: setting.description,
+        value: setting.value,
+        createdById: adminUser?.id,
+        updatedById: adminUser?.id,
+      },
+    });
+  }
+
+  const featureFlagSeeds: Array<{
+    key: string;
+    name: string;
+    description: string;
+    enabled: boolean;
+    rolloutPercentage: number;
+    targeting: Prisma.InputJsonValue | null;
+  }> = [
+    {
+      key: "editor.v2",
+      name: "Monaco Editor v2",
+      description: "Ships the new Monaco-based solving experience.",
+      enabled: true,
+      rolloutPercentage: 40,
+      targeting: {
+        roles: ["ADMIN", "PROBLEM_CURATOR"],
+      },
+    },
+    {
+      key: "discussions.trails",
+      name: "Approach Trails",
+      description: "Enables the collaborative solution trail explorer.",
+      enabled: true,
+      rolloutPercentage: 65,
+      targeting: {
+        minimumSolved: 5,
+      },
+    },
+    {
+      key: "judge.lowpower-mode",
+      name: "Judge Low Power Mode",
+      description: "Slow down the queue when infrastructure is constrained.",
+      enabled: false,
+      rolloutPercentage: 0,
+      targeting: null,
+    },
+  ];
+
+  for (const flag of featureFlagSeeds) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {
+        name: flag.name,
+        description: flag.description,
+        enabled: flag.enabled,
+        rolloutPercentage: flag.rolloutPercentage,
+        targeting: flag.targeting as Prisma.InputJsonValue,
+        updatedById: adminUser?.id,
+      },
+      create: {
+        key: flag.key,
+        name: flag.name,
+        description: flag.description,
+        enabled: flag.enabled,
+        rolloutPercentage: flag.rolloutPercentage,
+        targeting: flag.targeting as Prisma.InputJsonValue,
+        createdById: adminUser?.id,
+        updatedById: adminUser?.id,
+      },
+    });
+  }
+
+  const incidentSeeds: Array<{
+    title: string;
+    summary: string;
+    status: IncidentStatus;
+    severity: IncidentSeverity;
+    impact?: string;
+    timeline?: Prisma.InputJsonValue;
+    resolvedAt?: Date | null;
+  }> = [
+    {
+      title: "Judge backlog spike",
+      summary: "Submissions queue exceeded SLA; load-shedding enabled.",
+      status: IncidentStatus.INVESTIGATING,
+      severity: IncidentSeverity.SEV2,
+      impact: "Average wait time increased to 8 minutes.",
+      timeline: [
+        { at: new Date(Date.now() - 1000 * 60 * 45), note: "Alert fired for queue depth > 500." },
+        {
+          at: new Date(Date.now() - 1000 * 60 * 20),
+          note: "Scaled runners + enabled low power mode.",
+        },
+      ] as Prisma.InputJsonValue,
+    },
+    {
+      title: "Payment provider webhook delays",
+      summary: "Webhooks delayed, contest registrations pending review.",
+      status: IncidentStatus.MONITORING,
+      severity: IncidentSeverity.SEV3,
+      impact: "Sign-ups succeeds but badges delayed by up to 15 minutes.",
+      timeline: [
+        { at: new Date(Date.now() - 1000 * 60 * 120), note: "Provider incident acknowledged." },
+        { at: new Date(Date.now() - 1000 * 60 * 70), note: "Backfill job executed." },
+      ] as Prisma.InputJsonValue,
+      resolvedAt: null,
+    },
+  ];
+
+  for (const incident of incidentSeeds) {
+    await prisma.incident.upsert({
+      where: { title: incident.title },
+      update: {
+        summary: incident.summary,
+        status: incident.status,
+        severity: incident.severity,
+        impact: incident.impact,
+        timeline: incident.timeline as Prisma.InputJsonValue,
+        resolvedAt: incident.resolvedAt ?? undefined,
+        updatedById: adminUser?.id,
+      },
+      create: {
+        title: incident.title,
+        summary: incident.summary,
+        status: incident.status,
+        severity: incident.severity,
+        impact: incident.impact,
+        timeline: incident.timeline as Prisma.InputJsonValue,
+        resolvedAt: incident.resolvedAt ?? undefined,
+        createdById: adminUser?.id,
+        updatedById: adminUser?.id,
+      },
+    });
+  }
+
+  console.info("✅ Admin control surfaces seeded");
 
   console.info("\nSeeding complete ✅\n");
 }

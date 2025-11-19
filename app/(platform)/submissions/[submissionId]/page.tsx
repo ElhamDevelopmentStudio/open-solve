@@ -9,13 +9,20 @@ export default async function SubmissionDetailPage({
 }) {
   const resolved = params instanceof Promise ? await params : params;
   const caller = await createTRPCCaller();
+  let submission;
   try {
-    const submission = await caller.submissions.get({ submissionId: resolved.submissionId });
-    return <SubmissionDetailClient submissionId={resolved.submissionId} initialSubmission={submission} />;
+    submission = await caller.submissions.get({ submissionId: resolved.submissionId });
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;
   }
+  return (
+    <SubmissionDetailClient submissionId={resolved.submissionId} initialSubmission={submission} />
+  );
 }

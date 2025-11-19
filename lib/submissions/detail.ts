@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { parseProblemSamples, type ProblemSample } from "@/lib/problems/samples";
-import type { JudgeCaseResult, JudgeVerdictCode, SubmissionDetailPayload } from "@/lib/submissions/types";
+import type {
+  JudgeCaseResult,
+  JudgeVerdictCode,
+  SubmissionDetailPayload,
+} from "@/lib/submissions/types";
 import { Prisma, SubmissionStatus, TestCaseKind, type UserRole } from "@prisma/client";
 import { isStaffRole } from "@/lib/auth/permissions";
 import type { SubmissionTimelineEvent } from "@/lib/submissions/types";
@@ -132,7 +136,9 @@ export async function getSubmissionDetailForViewer(
   });
 }
 
-export async function getSubmissionDetailForShare(publicId: string): Promise<SubmissionDetailPayload | null> {
+export async function getSubmissionDetailForShare(
+  publicId: string,
+): Promise<SubmissionDetailPayload | null> {
   const record = await prisma.submission.findFirst({
     where: {
       sharePublicId: publicId,
@@ -257,8 +263,9 @@ function buildSubmissionPayload(
   const shareEnabled =
     Boolean(record.isShareEnabled) && Boolean(record.sharePublicId) && !record.shareRevokedAt;
   const now = new Date();
-  const contestActive =
-    Boolean(record.contest && record.contest.startsAt <= now && record.contest.endsAt > now);
+  const contestActive = Boolean(
+    record.contest && record.contest.startsAt <= now && record.contest.endsAt > now,
+  );
   const feedbackRestricted = contestActive && !staffViewer;
   const restrictionReason = feedbackRestricted
     ? `Detailed feedback unlocks once the contest ends (${record.contest?.endsAt.toLocaleString()}).`
@@ -329,16 +336,13 @@ function buildSubmissionPayload(
     review: {
       requiresManualReview: record.requiresManualReview,
       reviewerName: staffViewer
-        ? record.manualReviewer?.name ?? record.manualReviewer?.handle ?? null
+        ? (record.manualReviewer?.name ?? record.manualReviewer?.handle ?? null)
         : null,
-      reviewerId: staffViewer ? record.manualReviewer?.id ?? null : null,
+      reviewerId: staffViewer ? (record.manualReviewer?.id ?? null) : null,
       reviewedAt: record.manualReviewedAt ?? undefined,
       manualScore: typeof record.manualScore === "number" ? record.manualScore : null,
       internalNotesVisible: staffViewer,
-      internalNotes:
-        staffViewer && manualNotes
-          ? manualNotes
-          : null,
+      internalNotes: staffViewer && manualNotes ? manualNotes : null,
     },
     permissions: {
       canResubmit: isOwner,
@@ -404,7 +408,9 @@ function buildSummary(cases: SubmissionDetailPayload["cases"], submission: Submi
     runtimeMs: submission.timeUsedMs ?? cases.reduce((sum, item) => sum + item.runtimeMs, 0),
     memoryKb:
       submission.memoryUsedKb ??
-      (cases.length ? Math.round(cases.reduce((sum, item) => sum + item.memoryKb, 0) / cases.length) : 0),
+      (cases.length
+        ? Math.round(cases.reduce((sum, item) => sum + item.memoryKb, 0) / cases.length)
+        : 0),
     startedAt: submission.startedAt ?? submission.createdAt,
     finishedAt: submission.finishedAt ?? submission.updatedAt,
   };
@@ -451,18 +457,18 @@ function buildTimeline(record: SubmissionRecord): SubmissionTimelineEvent[] {
 
   const timeline: SubmissionTimelineEvent[] = [queued, running, finishedStates];
 
-  if (record.requiresManualReview || status === "MANUAL_PENDING" || verdict?.startsWith("MANUAL_")) {
+  if (
+    record.requiresManualReview ||
+    status === "MANUAL_PENDING" ||
+    verdict?.startsWith("MANUAL_")
+  ) {
     timeline.push(
       {
         stage: "MANUAL_REVIEW",
         label: "Manual review",
         at: record.manualDueAt ?? undefined,
         state:
-          status === "MANUAL_PENDING"
-            ? "active"
-            : record.manualReviewedAt
-              ? "complete"
-              : "pending",
+          status === "MANUAL_PENDING" ? "active" : record.manualReviewedAt ? "complete" : "pending",
         description:
           status === "MANUAL_PENDING" && !record.manualReviewedAt
             ? "Awaiting reviewer decision"

@@ -144,5 +144,3 @@ export async function sendEmailChangedNotification(
     }),
   ]);
 }
-
-
