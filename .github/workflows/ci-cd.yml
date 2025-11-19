@@ -64,13 +64,13 @@ jobs:
       APP_URL: "http://localhost:3000"
       NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
       DEPLOYMENT_ENVIRONMENT: "staging"
-      SESSION_SECRET: "ci-session-secret-change-me"
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/opensolve?schema=public"
       DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/opensolve?schema=public"
       LOG_LEVEL: "info"
       RATE_LIMIT_WINDOW_SECONDS: "60"
       RATE_LIMIT_MAX_REQUESTS: "250"
-      SENSITIVE_DATA_KEY: "ci-sensitive-data-key-change-me"
+      SENSITIVE_DATA_KEY: ${{ secrets.SENSITIVE_DATA_KEY }}
       REALTIME_WORKER_TOKEN: "ci-realtime-token"
       METRICS_ACCESS_TOKEN: "ci-metrics-token"
     services:
