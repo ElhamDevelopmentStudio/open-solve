@@ -105,14 +105,3 @@ export default function ResetPasswordPage() {
     </Card>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

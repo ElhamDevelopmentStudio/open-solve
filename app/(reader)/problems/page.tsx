@@ -1,4 +1,7 @@
-import { renderProblemLibraryPage, resolveViewerSessionFlag } from "@/components/problems/problem-library-page";
+import {
+  renderProblemLibraryPage,
+  resolveViewerSessionFlag,
+} from "@/components/problems/problem-library-page";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

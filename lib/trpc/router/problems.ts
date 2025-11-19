@@ -5,7 +5,10 @@ import {
   PROBLEM_SORT_OPTIONS,
   PROBLEM_STATUS_FILTERS,
 } from "@/lib/problems/constants";
-import { parseProblemSamples, type ProblemSample as ParsedProblemSample } from "@/lib/problems/samples";
+import {
+  parseProblemSamples,
+  type ProblemSample as ParsedProblemSample,
+} from "@/lib/problems/samples";
 import { prisma } from "@/lib/prisma";
 import { publicProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus, TestCaseKind, ProblemJudgeMode } from "@prisma/client";
@@ -79,7 +82,7 @@ export type ProblemDetailPayload = {
   hasEditorial: boolean;
   version: {
     number: number;
-  }; 
+  };
   content: {
     statement: string;
     constraints: string;
@@ -118,7 +121,9 @@ const canonicalDifficultySet = new Set<string>(DIFFICULTY_DEFAULTS);
 
 function normalizeDifficultyCode(code: string) {
   const normalized = code.toUpperCase();
-  return canonicalDifficultySet.has(normalized) ? (normalized as ProblemFiltersInput["difficulty"][number]) : null;
+  return canonicalDifficultySet.has(normalized)
+    ? (normalized as ProblemFiltersInput["difficulty"][number])
+    : null;
 }
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATION_LIMIT;

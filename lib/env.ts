@@ -12,7 +12,12 @@ const amqpUrl = z
   .regex(/^amqps?:\/\//i, "JUDGE_RABBIT_URL must start with amqp:// or amqps://");
 
 const deploymentEnvFallback =
-  (process.env.DEPLOYMENT_ENVIRONMENT as "development" | "staging" | "production" | "preview" | undefined) ??
+  (process.env.DEPLOYMENT_ENVIRONMENT as
+    | "development"
+    | "staging"
+    | "production"
+    | "preview"
+    | undefined) ??
   (process.env.VERCEL_ENV as "development" | "preview" | "production" | undefined) ??
   (process.env.NODE_ENV === "production" ? "production" : "development");
 

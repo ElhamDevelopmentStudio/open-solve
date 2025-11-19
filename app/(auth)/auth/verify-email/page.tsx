@@ -12,7 +12,9 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") || "";
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">(token ? "loading" : "error");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    token ? "loading" : "error",
+  );
 
   const verifyMutation = trpc.auth.verifyEmail.useMutation({
     onSuccess: (data) => {
@@ -86,13 +88,3 @@ export default function VerifyEmailPage() {
     </Card>
   );
 }
-
-
-
-
-
-
-
-
-
-

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-const amqplib = require("amqplib");
 
 async function main() {
   const url = process.env.JUDGE_RABBIT_URL;
@@ -7,6 +6,7 @@ async function main() {
     console.log("JUDGE_RABBIT_URL not set; treating worker as healthy");
     return;
   }
+  const { default: amqplib } = await import("amqplib");
   const connection = await amqplib.connect(url);
   try {
     const channel = await connection.createChannel();

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { type ComponentType, type SVGProps } from "react";
 import {
   Award02Icon,
   ClipboardIcon,
@@ -12,7 +11,11 @@ import {
   PathIcon,
 } from "hugeicons-react";
 import { Badge } from "@/components/ui/badge";
-import { SidebarShell, type SidebarNavGroup, type SidebarNavItem } from "@/components/layout/sidebar-shell";
+import {
+  SidebarShell,
+  type SidebarNavGroup,
+  type SidebarNavItem,
+} from "@/components/layout/sidebar-shell";
 
 type StaffAppShellProps = {
   user: {
@@ -81,10 +84,18 @@ export function StaffAppShell({ user, children }: StaffAppShellProps) {
     <SidebarShell
       user={user}
       nav={navGroups}
-      brand={{ title: "OpenSolve", subtitle: "Staff Console", href: "/dashboard", icon: Megaphone01Icon }}
+      brand={{
+        title: "OpenSolve",
+        subtitle: "Staff Console",
+        href: "/dashboard",
+        icon: Megaphone01Icon,
+      }}
       environmentLabel="OpenSolve Staff"
       headerBadge={
-        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+        <Badge
+          variant="secondary"
+          className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+        >
           Systems nominal
         </Badge>
       }
@@ -100,7 +111,10 @@ function SidebarOpsFooter({ role }: { role: string }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Environment</span>
-        <Badge variant="outline" className="border-blue-500/40 text-[11px] text-blue-600 dark:text-blue-300">
+        <Badge
+          variant="outline"
+          className="border-blue-500/40 text-[11px] text-blue-600 dark:text-blue-300"
+        >
           Control
         </Badge>
       </div>
@@ -114,7 +128,10 @@ function SidebarOpsFooter({ role }: { role: string }) {
         </Link>
       ) : null}
       <p className="text-[11px] text-muted-foreground">
-        Need elevated access? <Link href="/support" className="text-primary underline">Contact SRE</Link>
+        Need elevated access?{" "}
+        <Link href="/support" className="text-primary underline">
+          Contact SRE
+        </Link>
       </p>
     </div>
   );

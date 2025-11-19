@@ -1,65 +1,64 @@
 ## 6.1 Architecture & Stack
 
-- **Frontend:**  Next.js (App Router) + **React + Codemirror**.
-- **Data Layer:**  **tRPC + React Query**.
-- **Backend:**  tRPC procedures (judge queue & status).
-- **Realtime updates:**  via WebSocket subscription.
-- **Persistence:**  LocalStorage or IndexedDB per user/problem/language draft.
+- **Frontend:** Next.js (App Router) + **React + Codemirror**.
+- **Data Layer:** **tRPC + React Query**.
+- **Backend:** tRPC procedures (judge queue & status).
+- **Realtime updates:** via WebSocket subscription.
+- **Persistence:** LocalStorage or IndexedDB per user/problem/language draft.
 
 ---
 
 ## 6.2 Page Layout
 
-**URL:**  `/problems/[slug]/editor` and tabbed inside the Problem page (Both for better user experience).
+**URL:** `/problems/[slug]/editor` and tabbed inside the Problem page (Both for better user experience).
 
 ### Main sections
 
 1. **Top Bar**
+   - Problem title + difficulty pill.
+   - Tabs: _Description_, _Editorial (if released)_ , _Submissions_, _My Code_.
+   - Timer indicator (for contests).
 
-    - Problem title + difficulty pill.
-    - Tabs: *Description*, *Editorial (if released)* , *Submissions*, *My Code*.
-    - Timer indicator (for contests).
 2. **Code Editor Panel (left)**
+   - Codemierror instance (language aware, syntax-highlighted, dark/light theme sync).
+   - Language selector dropdown (auto loads boilerplate aka code stub).
+   - Line numbers, minimap hidden by default, toggleable.
+   - Adjustable font size and theme (user preference persisted).
+   - Autosave status (“Saved” / “Saving…” pulse).
 
-    - Codemierror instance (language aware, syntax-highlighted, dark/light theme sync).
-    - Language selector dropdown (auto loads boilerplate aka code stub).
-    - Line numbers, minimap hidden by default, toggleable.
-    - Adjustable font size and theme (user preference persisted).
-    - Autosave status (“Saved” / “Saving…” pulse).
 3. **I/O &amp; Actions Panel (right)**
+   - Input box (stdin) + output box (stdout).
+   - Buttons:
+     - **Run Code** → executes against _sample tests_.
+     - **Submit Code** → sends to _judge queue_.
 
-    - Input box (stdin) + output box (stdout).
-    - Buttons:
+   - Result display area: verdicts, runtime, memory, per-test info.
 
-      - **Run Code** → executes against *sample tests*.
-      - **Submit Code** → sends to *judge queue*.
-    - Result display area: verdicts, runtime, memory, per-test info.
 4. **Console Panel (bottom)**
+   - Shows logs, compiler messages, errors, judge feedback.
+   - Collapsible with smooth 150 ms transition.
 
-    - Shows logs, compiler messages, errors, judge feedback.
-    - Collapsible with smooth 150 ms transition.
 5. **Side Drawer (mobile)**
-
-    - Problem statement toggle; editor and I/O stacked vertically.
+   - Problem statement toggle; editor and I/O stacked vertically.
 
 ---
 
 ## 6.3 Editor Features
 
-- **Languages:**  from your `Language` table (`cpp17`, `python3`, `java17`, `node20`…).
-- **Boilerplate aka Code Stubs:**  default snippets per language stored server-side and fetched once.
-- **Syntax &amp; Formatting:**  Codemirror with built-in prettier-style formatting per language.
+- **Languages:** from your `Language` table (`cpp17`, `python3`, `java17`, `node20`…).
+- **Boilerplate aka Code Stubs:** default snippets per language stored server-side and fetched once.
+- **Syntax &amp; Formatting:** Codemirror with built-in prettier-style formatting per language.
 - **Shortcuts:**
-
   - Ctrl+Enter / Cmd+Enter → Run
   - Ctrl+Shift+Enter → Submit
   - Ctrl+S → Save draft (manual)
-- **Autosave:**
 
+- **Autosave:**
   - On typing pause (2 s debounce).
   - On language change.
   - On page/tab close (via beforeunload hook).
-- **Draft key pattern:**  `code:${userId}:${problemId}:${language}` in IndexedDB.
+
+- **Draft key pattern:** `code:${userId}:${problemId}:${language}` in IndexedDB.
 
 ---
 
@@ -69,22 +68,21 @@
 
 Purpose: quick check using **public samples only**.
 
-**tRPC procedure:**  `submissions.runSample`
+**tRPC procedure:** `submissions.runSample`
 
 - Input: problemId, languageCode, sourceCode.
 - Behavior:
-
   - Uses local lightweight judge (no queue).
   - Runs against sample tests only.
   - Returns per-sample results (Expected vs Actual + runtime + memory).
-- UX:
 
+- UX:
   - “Running…” state: button animates pulse (≤ 250 ms).
   - Verdicts fade-in sequentially.
   - Failures highlight with soft coral background; success \= mint tint.
   - Compile/runtime errors appear in console panel.
 
-**Rules:**  No hidden tests. Not recorded as a submission.
+**Rules:** No hidden tests. Not recorded as a submission.
 
 ---
 
@@ -107,29 +105,29 @@ Purpose: enqueue for backend worker to run all tests.
 
 **Client states:**
 
-- 🟡 *Pending* — queued.
-- 🔵 *Running* — worker active; progress bar animates gently.
-- 🟢 *Accepted* — highlight mint; show runtime & memory summary.
-- 🔴 *Wrong Answer / Error / TLE / MLE / RE / CE* — red tint, expandable details.
+- 🟡 _Pending_ — queued.
+- 🔵 _Running_ — worker active; progress bar animates gently.
+- 🟢 _Accepted_ — highlight mint; show runtime & memory summary.
+- 🔴 _Wrong Answer / Error / TLE / MLE / RE / CE_ — red tint, expandable details.
 
-**DoD:**  user sees transition *pending → running → finished* smoothly, no reload.
+**DoD:** user sees transition _pending → running → finished_ smoothly, no reload.
 
 ---
 
 ## 6.5 Result Display (Verdict Panel)
 
-- **Top summary card:**  overall verdict, time, memory, language icon.
+- **Top summary card:** overall verdict, time, memory, language icon.
 - **Expandable per-test table:**
-
   - Columns: #, Status, Time (ms), Memory (KB), Input (toggle), Expected, Output, Error.
   - Animations: fade/slide in ≤ 200 ms per test.
-- **Tabs:**
 
-  - *All Tests*
-  - *Failed Only*
-  - *Details (stderr)* .
-- **Icons:**  AC ✅, WA ❌, TLE ⏱️, MLE 💾, RE ⚙️, CE 🧩.
-- **Retry link:**  “Try again” resets console and highlights input box.
+- **Tabs:**
+  - _All Tests_
+  - _Failed Only_
+  - _Details (stderr)_ .
+
+- **Icons:** AC ✅, WA ❌, TLE ⏱️, MLE 💾, RE ⚙️, CE 🧩.
+- **Retry link:** “Try again” resets console and highlights input box.
 
 ---
 
@@ -137,31 +135,31 @@ Purpose: enqueue for backend worker to run all tests.
 
 - **Autosave locally** (per problem & language).
 - **Cloud sync** (optional, if logged in):
-
   - tRPC: `submissions.saveDraft` / `getDraft`.
   - Keep 1–3 recent drafts per problem+language.
-- **Recovery:**  on page open, detect unsaved local code; prompt “Restore previous draft?”
-- **Autosave indicator:**  small dot next to filename fades in/out subtly on save.
+
+- **Recovery:** on page open, detect unsaved local code; prompt “Restore previous draft?”
+- **Autosave indicator:** small dot next to filename fades in/out subtly on save.
 
 ---
 
 ## 6.7 Error & Edge Handling
 
-- **Compile Errors:**  Show compiler stderr in console with line highlights.
-- **Runtime Errors:**  Show message + stacktrace if language supports it.
-- **TLE/MLE:**  gentle warning color + explanation (“Time limit exceeded on Test #4”).
-- **Disconnected:**  retain state, pause polling, retry automatically on reconnect.
-- **Judge overloaded:**  fallback banner (“Judging queue is busy—expect slight delay”).
-- **Multiple tabs:**  warn if same problem open in another tab (prevent draft overwrite).
+- **Compile Errors:** Show compiler stderr in console with line highlights.
+- **Runtime Errors:** Show message + stacktrace if language supports it.
+- **TLE/MLE:** gentle warning color + explanation (“Time limit exceeded on Test #4”).
+- **Disconnected:** retain state, pause polling, retry automatically on reconnect.
+- **Judge overloaded:** fallback banner (“Judging queue is busy—expect slight delay”).
+- **Multiple tabs:** warn if same problem open in another tab (prevent draft overwrite).
 
 ---
 
 ## 6.8 Accessibility & UX polish
 
 - Full keyboard navigation:
-
   - Tab cycles inputs/buttons.
   - Escape closes modals or console.
+
 - Font size & theme toggle persistent.
 - High-contrast mode & reduced-motion support.
 - Button states color-shift subtly (not flash).
@@ -173,15 +171,15 @@ Purpose: enqueue for backend worker to run all tests.
 ## 6.9 Performance & Responsiveness
 
 - **React Query config:**
-
   - `staleTime = 0` for live verdicts.
   - Polling stops once `isTerminal = true`.
-- **Network load:**
 
+- **Network load:**
   - Sample runs light, instant; full judge runs async.
   - Queue concurrency metrics tracked.
-- **Editor perf:**  Lazy-load Codemirror on demand; split chunk for languages.
-- **Edge caching:**  Problem + language list pre-fetched server-side.
+
+- **Editor perf:** Lazy-load Codemirror on demand; split chunk for languages.
+- **Edge caching:** Problem + language list pre-fetched server-side.
 
 **Target UX metrics:**
 
@@ -228,15 +226,15 @@ Purpose: enqueue for backend worker to run all tests.
 
 ## 6.13 Optional Delight Features ✨
 
-- **Result celebration:**  subtle confetti burst (≤ 600 ms) on first AC per problem.
-- **Submission timeline:**  side panel showing previous attempts with verdict colors.
-- **Diff viewer:**  compare current code to last Accepted.
-- **Offline-ready drafts:**  edit + run samples locally even when disconnected.
+- **Result celebration:** subtle confetti burst (≤ 600 ms) on first AC per problem.
+- **Submission timeline:** side panel showing previous attempts with verdict colors.
+- **Diff viewer:** compare current code to last Accepted.
+- **Offline-ready drafts:** edit + run samples locally even when disconnected.
 
 ---
 
 ### 💡 Summary
 
 This flow should make coding on OpenSolve feel like using a high-end IDE inside the browser —
-**smooth, reliable, respectful of the user’s focus, and visually balanced.** 
+**smooth, reliable, respectful of the user’s focus, and visually balanced.**
 Every action—run, submit, view results—should be **instant in perception**, **polished in motion**, and **predictable in behavior**, without ever distracting from the craft of problem solving.

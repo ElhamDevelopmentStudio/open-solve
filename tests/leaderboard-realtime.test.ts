@@ -1,5 +1,5 @@
 import { describe, expect, beforeEach, vi, it } from "vitest";
-import { Prisma, UserRole, UserStatus } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 
 const leaderEntryMock = vi.fn();
 const deltaGroupMock = vi.fn();
@@ -79,7 +79,10 @@ describe("buildRealtimeSnapshotRanking", () => {
     ]);
 
     const { buildRealtimeSnapshotRanking } = await import("@/lib/leaderboard/service");
-    const results = await buildRealtimeSnapshotRanking({ snapshot: { id: "snap" }, viewerIsStaff: false });
+    const results = await buildRealtimeSnapshotRanking({
+      snapshot: { id: "snap" },
+      viewerIsStaff: false,
+    });
 
     expect(results).toHaveLength(2);
     expect(results[0].user.handle).toBe("bob");
@@ -106,7 +109,10 @@ describe("buildRealtimeSnapshotRanking", () => {
     deltaGroupMock.mockRejectedValue({ code: "P2021" });
 
     const { buildRealtimeSnapshotRanking } = await import("@/lib/leaderboard/service");
-    const results = await buildRealtimeSnapshotRanking({ snapshot: { id: "snap" }, viewerIsStaff: false });
+    const results = await buildRealtimeSnapshotRanking({
+      snapshot: { id: "snap" },
+      viewerIsStaff: false,
+    });
 
     expect(results).toHaveLength(1);
     expect(results[0].user.handle).toBe("alice");

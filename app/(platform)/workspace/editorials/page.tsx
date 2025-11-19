@@ -32,8 +32,8 @@ export default async function WorkspaceEditorialsPage() {
         <p className="text-xs uppercase text-muted-foreground">Editorial hub</p>
         <h1 className="text-3xl font-semibold">Official write-ups</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Track which problems have in-house explanations and plan your practice queue accordingly. Editorials unlock
-          automatically after contests or when you solve a problem.
+          Track which problems have in-house explanations and plan your practice queue accordingly.
+          Editorials unlock automatically after contests or when you solve a problem.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button asChild>
@@ -55,7 +55,8 @@ export default async function WorkspaceEditorialsPage() {
         </div>
         {backlog.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/60 p-8 text-sm text-muted-foreground">
-            No editorials are published yet. Curators can add official solutions from the staff problem editor.
+            No editorials are published yet. Curators can add official solutions from the staff
+            problem editor.
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -68,7 +69,9 @@ export default async function WorkspaceEditorialsPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm text-muted-foreground">#{problem.slug}</p>
-                    <p className="text-lg font-semibold">{problem.currentVersion?.title ?? problem.slug}</p>
+                    <p className="text-lg font-semibold">
+                      {problem.currentVersion?.title ?? problem.slug}
+                    </p>
                   </div>
                   <Badge variant="outline">{problem.difficulty?.code ?? "UNRATED"}</Badge>
                 </div>

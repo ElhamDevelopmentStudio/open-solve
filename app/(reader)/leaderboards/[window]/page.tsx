@@ -14,19 +14,30 @@ const WINDOW_MAP: Record<string, LeaderboardWindow> = {
 
 type Params = { window: string };
 
-export async function generateMetadata({ params }: { params: Params | Promise<Params> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}): Promise<Metadata> {
   const resolved = await params;
   if (!WINDOW_MAP[resolved.window]) {
     return { title: "Leaderboards | OpenSolve" };
   }
-  const label = resolved.window === "global" ? "All time" : resolved.window.charAt(0).toUpperCase() + resolved.window.slice(1);
+  const label =
+    resolved.window === "global"
+      ? "All time"
+      : resolved.window.charAt(0).toUpperCase() + resolved.window.slice(1);
   return {
     title: `${label} Leaderboard | OpenSolve`,
     description: `Top performers on the ${label.toLowerCase()} leaderboard.`,
   };
 }
 
-export default async function LeaderboardWindowPage({ params }: { params: Params | Promise<Params> }) {
+export default async function LeaderboardWindowPage({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}) {
   const { window } = await params;
   const resolved = WINDOW_MAP[window];
   if (!resolved) {

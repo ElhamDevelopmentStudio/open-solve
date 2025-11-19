@@ -95,11 +95,7 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
           <CardContent className="space-y-4">
             <QueueBar label="Queued" value={data.submissions.queued} tone="primary" />
             <QueueBar label="Running" value={data.submissions.running} tone="muted" />
-            <QueueBar
-              label="Manual review"
-              value={data.submissions.manualPending}
-              tone="warning"
-            />
+            <QueueBar label="Manual review" value={data.submissions.manualPending} tone="warning" />
           </CardContent>
         </Card>
         <Card className="border-border/60 bg-card/80">
@@ -122,7 +118,9 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
                   variant={status.healthy ? "outline" : "destructive"}
                   className={cn(
                     "text-[11px]",
-                    status.healthy ? "text-primary border-primary/40" : "text-destructive-foreground",
+                    status.healthy
+                      ? "text-primary border-primary/40"
+                      : "text-destructive-foreground",
                   )}
                 >
                   {status.healthy ? "Healthy" : "Degraded"}

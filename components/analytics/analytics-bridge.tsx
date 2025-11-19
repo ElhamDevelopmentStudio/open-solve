@@ -8,7 +8,7 @@ export function AnalyticsBridge() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const lastRouteRef = useRef<string | null>(null);
-  const lastVisitedAtRef = useRef<number>(Date.now());
+  const lastVisitedAtRef = useRef<number>(0);
   const isInitialisedRef = useRef(false);
 
   useEffect(() => {
@@ -42,10 +42,14 @@ export function AnalyticsBridge() {
   }, [pathname, searchParams]);
 
   useEffect(() => {
+    if (lastVisitedAtRef.current === 0) {
+      lastVisitedAtRef.current = Date.now();
+    }
+
     const now = Date.now();
     const currentRoute = buildRoute(pathname, searchParams?.toString());
     const prevRoute = lastRouteRef.current;
-    const timeOnFromMs = now - (lastVisitedAtRef.current ?? now);
+    const timeOnFromMs = now - lastVisitedAtRef.current;
 
     if (prevRoute) {
       trackAnalyticsEvent("navigation.path", {

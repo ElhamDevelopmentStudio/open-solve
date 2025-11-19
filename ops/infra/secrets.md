@@ -3,6 +3,7 @@
 All environments consume the same variables validated in `lib/env.ts`. Use the templates in `ops/env/*.env` as the canonical definitions.
 
 ## Required Secrets
+
 - **Session/Auth:** `SESSION_SECRET`, `SENSITIVE_DATA_KEY`, `REALTIME_WORKER_TOKEN`.
 - **Databases:** `DATABASE_URL`, `DIRECT_URL` (read replica optional).
 - **RabbitMQ:** `JUDGE_RABBIT_URL`, `JUDGE_RABBIT_PREFETCH`.
@@ -12,6 +13,7 @@ All environments consume the same variables validated in `lib/env.ts`. Use the t
 - **AI (optional):** `AI_PROVIDER`, `OPENAI_API_KEY`, `OLLAMA_HOST`.
 
 ## Storage Strategy
+
 - **Dev:** `.env` or `direnv` referencing `ops/env/dev.env`.
 - **Staging:** managed secret manager (AWS SSM, Doppler, 1Password). Render to `/etc/opensolve/staging.env` before invoking compose.
 - **Production (Fly):** `flyctl secrets import < ops/env/prod.env`.

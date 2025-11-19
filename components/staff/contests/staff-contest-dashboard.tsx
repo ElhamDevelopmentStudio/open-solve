@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useMemo,
-  useState,
-  type ComponentType,
-  type SVGProps,
-} from "react";
+import { useMemo, useState, type ComponentType, type SVGProps } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ClarificationStatus, ClarificationVisibility } from "@prisma/client";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -29,11 +24,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DataTable,
-  type DataTableColumn,
-  DataTableColumnHeader,
-} from "@/components/ui/data-table";
+import { DataTable, type DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
 import {
   Dialog,
   DialogContent,
@@ -103,7 +94,10 @@ export function StaffContestDashboard() {
     [clarificationsQuery.data],
   );
   const openClarifications = clarificationList.filter((entry) => entry.status !== "CLOSED");
-  const metrics = useMemo(() => buildContestMetrics(contests, clarificationList), [contests, clarificationList]);
+  const metrics = useMemo(
+    () => buildContestMetrics(contests, clarificationList),
+    [contests, clarificationList],
+  );
 
   const answerMutation = trpc.staff.contests.answerClarification.useMutation({
     onSuccess: () => {
@@ -181,7 +175,8 @@ export function StaffContestDashboard() {
           <p className="text-xs uppercase text-muted-foreground">Control room</p>
           <h1 className="text-3xl font-semibold tracking-tight">Contest operations</h1>
           <p className="text-sm text-muted-foreground">
-            Monitor schedules, clarify issues, and broadcast announcements without leaving this view.
+            Monitor schedules, clarify issues, and broadcast announcements without leaving this
+            view.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -226,7 +221,10 @@ export function StaffContestDashboard() {
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <Select value={stateFilter} onValueChange={(value) => setStateFilter(value as typeof stateFilter)}>
+                <Select
+                  value={stateFilter}
+                  onValueChange={(value) => setStateFilter(value as typeof stateFilter)}
+                >
                   <SelectTrigger className="w-[160px]">
                     <SelectValue placeholder="State filter" />
                   </SelectTrigger>
@@ -247,7 +245,9 @@ export function StaffContestDashboard() {
             </div>
             {selectedContest ? (
               <p className="text-xs text-muted-foreground">
-                Focused on <span className="font-medium text-foreground">{selectedContest.name}</span> for clarifications.
+                Focused on{" "}
+                <span className="font-medium text-foreground">{selectedContest.name}</span> for
+                clarifications.
               </p>
             ) : null}
           </CardHeader>
@@ -348,7 +348,8 @@ export function StaffContestDashboard() {
             <div>
               <CardTitle>Clarification tower</CardTitle>
               <CardDescription>
-                Every question routed through ops shows up here with state, scope, and triage actions.
+                Every question routed through ops shows up here with state, scope, and triage
+                actions.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -605,9 +606,7 @@ function buildContestMetrics(
   const running = contests.filter((contest) => contest.state === "RUNNING");
   const upcoming = contests
     .filter((contest) => contest.state === "UPCOMING")
-    .sort(
-      (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-    );
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
   const latestClarification = [...clarifications].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )[0];

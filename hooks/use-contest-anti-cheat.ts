@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getAnalyticsDeviceSnapshot, getAnalyticsSessionId } from "@/lib/analytics/client";
-import type { ContestProblemAntiCheatContext, ContestAntiCheatClientEvent } from "@/lib/contests/anti-cheat/types";
+import type {
+  ContestProblemAntiCheatContext,
+  ContestAntiCheatClientEvent,
+} from "@/lib/contests/anti-cheat/types";
 import type { ContestAntiCheatFlagStatus } from "@prisma/client";
 
 type HookResult = {
@@ -30,9 +33,7 @@ const noop: HookResult = {
   },
 };
 
-export function useContestAntiCheat(
-  contestContext?: ContestProblemAntiCheatContext,
-): HookResult {
+export function useContestAntiCheat(contestContext?: ContestProblemAntiCheatContext): HookResult {
   const guardEnabled = Boolean(contestContext && contestContext.antiCheat.enabled);
   const sessionId = useMemo(() => (guardEnabled ? getAnalyticsSessionId() : null), [guardEnabled]);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -126,7 +127,8 @@ export function useContestAntiCheat(
     const device = getAnalyticsDeviceSnapshot();
     const connectionType =
       typeof navigator !== "undefined" && "connection" in navigator
-        ? (navigator as Navigator & { connection?: { effectiveType?: string } }).connection?.effectiveType
+        ? (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
+            ?.effectiveType
         : undefined;
     enqueueEvent({
       type: "session_start",

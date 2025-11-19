@@ -6,7 +6,10 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 
-async function fetchProblem(slug: string, viewerHasSession: boolean): Promise<ProblemDetailPayload> {
+async function fetchProblem(
+  slug: string,
+  viewerHasSession: boolean,
+): Promise<ProblemDetailPayload> {
   if (viewerHasSession) {
     const caller = await createTRPCCaller();
     return caller.problems.detail({ slug });

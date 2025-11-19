@@ -25,10 +25,7 @@ import { ContestState, Prisma, SubmissionStatus, TestCaseKind } from "@prisma/cl
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import {
-  dispatchSubmissionToJudge,
-  publishManualReviewMessage,
-} from "@/lib/judge/dispatcher";
+import { dispatchSubmissionToJudge, publishManualReviewMessage } from "@/lib/judge/dispatcher";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { recordSubmissionEvent } from "@/lib/observability/metrics";
 
@@ -211,6 +208,7 @@ export const submissionsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
     }
     const { slug: _slug, ...rest } = input;
+    void _slug;
     const response = await buildSubmissionList({
       userId: ctx.user.id,
       input: { ...rest, problemId: problem.id },
@@ -283,7 +281,10 @@ export const submissionsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
     }
     if (submission.userId !== ctx.user.id) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Cannot modify another user’s submission" });
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Cannot modify another user’s submission",
+      });
     }
     await prisma.submission.update({
       where: { id: submission.id },
@@ -296,23 +297,25 @@ export const submissionsRouter = router({
     return { ok: true };
   }),
 
-  hideFromProfile: protectedProcedure.input(hideVisibilitySchema).mutation(async ({ ctx, input }) => {
-    const submission = await prisma.submission.findFirst({
-      where: { id: input.submissionId, deletedAt: null },
-      select: { id: true, userId: true },
-    });
-    if (!submission) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
-    }
-    if (submission.userId !== ctx.user.id && !isStaffRole(ctx.user.role)) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
-    }
-    await prisma.submission.update({
-      where: { id: submission.id },
-      data: { hiddenFromProfile: input.hidden },
-    });
-    return { ok: true };
-  }),
+  hideFromProfile: protectedProcedure
+    .input(hideVisibilitySchema)
+    .mutation(async ({ ctx, input }) => {
+      const submission = await prisma.submission.findFirst({
+        where: { id: input.submissionId, deletedAt: null },
+        select: { id: true, userId: true },
+      });
+      if (!submission) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+      }
+      if (submission.userId !== ctx.user.id && !isStaffRole(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+      await prisma.submission.update({
+        where: { id: submission.id },
+        data: { hiddenFromProfile: input.hidden },
+      });
+      return { ok: true };
+    }),
 
   saveDraft: protectedProcedure.input(draftSaveSchema).mutation(async ({ ctx, input }) => {
     await getRunnableProblem(input.problemId);
@@ -494,7 +497,7 @@ async function enqueueSubmission(params: {
         manualOnly: false,
         userId: submission.userId,
       });
-    } catch (error) {
+    } catch {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Judge queue is unavailable. Please retry in a moment.",
@@ -534,11 +537,7 @@ async function resolveContestSubmissionContext({
     throw new TRPCError({ code: "NOT_FOUND", message: "Contest not found" });
   }
   const now = new Date();
-  if (
-    contest.state === ContestState.UPCOMING ||
-    now < contest.startsAt ||
-    now > contest.endsAt
-  ) {
+  if (contest.state === ContestState.UPCOMING || now < contest.startsAt || now > contest.endsAt) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Contest window is closed" });
   }
   const registration = await prisma.contestRegistration.findFirst({
@@ -546,7 +545,10 @@ async function resolveContestSubmissionContext({
     select: { id: true, isDisqualified: true },
   });
   if (!registration) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Register before submitting to this contest" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Register before submitting to this contest",
+    });
   }
   if (registration.isDisqualified) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You are disqualified from this contest" });
@@ -694,15 +696,9 @@ function buildOrderBy(sort: (typeof SUBMISSION_LIST_SORTS)[number]) {
     ];
   }
   if (sort === "first_ac") {
-    return [
-      { createdAt: "asc" as Prisma.SortOrder },
-      { id: "asc" as Prisma.SortOrder },
-    ];
+    return [{ createdAt: "asc" as Prisma.SortOrder }, { id: "asc" as Prisma.SortOrder }];
   }
-  return [
-    { createdAt: "desc" as Prisma.SortOrder },
-    { id: "desc" as Prisma.SortOrder },
-  ];
+  return [{ createdAt: "desc" as Prisma.SortOrder }, { id: "desc" as Prisma.SortOrder }];
 }
 
 async function getEarliestAcceptedMap(userId: string, problemIds: string[]) {
@@ -869,10 +865,7 @@ async function buildFilterMetadata(userId: string): Promise<SubmissionFilterMeta
 
   return {
     languages: languageGroups.map((group) => {
-      const count =
-        typeof group._count === "object" && group._count
-          ? group._count._all ?? 0
-          : 0;
+      const count = typeof group._count === "object" && group._count ? (group._count._all ?? 0) : 0;
       return {
         code: group.languageCode,
         displayName: languageMap.get(group.languageCode) ?? group.languageCode,
@@ -891,9 +884,7 @@ async function buildFilterMetadata(userId: string): Promise<SubmissionFilterMeta
   };
 }
 
-function ensureContestShareAllowed(
-  contest: { startsAt: Date; endsAt: Date } | null,
-) {
+function ensureContestShareAllowed(contest: { startsAt: Date; endsAt: Date } | null) {
   if (!contest) {
     return;
   }

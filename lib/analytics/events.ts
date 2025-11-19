@@ -208,6 +208,7 @@ type AnalyticsPayloadDefinitions = {
   };
 };
 
-export type AnalyticsPayload<TName extends AnalyticsEventName> = TName extends keyof AnalyticsPayloadDefinitions
-  ? AnalyticsPayloadDefinitions[TName]
-  : BasePayload;
+export type AnalyticsPayload<TName extends AnalyticsEventName> =
+  TName extends keyof AnalyticsPayloadDefinitions
+    ? AnalyticsPayloadDefinitions[TName]
+    : BasePayload;

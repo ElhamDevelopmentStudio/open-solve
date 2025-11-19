@@ -90,7 +90,10 @@ export function AdminProblemsClient({ initialData }: { initialData: ProblemListR
               className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
             />
           </div>
-          <Select value={stateFilter} onValueChange={(value) => setStateFilter(value as ProblemState | "all")}>
+          <Select
+            value={stateFilter}
+            onValueChange={(value) => setStateFilter(value as ProblemState | "all")}
+          >
             <SelectTrigger className="sm:w-40">
               <SelectValue placeholder="State" />
             </SelectTrigger>

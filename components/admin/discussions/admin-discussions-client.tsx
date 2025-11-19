@@ -85,7 +85,10 @@ export function AdminDiscussionsClient({
               placeholder="Search title, content, slug"
               className="h-9 w-full sm:w-52"
             />
-            <Select value={stateFilter} onValueChange={(value) => setStateFilter(value as DiscussionState | "all")}>
+            <Select
+              value={stateFilter}
+              onValueChange={(value) => setStateFilter(value as DiscussionState | "all")}
+            >
               <SelectTrigger className="h-9 w-full sm:w-40">
                 <SelectValue placeholder="State" />
               </SelectTrigger>
@@ -102,7 +105,10 @@ export function AdminDiscussionsClient({
         </CardHeader>
         <CardContent className="space-y-4">
           {threads.map((thread) => (
-            <div key={thread.id} className="rounded-xl border border-border/60 bg-background/70 p-4">
+            <div
+              key={thread.id}
+              className="rounded-xl border border-border/60 bg-background/70 p-4"
+            >
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="font-semibold">{thread.title ?? "(untitled)"}</p>
@@ -122,7 +128,8 @@ export function AdminDiscussionsClient({
               <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{thread.content}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span>
-                  Last activity {formatDistanceToNow(new Date(thread.lastActivityAt), { addSuffix: true })}
+                  Last activity{" "}
+                  {formatDistanceToNow(new Date(thread.lastActivityAt), { addSuffix: true })}
                 </span>
                 {thread.containsSpoiler ? <Badge variant="secondary">Spoiler</Badge> : null}
                 {thread.isLocked ? <Badge variant="secondary">Locked</Badge> : null}
@@ -151,7 +158,11 @@ export function AdminDiscussionsClient({
                 >
                   {thread.isLocked ? "Unlock" : "Lock"}
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => deleteThread.mutate({ discussionId: thread.id })}>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => deleteThread.mutate({ discussionId: thread.id })}
+                >
                   Remove
                 </Button>
               </div>
@@ -215,7 +226,9 @@ export function AdminDiscussionsClient({
               </div>
             </div>
           ))}
-          {reports.length === 0 ? <p className="text-sm text-muted-foreground">No open reports.</p> : null}
+          {reports.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No open reports.</p>
+          ) : null}
         </CardContent>
       </Card>
     </div>

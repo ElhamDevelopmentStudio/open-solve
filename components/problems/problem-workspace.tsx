@@ -20,11 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -35,12 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSubmissionRealtime } from "@/hooks/use-submission-realtime";
@@ -54,7 +45,11 @@ import {
   submissionHistoryQueryOptions,
 } from "@/lib/react-query/policies";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
-import type { SampleRunResult, SubmissionDetailPayload, SubmissionHistoryEntry } from "@/lib/submissions/types";
+import type {
+  SampleRunResult,
+  SubmissionDetailPayload,
+  SubmissionHistoryEntry,
+} from "@/lib/submissions/types";
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
 import { trpc } from "@/lib/trpc/client";
@@ -79,7 +74,7 @@ import {
 } from "hugeicons-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type WorkspaceResult =
@@ -132,7 +127,8 @@ export function ProblemWorkspace({
     }),
     [contestContext?.contestId, problem.id],
   );
-  const examModeClass = contestGuard.enabled && contestGuard.examMode.disableSelection ? "exam-mode-locked" : "";
+  const examModeClass =
+    contestGuard.enabled && contestGuard.examMode.disableSelection ? "exam-mode-locked" : "";
 
   const languageOptions = useMemo(() => {
     if (problem.languages.length > 0) {
@@ -201,7 +197,9 @@ export function ProblemWorkspace({
   const activeCode = codeByLanguage[activeLanguage] ?? getDefaultCodeStub(activeLanguage);
   const editorTheme =
     preferences.theme === "system"
-      ? (resolvedTheme === "dark" ? "dark" : "light")
+      ? resolvedTheme === "dark"
+        ? "dark"
+        : "light"
       : preferences.theme;
 
   const draftKey = useMemo(
@@ -222,7 +220,9 @@ export function ProblemWorkspace({
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(draftKey);
     if (stored) {
-      setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: stored }));
+      startTransition(() =>
+        setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: stored })),
+      );
     }
   }, [draftKey, activeLanguage]);
 
@@ -243,13 +243,13 @@ export function ProblemWorkspace({
     if (autosaveTimeout.current) {
       clearTimeout(autosaveTimeout.current);
     }
-    setAutosaveState("saving");
+    startTransition(() => setAutosaveState("saving"));
     autosaveTimeout.current = setTimeout(() => {
       try {
         window.localStorage.setItem(draftKey, activeCode);
-        setAutosaveState("saved");
+        startTransition(() => setAutosaveState("saved"));
       } catch {
-        setAutosaveState("idle");
+        startTransition(() => setAutosaveState("idle"));
       }
     }, 2_000);
     return () => {
@@ -283,25 +283,6 @@ export function ProblemWorkspace({
       channel.close();
     };
   }, [problem.id, clientId, userId, activeLanguage]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handler = (event: KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey)) return;
-      if (event.key.toLowerCase() === "s") {
-        event.preventDefault();
-        handleSaveDraft("manual");
-      } else if (event.key === "Enter" && event.shiftKey) {
-        event.preventDefault();
-        handleSubmit();
-      } else if (event.key === "Enter") {
-        event.preventDefault();
-        handleRun();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  });
 
   useEffect(() => {
     analytics.registerEditorOpen();
@@ -374,12 +355,11 @@ export function ProblemWorkspace({
     onSuccess: ({ submissionId }) => {
       setCurrentSubmissionId(submissionId);
       setViewMode("submission");
-      const intro =
-        manualOnly
-          ? ["Submission queued for manual review.", "A curator will respond once it is scored."]
-          : requiresManualReview
-            ? ["Auto judge running…", "Manual review will follow once auto checks finish."]
-            : ["Submission queued…", "Judge will update shortly."];
+      const intro = manualOnly
+        ? ["Submission queued for manual review.", "A curator will respond once it is scored."]
+        : requiresManualReview
+          ? ["Auto judge running…", "Manual review will follow once auto checks finish."]
+          : ["Submission queued…", "Judge will update shortly."];
       setConsoleLines(intro);
       invalidateTags(queryClient, ["submissions"]);
     },
@@ -407,7 +387,7 @@ export function ProblemWorkspace({
   useEffect(() => {
     if (!submissionDetailQuery.data) return;
     const payload: WorkspaceResult = { ...submissionDetailQuery.data, kind: "submission" };
-    setConsoleLines(payload.console);
+    startTransition(() => setConsoleLines(payload.console));
     const finalVerdict = payload.verdictCode ?? payload.summary?.verdictCode;
     if (finalVerdict === "AC" || finalVerdict === "MANUAL_ACCEPTED") {
       maybeCelebrate(userId, problem.id, historyQuery.data?.entries ?? []);
@@ -415,9 +395,16 @@ export function ProblemWorkspace({
     }
     const pendingStatuses = ["QUEUED", "RUNNING", "RETRYING", "MANUAL_PENDING"];
     if (!pendingStatuses.includes(payload.status)) {
-      setLastSubmission(payload);
+      startTransition(() => setLastSubmission(payload));
     }
-  }, [analytics, activeLanguage, submissionDetailQuery.data, historyQuery.data, problem.id, userId]);
+  }, [
+    analytics,
+    activeLanguage,
+    submissionDetailQuery.data,
+    historyQuery.data,
+    problem.id,
+    userId,
+  ]);
 
   const handleLanguageChange = useCallback(
     (next: SupportedLanguage) => {
@@ -441,14 +428,14 @@ export function ProblemWorkspace({
     analytics.incrementRunCount();
     runCounterRef.current += 1;
     const timeSinceOpen = Math.round(timestamp() - editorOpenedAtRef.current);
-      trackAnalyticsEvent(
-        "editor.run_clicked",
-        {
-          runIndex: runCounterRef.current,
-          timeSinceEditorOpenMs: timeSinceOpen,
-        },
-        { ...baseAnalyticsContext, languageCode: activeLanguage },
-      );
+    trackAnalyticsEvent(
+      "editor.run_clicked",
+      {
+        runIndex: runCounterRef.current,
+        timeSinceEditorOpenMs: timeSinceOpen,
+      },
+      { ...baseAnalyticsContext, languageCode: activeLanguage },
+    );
     if (isOffline) {
       const offlineResult = simulateSampleRun({
         problemId: problem.id,
@@ -466,10 +453,7 @@ export function ProblemWorkspace({
       const enriched: WorkspaceResult = { ...offlineResult, kind: "sample" };
       setSampleResult(enriched);
       setViewMode("run");
-      setConsoleLines([
-        "Offline mode enabled — using local simulator.",
-        ...offlineResult.console,
-      ]);
+      setConsoleLines(["Offline mode enabled — using local simulator.", ...offlineResult.console]);
       return;
     }
     runSample.mutate({
@@ -568,10 +552,27 @@ export function ProblemWorkspace({
     [session?.user, touchActivity, saveDraftMutation, problem.id, activeLanguage, activeCode],
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey)) return;
+      if (event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        handleSaveDraft("manual");
+      } else if (event.key === "Enter" && event.shiftKey) {
+        event.preventDefault();
+        handleSubmit();
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        handleRun();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleRun, handleSubmit, handleSaveDraft]);
+
   const activeResult =
-    viewMode === "run"
-      ? sampleResult
-      : currentSubmissionResult ?? lastSubmission;
+    viewMode === "run" ? sampleResult : (currentSubmissionResult ?? lastSubmission);
 
   return (
     <TooltipProvider>
@@ -600,10 +601,7 @@ export function ProblemWorkspace({
               <BookOpen01Icon className="h-4 w-4" strokeWidth={2} />
               Statement
             </Button>
-            <PreferencesMenu
-              preferences={preferences}
-              onChange={setPreferences}
-            />
+            <PreferencesMenu preferences={preferences} onChange={setPreferences} />
           </div>
         </div>
 
@@ -635,7 +633,10 @@ export function ProblemWorkspace({
                 Anti-cheat guard active
               </span>
               {contestGuard.status ? (
-                <Badge variant="outline" className="rounded-full border-sky-500/40 text-[10px] uppercase text-sky-500">
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-sky-500/40 text-[10px] uppercase text-sky-500"
+                >
                   {contestGuard.status.toLowerCase()}
                 </Badge>
               ) : null}
@@ -668,25 +669,25 @@ export function ProblemWorkspace({
                 onLanguageChange={handleLanguageChange}
                 code={activeCode}
                 onChange={(next) => {
-              touchActivity();
-              setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
-            }}
-            onCopy={handleCopy}
-            onReset={handleReset}
-            onSave={() => handleSaveDraft("manual")}
-            appearance={editorTheme === "dark" ? "dark" : "light"}
-            preferences={preferences}
-            customInput={customInput}
-            onInputChange={(value) => {
-              touchActivity();
-              setCustomInput(value);
-            }}
-            onPaste={contestGuard.recordPaste}
-            autosaveState={autosaveState}
-            runInProgress={runSample.isPending}
-            submitInProgress={createSubmission.isPending}
-            onRun={handleRun}
-            onSubmit={handleSubmit}
+                  touchActivity();
+                  setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: next }));
+                }}
+                onCopy={handleCopy}
+                onReset={handleReset}
+                onSave={() => handleSaveDraft("manual")}
+                appearance={editorTheme === "dark" ? "dark" : "light"}
+                preferences={preferences}
+                customInput={customInput}
+                onInputChange={(value) => {
+                  touchActivity();
+                  setCustomInput(value);
+                }}
+                onPaste={contestGuard.recordPaste}
+                autosaveState={autosaveState}
+                runInProgress={runSample.isPending}
+                submitInProgress={createSubmission.isPending}
+                onRun={handleRun}
+                onSubmit={handleSubmit}
                 consoleLines={consoleLines}
               />
             </ResizablePanel>
@@ -699,7 +700,11 @@ export function ProblemWorkspace({
                 result={activeResult}
                 submissionHistory={historyQuery.data?.entries ?? []}
                 onSelectSubmission={(submissionId) => {
-                  trackAnalyticsEvent("submission.timeline_open", { submissionId }, baseAnalyticsContext);
+                  trackAnalyticsEvent(
+                    "submission.timeline_open",
+                    { submissionId },
+                    baseAnalyticsContext,
+                  );
                   setCurrentSubmissionId(submissionId);
                   setViewMode("submission");
                 }}
@@ -732,10 +737,13 @@ export function ProblemWorkspace({
   );
 }
 
-
 function EditorColumn(props: {
   activeLanguage: SupportedLanguage;
-  languageOptions: Array<{ code: SupportedLanguage; displayName: string; fileExtension: string | null }>;
+  languageOptions: Array<{
+    code: SupportedLanguage;
+    displayName: string;
+    fileExtension: string | null;
+  }>;
   onLanguageChange: (language: SupportedLanguage) => void;
   code: string;
   onChange: (value: string) => void;
@@ -779,7 +787,10 @@ function EditorColumn(props: {
     <div className="flex h-full flex-col gap-4">
       <div className="rounded-2xl border border-white/10 bg-background/80 p-4 shadow-inner shadow-black/5">
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={activeLanguage} onValueChange={(value) => onLanguageChange(value as SupportedLanguage)}>
+          <Select
+            value={activeLanguage}
+            onValueChange={(value) => onLanguageChange(value as SupportedLanguage)}
+          >
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
@@ -844,11 +855,19 @@ function EditorColumn(props: {
           </div>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-end">
             <Button variant="outline" className="gap-2" onClick={onRun} disabled={runInProgress}>
-              {runInProgress ? <Spinner className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" strokeWidth={2} />}
+              {runInProgress ? (
+                <Spinner className="h-4 w-4" />
+              ) : (
+                <PlayIcon className="h-4 w-4" strokeWidth={2} />
+              )}
               Run Samples
             </Button>
             <Button className="gap-2" onClick={onSubmit} disabled={submitInProgress}>
-              {submitInProgress ? <Spinner className="h-4 w-4" /> : <SentIcon className="h-4 w-4" strokeWidth={2} />}
+              {submitInProgress ? (
+                <Spinner className="h-4 w-4" />
+              ) : (
+                <SentIcon className="h-4 w-4" strokeWidth={2} />
+              )}
               Submit
             </Button>
           </div>
@@ -909,7 +928,10 @@ function SidePanel(props: {
   } = props;
   return (
     <div className="flex h-full flex-col gap-4">
-      <Tabs value={viewMode} onValueChange={(value) => onViewModeChange(value as "run" | "submission")}>
+      <Tabs
+        value={viewMode}
+        onValueChange={(value) => onViewModeChange(value as "run" | "submission")}
+      >
         <TabsList className="w-full justify-between">
           <TabsTrigger value="run">Run output</TabsTrigger>
           <TabsTrigger value="submission">Judge</TabsTrigger>
@@ -927,19 +949,29 @@ function SidePanel(props: {
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
           <TabsTrigger value="drafts">My Code</TabsTrigger>
         </TabsList>
-        <TabsContent value="description" className="rounded-2xl border border-white/5 bg-background/60 p-4 text-sm text-muted-foreground">
+        <TabsContent
+          value="description"
+          className="rounded-2xl border border-white/5 bg-background/60 p-4 text-sm text-muted-foreground"
+        >
           <ScrollArea className="h-64">
             <p className="whitespace-pre-line text-foreground">{problem.content.statement}</p>
           </ScrollArea>
         </TabsContent>
-        <TabsContent value="editorial" className="rounded-2xl border border-white/5 bg-background/60 p-4">
+        <TabsContent
+          value="editorial"
+          className="rounded-2xl border border-white/5 bg-background/60 p-4"
+        >
           {problem.editorialIsReleased && problem.content.editorial ? (
             <ScrollArea className="h-64 text-sm text-foreground">
               <p className="whitespace-pre-line">{problem.content.editorial}</p>
             </ScrollArea>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Editorial locked{problem.editorialReleaseAt ? ` until ${format(new Date(problem.editorialReleaseAt), "PPP p")}` : ""}. View the full write-up once it is released.
+              Editorial locked
+              {problem.editorialReleaseAt
+                ? ` until ${format(new Date(problem.editorialReleaseAt), "PPP p")}`
+                : ""}
+              . View the full write-up once it is released.
             </p>
           )}
         </TabsContent>
@@ -1013,9 +1045,7 @@ function SidePanel(props: {
 function ResultPanel({ result }: { result: WorkspaceResult | null }) {
   if (!result) {
     return (
-      <div className="text-sm text-muted-foreground">
-        Run samples or submit to see verdicts.
-      </div>
+      <div className="text-sm text-muted-foreground">Run samples or submit to see verdicts.</div>
     );
   }
 
@@ -1071,7 +1101,11 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
               >
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-foreground">Test #{test.ordinal}</p>
-                <SubmissionStatusBadge verdict={test.verdictCode} status={test.status} size="sm" />
+                  <SubmissionStatusBadge
+                    verdict={test.verdictCode}
+                    status={test.status}
+                    size="sm"
+                  />
                 </div>
                 {test.inputPreview && (
                   <p className="mt-2 text-muted-foreground">
@@ -1080,13 +1114,10 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
                 )}
                 {test.actualOutput && (
                   <p className="mt-1 text-muted-foreground">
-                    <span className="font-semibold text-foreground">Out:</span>{" "}
-                    {test.actualOutput}
+                    <span className="font-semibold text-foreground">Out:</span> {test.actualOutput}
                   </p>
                 )}
-                {test.stderr ? (
-                  <p className="mt-1 text-rose-400">stderr: {test.stderr}</p>
-                ) : null}
+                {test.stderr ? <p className="mt-1 text-rose-400">stderr: {test.stderr}</p> : null}
               </motion.div>
             ))}
           </div>
@@ -1133,9 +1164,7 @@ function PreferencesMenu({
           min={12}
           max={20}
           value={preferences.fontSize}
-          onChange={(event) =>
-            onChange({ ...preferences, fontSize: Number(event.target.value) })
-          }
+          onChange={(event) => onChange({ ...preferences, fontSize: Number(event.target.value) })}
         />
         <DropdownMenuSeparator />
         <div className="flex items-center justify-between text-xs">

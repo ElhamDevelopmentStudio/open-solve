@@ -42,7 +42,8 @@ export class JudgeWorker {
       channel.ack(msg);
     } catch (error) {
       const submissionId =
-        msg.properties.messageId ?? (() => {
+        msg.properties.messageId ??
+        (() => {
           try {
             return JSON.parse(msg.content.toString()).submissionId;
           } catch {

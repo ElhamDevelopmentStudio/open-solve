@@ -44,7 +44,7 @@ export function ProblemFiltersPanel({
   showStatusFilters = true,
 }: ProblemFiltersPanelProps) {
   const [tagQuery, setTagQuery] = useState("");
-  const tags = metadata?.tags ?? [];
+  const tags = useMemo(() => metadata?.tags ?? [], [metadata?.tags]);
   const filteredTags = useMemo(() => {
     if (!tagQuery) return tags;
     return tags.filter((tag) => tag.name.toLowerCase().includes(tagQuery.toLowerCase()));
@@ -143,7 +143,9 @@ export function ProblemFiltersPanel({
                   onClick={() => toggleStatus(status)}
                   className={cn(
                     "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:scale-105",
-                    active ? statusTone[status] : "border-border bg-background text-muted-foreground hover:bg-muted",
+                    active
+                      ? statusTone[status]
+                      : "border-border bg-background text-muted-foreground hover:bg-muted",
                   )}
                 >
                   {active && <Tick02Icon className="mr-1.5 h-3.5 w-3.5" strokeWidth={2.5} />}
@@ -203,9 +205,7 @@ export function ProblemFiltersPanel({
         <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3">
           <div className="flex-1">
             <p className="text-sm font-medium">Only problems with editorials</p>
-            <p className="text-xs text-muted-foreground">
-              Curated solutions included
-            </p>
+            <p className="text-xs text-muted-foreground">Curated solutions included</p>
           </div>
           <Switch
             checked={filters.onlyWithEditorial}
@@ -236,7 +236,9 @@ function FilterCard({
     <section className="space-y-3">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">{title}</p>
-        {description ? <p className="text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
+        {description ? (
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+        ) : null}
       </div>
       <div className="space-y-2">{children}</div>
     </section>

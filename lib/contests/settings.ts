@@ -115,9 +115,8 @@ export const defaultContestSettings: ContestSettings = {
   },
 };
 
-type DeepPartial<T> = T extends Record<string, unknown>
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : T | undefined;
+type DeepPartial<T> =
+  T extends Record<string, unknown> ? { [K in keyof T]?: DeepPartial<T[K]> } : T | undefined;
 
 function deepMerge<T extends Record<string, unknown>>(base: T, override: DeepPartial<T>): T {
   const output: Record<string, unknown> = { ...base };
@@ -138,7 +137,10 @@ function deepMerge<T extends Record<string, unknown>>(base: T, override: DeepPar
       typeof baseValue === "object" &&
       !Array.isArray(baseValue)
     ) {
-      output[key] = deepMerge(baseValue as Record<string, unknown>, value as Record<string, unknown>);
+      output[key] = deepMerge(
+        baseValue as Record<string, unknown>,
+        value as Record<string, unknown>,
+      );
       continue;
     }
     output[key] = value as unknown;
@@ -156,5 +158,8 @@ export function resolveContestSettings(settings?: unknown): ContestSettings {
   if (!parsed.success) {
     return defaultContestSettings;
   }
-  return deepMerge(defaultContestSettings, parsed.data as DeepPartial<ContestSettings>) as ContestSettings;
+  return deepMerge(
+    defaultContestSettings,
+    parsed.data as DeepPartial<ContestSettings>,
+  ) as ContestSettings;
 }

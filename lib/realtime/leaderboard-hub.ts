@@ -45,7 +45,11 @@ export class LeaderboardRealtimeHub {
       return;
     }
     const unique = Array.from(new Set(windows));
-    const payload = JSON.stringify({ type: "update", windows: unique, at: new Date().toISOString() } satisfies LeaderboardServerMessage);
+    const payload = JSON.stringify({
+      type: "update",
+      windows: unique,
+      at: new Date().toISOString(),
+    } satisfies LeaderboardServerMessage);
     for (const ws of this.clients) {
       if (ws.readyState !== ws.OPEN) {
         continue;
@@ -110,6 +114,5 @@ export const getLeaderboardRealtimeHub = () => {
 export const hasLeaderboardRealtimeHub = () => Boolean(globalThis.__leaderboardHub);
 
 declare global {
-   
   var __leaderboardHub: LeaderboardRealtimeHub | undefined;
 }

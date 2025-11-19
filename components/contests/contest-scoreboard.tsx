@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { contestDetailQueryOptions, contestStandingsQueryOptions } from "@/lib/react-query/policies";
+import {
+  contestDetailQueryOptions,
+  contestStandingsQueryOptions,
+} from "@/lib/react-query/policies";
 import type { ContestStandingProblemCell } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -88,13 +91,17 @@ export const ContestScoreboard = ({ slug }: ContestScoreboardProps) => {
         </div>
         {scoreboardMeta ? (
           <p className="text-sm text-muted-foreground">
-            Last updated {formatDistanceToNow(new Date(scoreboardMeta.generatedAt), { addSuffix: true })}
+            Last updated{" "}
+            {formatDistanceToNow(new Date(scoreboardMeta.generatedAt), { addSuffix: true })}
           </p>
         ) : null}
         {scoreboardMeta?.frozen ? (
           <div className="rounded-xl border border-amber-400/40 bg-amber-50/60 p-3 text-xs text-amber-700">
             Scoreboard frozen — final standings will unlock{" "}
-            {contest.freezeAt ? formatDistanceToNow(new Date(contest.freezeAt), { addSuffix: true }) : "after the contest"}.
+            {contest.freezeAt
+              ? formatDistanceToNow(new Date(contest.freezeAt), { addSuffix: true })
+              : "after the contest"}
+            .
           </div>
         ) : null}
       </div>
@@ -122,7 +129,10 @@ export const ContestScoreboard = ({ slug }: ContestScoreboardProps) => {
                       <th className="px-4 py-3">Penalty</th>
                     ) : null}
                     {scoreboardProblems.map((problem) => (
-                      <th key={problem.id} className="px-3 py-3 text-center text-[10px] font-semibold">
+                      <th
+                        key={problem.id}
+                        className="px-3 py-3 text-center text-[10px] font-semibold"
+                      >
                         {problem.label}
                       </th>
                     ))}

@@ -17,8 +17,10 @@ export const profileRouter = router({
       }
       return profile;
     }),
-  updateSettings: protectedProcedure.input(profileSettingsSchema).mutation(async ({ ctx, input }) => {
-    await updateProfileSettings(ctx.user.id, input);
-    return { success: true };
-  }),
+  updateSettings: protectedProcedure
+    .input(profileSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      await updateProfileSettings(ctx.user.id, input);
+      return { success: true };
+    }),
 });

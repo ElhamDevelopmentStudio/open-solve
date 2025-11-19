@@ -3,7 +3,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc/client";
@@ -86,8 +92,7 @@ export const ContestClarifications = ({ slug }: ContestClarificationsProps) => {
   const contest = detail.data.contest;
   const viewerRegistration = detail.data.viewerRegistration;
   const canSubmitClarification =
-    Boolean(viewerRegistration) &&
-    (contest.state === "UPCOMING" || contest.state === "RUNNING");
+    Boolean(viewerRegistration) && (contest.state === "UPCOMING" || contest.state === "RUNNING");
 
   const clarificationList = clarifications.data ?? [];
 
@@ -267,11 +272,10 @@ const ClarificationStatusBadge = ({ status }: { status: string }) => {
     <span
       className={cn(
         "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
-        styles[status] ?? "bg-muted text-muted-foreground"
+        styles[status] ?? "bg-muted text-muted-foreground",
       )}
     >
       {labelMap[status] ?? status.toLowerCase()}
     </span>
   );
 };
-

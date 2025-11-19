@@ -48,7 +48,9 @@ function Hero({ overview }: { overview: OverviewCard[] }) {
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">OpenSolve Rankings</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          OpenSolve Rankings
+        </p>
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Leaderboards</h1>
         <p className="max-w-2xl text-base text-muted-foreground">
           Discover the most consistent problem solvers across weekly, monthly, and all-time windows.
@@ -58,8 +60,13 @@ function Hero({ overview }: { overview: OverviewCard[] }) {
         {overview.map((window) => (
           <div key={window.window} className="premium-card space-y-4 rounded-2xl p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold capitalize">{window.window.replace("_", " ")}</h3>
-              <Badge variant="secondary" className="rounded-full text-[10px] font-semibold uppercase">
+              <h3 className="text-lg font-semibold capitalize">
+                {window.window.replace("_", " ")}
+              </h3>
+              <Badge
+                variant="secondary"
+                className="rounded-full text-[10px] font-semibold uppercase"
+              >
                 Top 3
               </Badge>
             </div>
@@ -68,7 +75,10 @@ function Hero({ overview }: { overview: OverviewCard[] }) {
                 <p className="py-4 text-center text-muted-foreground">No data yet</p>
               ) : (
                 window.hero.map((entry, idx) => (
-                  <div key={entry.user.id} className="flex items-center justify-between rounded-xl border border-border/50 bg-card/30 p-3">
+                  <div
+                    key={entry.user.id}
+                    className="flex items-center justify-between rounded-xl border border-border/50 bg-card/30 p-3"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-muted-foreground">#{idx + 1}</span>
                       <span className="font-medium">@{entry.user.handle}</span>
@@ -79,7 +89,9 @@ function Hero({ overview }: { overview: OverviewCard[] }) {
               )}
             </div>
             <Button variant="ghost" size="sm" asChild className="w-full justify-between rounded-xl">
-              <Link href={`/leaderboards/${window.window === "all_time" ? "global" : window.window}`}>
+              <Link
+                href={`/leaderboards/${window.window === "all_time" ? "global" : window.window}`}
+              >
                 View Full Board
                 <span aria-hidden>→</span>
               </Link>
@@ -106,7 +118,13 @@ function Callouts() {
         </p>
         <div className="flex flex-wrap gap-2">
           {(["easy", "medium", "hard"] as const).map((level) => (
-            <Button key={level} variant="outline" size="sm" asChild className="rounded-xl capitalize">
+            <Button
+              key={level}
+              variant="outline"
+              size="sm"
+              asChild
+              className="rounded-xl capitalize"
+            >
               <Link href={`/leaderboards/difficulty/${level}`}>{level}</Link>
             </Button>
           ))}

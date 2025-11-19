@@ -31,15 +31,24 @@ const tabOptions = [
   { value: "meta", label: "Meta" },
 ];
 
-export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: GlobalDiscussionsClientProps) {
+export function GlobalDiscussionsClient({
+  tagOptions,
+  difficultyOptions,
+}: GlobalDiscussionsClientProps) {
   const [tab, setTab] = useQueryState(
     "tab",
     parseAsStringLiteral(["trending", "latest", "help", "meta"]).withDefault("trending"),
   );
   const [tagParam, setTagParam] = useQueryState("tags", { defaultValue: "" });
   const [difficultyParam, setDifficultyParam] = useQueryState("difficulty", { defaultValue: "" });
-  const selectedTags = useMemo(() => (tagParam ? tagParam.split(",").filter(Boolean) : []), [tagParam]);
-  const selectedDifficulty = useMemo(() => (difficultyParam ? difficultyParam.split(",").filter(Boolean) : []), [difficultyParam]);
+  const selectedTags = useMemo(
+    () => (tagParam ? tagParam.split(",").filter(Boolean) : []),
+    [tagParam],
+  );
+  const selectedDifficulty = useMemo(
+    () => (difficultyParam ? difficultyParam.split(",").filter(Boolean) : []),
+    [difficultyParam],
+  );
 
   const toggleTag = (slug: string) => {
     const next = selectedTags.includes(slug)
@@ -76,7 +85,9 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
       <section className="premium-card space-y-5 rounded-2xl p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Start a Topic</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Start a Topic
+            </p>
             <h2 className="text-2xl font-semibold">Community Discussions</h2>
           </div>
           <Button variant="ghost" size="sm" className="gap-2 rounded-xl" onClick={resetFilters}>
@@ -92,7 +103,10 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
       </section>
 
       <section className="space-y-5">
-        <Tabs value={tab} onValueChange={(value) => setTab(value as "trending" | "latest" | "help" | "meta")}>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as "trending" | "latest" | "help" | "meta")}
+        >
           <TabsList className="grid w-full grid-cols-4 rounded-xl">
             {tabOptions.map((option) => (
               <TabsTrigger key={option.value} value={option.value} className="rounded-lg">
@@ -153,12 +167,22 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
             </DropdownMenuContent>
           </DropdownMenu>
           {selectedTags.map((slug) => (
-            <Badge key={slug} variant="secondary" className="cursor-pointer rounded-full" onClick={() => toggleTag(slug)}>
+            <Badge
+              key={slug}
+              variant="secondary"
+              className="cursor-pointer rounded-full"
+              onClick={() => toggleTag(slug)}
+            >
               #{slug}
             </Badge>
           ))}
           {selectedDifficulty.map((value) => (
-            <Badge key={value} variant="outline" className="cursor-pointer rounded-full" onClick={() => toggleDifficulty(value)}>
+            <Badge
+              key={value}
+              variant="outline"
+              className="cursor-pointer rounded-full"
+              onClick={() => toggleDifficulty(value)}
+            >
               {value}
             </Badge>
           ))}

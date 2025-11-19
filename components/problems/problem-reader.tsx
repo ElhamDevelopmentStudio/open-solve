@@ -3,7 +3,10 @@
 import "katex/dist/katex.min.css";
 
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
-import { ProblemAnalyticsProvider, useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
+import {
+  ProblemAnalyticsProvider,
+  useProblemAnalyticsContext,
+} from "@/components/problems/problem-analytics-provider";
 import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
@@ -22,14 +25,14 @@ import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { 
+import {
   ArrowUpRight01Icon,
   Bookmark01Icon,
   Copy01Icon,
   Flag02Icon,
   Link01Icon,
   Share01Icon,
-  MessageMultiple02Icon
+  MessageMultiple02Icon,
 } from "hugeicons-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -146,8 +149,6 @@ function ProblemReaderContent({
     };
   }, [analytics, sectionEntries]);
 
-
-
   useEffect(() => {
     if (typeof window === "undefined" || typeof performance === "undefined") return;
     const navEntries = performance.getEntriesByType("navigation") as
@@ -214,9 +215,6 @@ function ProblemReaderContent({
     ? Math.round(problem.stats.acceptanceRate * 100)
     : null;
 
-  const progressValue =
-    problem.status === "SOLVED" ? 100 : problem.status === "ATTEMPTED" ? 55 : 20;
-
   const lastSubmissionLabel = problem.lastSubmissionAt
     ? formatDistanceToNow(new Date(problem.lastSubmissionAt), { addSuffix: true })
     : null;
@@ -281,13 +279,16 @@ function ProblemReaderContent({
                   <Link href={`/contests/${contestContext!.contestSlug}`}>Contest overview</Link>
                 </Button>
                 <Button asChild>
-                  <Link href={`/contests/${contestContext!.contestSlug}/scoreboard`}>Scoreboard</Link>
+                  <Link href={`/contests/${contestContext!.contestSlug}/scoreboard`}>
+                    Scoreboard
+                  </Link>
                 </Button>
               </div>
             </div>
             {contestContext?.antiCheat.examMode.enabled ? (
               <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/15 px-4 py-3 text-xs text-amber-700 dark:text-amber-200">
-                Exam mode enabled — context menus and text selection are restricted for this workspace.
+                Exam mode enabled — context menus and text selection are restricted for this
+                workspace.
               </div>
             ) : null}
           </div>
@@ -353,7 +354,10 @@ function ProblemReaderContent({
                 <Flag02Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button variant="outline" size="sm" className="gap-2" asChild>
-                <Link href={`/problems/${problem.slug}/discuss`} onClick={() => analytics.markDiscussOpen()}>
+                <Link
+                  href={`/problems/${problem.slug}/discuss`}
+                  onClick={() => analytics.markDiscussOpen()}
+                >
                   <MessageMultiple02Icon className="h-4 w-4" strokeWidth={2} /> Discuss
                 </Link>
               </Button>
@@ -362,20 +366,17 @@ function ProblemReaderContent({
               </Button>
               {problem.editorialIsReleased ? (
                 <Button variant="ghost" size="sm" asChild>
-                <Link
-                  href={`/problems/${problem.slug}/editorial`}
-                  onClick={() => analytics.markEditorialOpen()}
-                >
-                  Editorial
-                </Link>
-              </Button>
-            ) : null}
+                  <Link
+                    href={`/problems/${problem.slug}/editorial`}
+                    onClick={() => analytics.markEditorialOpen()}
+                  >
+                    Editorial
+                  </Link>
+                </Button>
+              ) : null}
             </div>
             <Button className="flex items-center gap-2" asChild>
-              <a
-                href="#editor"
-                onClick={() => analytics.markSolveClick("header")}
-              >
+              <a href="#editor" onClick={() => analytics.markSolveClick("header")}>
                 Start solving
                 <ArrowUpRight01Icon className="h-4 w-4" strokeWidth={2.5} />
               </a>
@@ -403,7 +404,6 @@ function ProblemReaderContent({
               <ProblemSection id="statement" title="Statement">
                 <Markdown
                   content={problem.content.statement}
-                  slug={problem.slug}
                   problemId={problem.id}
                   field="Statement"
                 />
@@ -414,7 +414,6 @@ function ProblemReaderContent({
               <ProblemSection id="constraints" title="Constraints">
                 <Markdown
                   content={problem.content.constraints}
-                  slug={problem.slug}
                   problemId={problem.id}
                   field="Constraints"
                 />
@@ -429,7 +428,6 @@ function ProblemReaderContent({
                       key={`${sample.input}-${index}`}
                       sample={sample}
                       index={index}
-                      slug={problem.slug}
                       problemId={problem.id}
                     />
                   ))}
@@ -441,7 +439,6 @@ function ProblemReaderContent({
               <ProblemSection id="notes" title="Notes & Hints">
                 <Markdown
                   content={problem.content.hints}
-                  slug={problem.slug}
                   problemId={problem.id}
                   field="Notes"
                 />
@@ -458,7 +455,6 @@ function ProblemReaderContent({
                         <CopyField
                           label="Input"
                           value={test.input}
-                          slug={problem.slug}
                           problemId={problem.id}
                           field={`Sample ${test.ordinal} Input`}
                           isHidden={test.kind === "HIDDEN"}
@@ -466,7 +462,6 @@ function ProblemReaderContent({
                         <CopyField
                           label="Output"
                           value={test.output}
-                          slug={problem.slug}
                           problemId={problem.id}
                           field={`Sample ${test.ordinal} Output`}
                           isHidden={test.kind === "HIDDEN"}
@@ -557,10 +552,7 @@ function ProblemReaderContent({
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>
-          <a
-            href="#editor"
-            onClick={() => analytics.markSolveClick("mobile-sticky")}
-          >
+          <a href="#editor" onClick={() => analytics.markSolveClick("mobile-sticky")}>
             Start solving
           </a>
         </Button>
@@ -655,12 +647,10 @@ function ProblemSection({
 
 function Markdown({
   content,
-  slug,
   problemId,
   field,
 }: {
   content: string;
-  slug: string;
   problemId: string;
   field: string;
 }) {
@@ -709,12 +699,10 @@ function Markdown({
 function SampleCard({
   sample,
   index,
-  slug,
   problemId,
 }: {
   sample: ProblemDetailPayload["content"]["samples"][number];
   index: number;
-  slug: string;
   problemId: string;
 }) {
   return (
@@ -727,14 +715,12 @@ function SampleCard({
         <CopyField
           label="Input"
           value={sample.input}
-          slug={slug}
           problemId={problemId}
           field={`Example ${index + 1} Input`}
         />
         <CopyField
           label="Output"
           value={sample.output}
-          slug={slug}
           problemId={problemId}
           field={`Example ${index + 1} Output`}
         />
@@ -749,14 +735,12 @@ function SampleCard({
 function CopyField({
   label,
   value,
-  slug,
   problemId,
   field,
   isHidden,
 }: {
   label: string;
   value: string;
-  slug: string;
   problemId: string;
   field: string;
   isHidden?: boolean;

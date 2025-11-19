@@ -13,12 +13,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui";
-import {
-  DataTable,
-  DataTableColumn,
-  DataTableColumnHeader,
-} from "@/components/ui/data-table";
-import { cn } from "@/lib/utils";
+import { DataTable, DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
 import { trpc } from "@/lib/trpc/client";
 import type { AppRouter } from "@/lib/trpc/router";
 import type { inferRouterOutputs } from "@trpc/server";

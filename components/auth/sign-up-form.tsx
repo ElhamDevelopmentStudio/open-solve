@@ -111,26 +111,42 @@ export function SignUpForm() {
             <div
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
-                step === 1 ? "border-primary bg-primary text-primary-foreground" : "border-primary bg-background text-primary"
+                step === 1
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-primary bg-background text-primary",
               )}
             >
               {step > 1 ? <CheckCircle2 className="h-4 w-4" /> : "1"}
             </div>
-            <span className={cn("text-sm font-medium", step === 1 ? "text-foreground" : "text-muted-foreground")}>
+            <span
+              className={cn(
+                "text-sm font-medium",
+                step === 1 ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
               Credentials
             </span>
           </div>
-          <div className={cn("h-px flex-1 transition-colors", step > 1 ? "bg-primary" : "bg-border")} />
+          <div
+            className={cn("h-px flex-1 transition-colors", step > 1 ? "bg-primary" : "bg-border")}
+          />
           <div className="flex items-center gap-2">
             <div
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
-                step === 2 ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground"
+                step === 2
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground",
               )}
             >
               {step === 2 ? "2" : <Circle className="h-3 w-3" />}
             </div>
-            <span className={cn("text-sm font-medium", step === 2 ? "text-foreground" : "text-muted-foreground")}>
+            <span
+              className={cn(
+                "text-sm font-medium",
+                step === 2 ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
               Profile
             </span>
           </div>
@@ -145,7 +161,13 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel className="text-sm font-medium">Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="name@company.com" autoComplete="email" className="h-11" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="name@company.com"
+                      autoComplete="email"
+                      className="h-11"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -175,7 +197,11 @@ export function SignUpForm() {
               )}
             />
 
-            <Button type="button" className="h-11 w-full font-medium" onClick={handleContinueToStep2}>
+            <Button
+              type="button"
+              className="h-11 w-full font-medium"
+              onClick={handleContinueToStep2}
+            >
               Continue to profile
             </Button>
           </div>
@@ -190,7 +216,13 @@ export function SignUpForm() {
                     Display name <span className="text-muted-foreground">(optional)</span>
                   </FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder="Your full name" autoComplete="name" className="h-11" {...field} />
+                    <Input
+                      type="text"
+                      placeholder="Your full name"
+                      autoComplete="name"
+                      className="h-11"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -206,7 +238,13 @@ export function SignUpForm() {
                     Username <span className="text-muted-foreground">(optional)</span>
                   </FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder="unique-handle" autoComplete="username" className="h-11" {...field} />
+                    <Input
+                      type="text"
+                      placeholder="unique-handle"
+                      autoComplete="username"
+                      className="h-11"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
@@ -225,7 +263,11 @@ export function SignUpForm() {
               >
                 Back
               </Button>
-              <Button type="submit" className="h-11 flex-1 font-medium" disabled={signUpMutation.isPending}>
+              <Button
+                type="submit"
+                className="h-11 flex-1 font-medium"
+                disabled={signUpMutation.isPending}
+              >
                 {signUpMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -242,8 +284,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-
-
-
-
-

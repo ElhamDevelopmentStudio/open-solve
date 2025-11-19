@@ -13,10 +13,16 @@ export default async function SubmissionDetailPage({
   try {
     submission = await caller.submissions.get({ submissionId: resolved.submissionId });
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;
   }
-  return <SubmissionDetailClient submissionId={resolved.submissionId} initialSubmission={submission} />;
+  return (
+    <SubmissionDetailClient submissionId={resolved.submissionId} initialSubmission={submission} />
+  );
 }

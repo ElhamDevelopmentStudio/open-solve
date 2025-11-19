@@ -1,4 +1,7 @@
-import { ingestContestAntiCheatEvents, resolveContestAntiCheatContext } from "@/lib/contests/anti-cheat/service";
+import {
+  ingestContestAntiCheatEvents,
+  resolveContestAntiCheatContext,
+} from "@/lib/contests/anti-cheat/service";
 import type { ContestAntiCheatClientEvent } from "@/lib/contests/anti-cheat/types";
 import { getSession } from "@/lib/auth/session";
 import { logger } from "@/lib/logger";
@@ -60,10 +63,7 @@ const eventSchema = z.discriminatedUnion("type", [
 
 const payloadSchema = z.array(eventSchema).min(1).max(64);
 
-export async function POST(
-  request: Request,
-  { params }: { params: { contestId: string } },
-) {
+export async function POST(request: Request, { params }: { params: { contestId: string } }) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });

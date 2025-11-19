@@ -123,7 +123,6 @@ Phase 7 introduces a standalone judge worker that consumes RabbitMQ queues and r
    ```
 
 2. **Start RabbitMQ + worker**
-
    - Dev mode: `docker compose --profile judge up rabbitmq judge-worker`
    - Bare metal: run `npm run judge:worker` alongside `npm run dev`
 

@@ -82,12 +82,7 @@ async function rabbitHealthCheck(): Promise<HealthCheck> {
 }
 
 async function objectStorageHealthCheck(): Promise<HealthCheck> {
-  if (
-    !env.MINIO_ENDPOINT ||
-    !env.MINIO_BUCKET ||
-    !env.MINIO_ACCESS_KEY ||
-    !env.MINIO_SECRET_KEY
-  ) {
+  if (!env.MINIO_ENDPOINT || !env.MINIO_BUCKET || !env.MINIO_ACCESS_KEY || !env.MINIO_SECRET_KEY) {
     return {
       healthy: true,
       optional: true,

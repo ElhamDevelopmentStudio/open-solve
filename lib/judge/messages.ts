@@ -24,6 +24,5 @@ export const isJudgeSubmissionMessage = (
   payload: JudgeQueueMessage,
 ): payload is JudgeSubmissionMessage => "problemVersionId" in payload;
 
-export const isManualJudgeMessage = (
-  payload: JudgeQueueMessage,
-): payload is ManualJudgeMessage => "reason" in payload && !("problemVersionId" in payload);
+export const isManualJudgeMessage = (payload: JudgeQueueMessage): payload is ManualJudgeMessage =>
+  "reason" in payload && !("problemVersionId" in payload);

@@ -19,14 +19,14 @@
 
 ## Commands
 
-| Layer         | Command                         | Notes |
-|---------------|---------------------------------|-------|
-| Lint          | `npm run lint`                  | Targets all wizard + API files touched in Phase 13. |
-| Format        | `npm run format:check`          | Applies Prettier rules. |
-| Type check    | `npm run typecheck`             | Uses `tsconfig.json` to catch schema drift. |
-| Unit/integration | `npm run test`              | Spins up disposable Prisma schema; `SENSITIVE_DATA_KEY` is injected via `vitest.setup.ts`. |
-| E2E           | `RUN_E2E=true npx playwright test` | Runs smoke spec against the local dev server. |
-| Load          | `k6 run tests/load/contest-surge.k6.ts` | Assumes Rabbit + DB running in the same network. |
+| Layer            | Command                                 | Notes                                                                                      |
+| ---------------- | --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Lint             | `npm run lint`                          | Targets all wizard + API files touched in Phase 13.                                        |
+| Format           | `npm run format:check`                  | Applies Prettier rules.                                                                    |
+| Type check       | `npm run typecheck`                     | Uses `tsconfig.json` to catch schema drift.                                                |
+| Unit/integration | `npm run test`                          | Spins up disposable Prisma schema; `SENSITIVE_DATA_KEY` is injected via `vitest.setup.ts`. |
+| E2E              | `RUN_E2E=true npx playwright test`      | Runs smoke spec against the local dev server.                                              |
+| Load             | `k6 run tests/load/contest-surge.k6.ts` | Assumes Rabbit + DB running in the same network.                                           |
 
 ## Coverage Expectations
 

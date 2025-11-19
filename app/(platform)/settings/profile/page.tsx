@@ -80,12 +80,12 @@ export default function ProfileSettingsPage() {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/uploads/avatar", { method: "POST", body: formData });
-      
+
       if (!res.ok) {
         const { error } = await res.json();
         throw new Error(error || "Upload failed");
       }
-      
+
       const { url } = await res.json();
       form.setValue("avatarUrl", url);
       setPreviewUrl(url);
@@ -274,12 +274,7 @@ export default function ProfileSettingsPage() {
                 <FormItem>
                   <FormLabel className="text-sm font-semibold">Avatar URL</FormLabel>
                   <FormControl>
-                    <Input
-                      type="url"
-                      placeholder="https://..."
-                      className="rounded-xl"
-                      {...field}
-                    />
+                    <Input type="url" placeholder="https://..." className="rounded-xl" {...field} />
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
@@ -320,4 +315,3 @@ export default function ProfileSettingsPage() {
     </div>
   );
 }
-

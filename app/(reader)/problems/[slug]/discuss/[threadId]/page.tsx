@@ -16,14 +16,22 @@ type ProblemThreadPageParams = {
   threadId: string;
 };
 
-export async function generateMetadata({ params }: { params: ProblemThreadPageParams | Promise<ProblemThreadPageParams> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: ProblemThreadPageParams | Promise<ProblemThreadPageParams>;
+}) {
   const { slug } = await params;
   return {
     title: `${slug} • Discussion thread`,
   };
 }
 
-export default async function ProblemThreadDetailPage({ params }: { params: ProblemThreadPageParams | Promise<ProblemThreadPageParams> }) {
+export default async function ProblemThreadDetailPage({
+  params,
+}: {
+  params: ProblemThreadPageParams | Promise<ProblemThreadPageParams>;
+}) {
   const { slug, threadId } = await params;
   const caller = await createTRPCCaller();
 
@@ -47,7 +55,12 @@ export default async function ProblemThreadDetailPage({ params }: { params: Prob
 
   return (
     <div className="space-y-6 py-8">
-      <Button asChild variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="gap-2 text-muted-foreground hover:text-foreground"
+      >
         <Link href={`/problems/${slug}/discuss`}>
           <ArrowLeft className="h-4 w-4" /> Back to discussions
         </Link>

@@ -15,12 +15,20 @@ export function PageShell({ children, className, width = "xl" }: PageShellProps)
   };
   const widthClass = widths[width];
   return (
-    <div className={cn("relative isolate px-4 pb-16 pt-[calc(2rem+env(safe-area-inset-top))] sm:px-6 lg:px-10", className)}>
+    <div
+      className={cn(
+        "relative isolate px-4 pb-16 pt-[calc(2rem+env(safe-area-inset-top))] sm:px-6 lg:px-10",
+        className,
+      )}
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.15),transparent_65%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.35),transparent_70%)]"
       />
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(6,182,212,0.18),transparent_55%)] opacity-80 blur-3xl" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(6,182,212,0.18),transparent_55%)] opacity-80 blur-3xl"
+      />
       <div className="relative mx-auto flex w-full flex-col gap-10">
         <div className={cn("mx-auto w-full", widthClass)}>{children}</div>
       </div>
@@ -40,10 +48,16 @@ export function PageHeader({ eyebrow, title, description, actions, stats }: Page
   return (
     <div className="flex flex-col gap-6 rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card/80 to-accent/40 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.12)] dark:from-card/80 dark:via-card/50 dark:to-foreground/5 lg:flex-row lg:items-center lg:justify-between">
       <div className="space-y-3">
-        {eyebrow ? <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{eyebrow}</p> : null}
+        {eyebrow ? (
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{eyebrow}</p>
+        ) : null}
         <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{title}</h1>
-          {description ? <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">{description}</p> : null}
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            {title}
+          </h1>
+          {description ? (
+            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">{description}</p>
+          ) : null}
         </div>
         {stats ? <div className="grid gap-4 sm:grid-cols-2">{stats}</div> : null}
       </div>

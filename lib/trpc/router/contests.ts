@@ -22,9 +22,11 @@ const standingsInput = z.object({
 
 export const contestsRouter = router({
   overview: protectedProcedure.query(({ ctx }) => getContestOverview(ctx.user.id)),
-  detail: protectedProcedure.input(z.object({ slug: z.string() })).query(({ ctx, input }) =>
-    getContestDetail({ slug: input.slug, viewerId: ctx.user.id, viewerRole: ctx.user.role }),
-  ),
+  detail: protectedProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(({ ctx, input }) =>
+      getContestDetail({ slug: input.slug, viewerId: ctx.user.id, viewerRole: ctx.user.role }),
+    ),
   standings: protectedProcedure.input(standingsInput).query(async ({ ctx, input }) => {
     let contestId = input.contestId ?? null;
     if (!contestId) {

@@ -32,7 +32,7 @@ import {
   Tablet,
   Trash2,
   User as UserIcon,
-  XCircle
+  XCircle,
 } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -251,9 +251,7 @@ export default function AccountSettingsPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">
-                      {sess.userAgent || "Unknown Device"}
-                    </p>
+                    <p className="text-sm font-medium">{sess.userAgent || "Unknown Device"}</p>
                     {sess.isCurrent ? (
                       <Badge variant="default" className="h-5 rounded-full text-[10px]">
                         Current
@@ -330,10 +328,7 @@ export default function AccountSettingsPage() {
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button
-              variant="destructive"
-              className="w-full rounded-xl sm:w-auto"
-            >
+            <Button variant="destructive" className="w-full rounded-xl sm:w-auto">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Account
             </Button>
@@ -342,9 +337,8 @@ export default function AccountSettingsPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Account Permanently?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your account and
-                remove all your data from our servers including submissions, proposals, and
-                progress.
+                This action cannot be undone. This will permanently delete your account and remove
+                all your data from our servers including submissions, proposals, and progress.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="space-y-3">
@@ -397,14 +391,3 @@ export default function AccountSettingsPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

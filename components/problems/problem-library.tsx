@@ -39,19 +39,18 @@ import { cn } from "@/lib/utils";
 import { stableHash } from "@/lib/utils/stable-hash";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { formatDistanceToNow } from "date-fns";
-import { 
+import {
   ArrowRight01Icon,
   Search01Icon,
   FilterIcon,
   SlidersHorizontalIcon,
   Clock01Icon,
-  BookmarkCheck01Icon as BookmarkIcon,
-  Cancel01Icon
+  Cancel01Icon,
 } from "hugeicons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
   relevance: "Relevance",
@@ -100,13 +99,15 @@ export function ProblemLibraryShell({
   const [searchValue, setSearchValue] = useState(mergedFilters.q ?? "");
 
   useEffect(() => {
-    setSearchValue(mergedFilters.q ?? "");
+    startTransition(() => setSearchValue(mergedFilters.q ?? ""));
   }, [mergedFilters.q]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       if (searchValue === mergedFilters.q) return;
-      setFilters({ q: searchValue, page: 1 });
+      startTransition(() => {
+        void setFilters({ q: searchValue, page: 1 });
+      });
     }, 250);
     return () => clearTimeout(handle);
   }, [searchValue, mergedFilters.q, setFilters]);
@@ -134,11 +135,11 @@ export function ProblemLibraryShell({
     count += mergedFilters.tags.length;
     if (mergedFilters.onlyWithEditorial) count += 1;
     return count;
-  }, [mergedFilters]);
+  }, [mergedFilters, viewerHasSession]);
   const hasActiveFilters = activeFilterCount > 0;
 
   const results: ProblemListResponse | null = listData ?? null;
-  const items = results?.items ?? [];
+  const items = useMemo(() => results?.items ?? [], [results]);
   const filtersHash = useMemo(() => stableHash(mergedFilters), [mergedFilters]);
   const previousFiltersHash = useRef(filtersHash);
   const zeroResultHashes = useRef(new Set<string>());
@@ -191,10 +192,7 @@ export function ProblemLibraryShell({
         prefetchedProblems.current.clear();
       }
       prefetchedProblems.current.add(slug);
-      utils.problems.detail.prefetch(
-        { slug },
-        { staleTime: publicContentQueryOptions.staleTime },
-      );
+      utils.problems.detail.prefetch({ slug }, { staleTime: publicContentQueryOptions.staleTime });
       router.prefetch(`${problemBasePath}/${slug}`);
     },
     [problemBasePath, router, utils],
@@ -233,7 +231,8 @@ export function ProblemLibraryShell({
   };
 
   const statusFilterBlocked = !viewerHasSession && mergedFilters.status.length > 0;
-  const listIsEmpty = !isPending && items.length === 0 && !listQuery.isError && !statusFilterBlocked;
+  const listIsEmpty =
+    !isPending && items.length === 0 && !listQuery.isError && !statusFilterBlocked;
 
   useEffect(() => {
     if (!mergedFilters.q) return;
@@ -309,16 +308,22 @@ export function ProblemLibraryShell({
       <div className="space-y-8">
         <header className="space-y-6">
           <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Problem Library</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Problem Library
+            </p>
             <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Browse Problems</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Explore our curated collection of coding challenges across various topics and difficulty levels
+              Explore our curated collection of coding challenges across various topics and
+              difficulty levels
             </p>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[280px]">
-              <Search01Icon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Search01Icon
+                className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                strokeWidth={2}
+              />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
@@ -359,7 +364,10 @@ export function ProblemLibraryShell({
                   <Button variant="outline" size="sm" className="gap-2 rounded-xl lg:hidden">
                     <FilterIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     {hasActiveFilters && (
-                      <Badge variant="secondary" className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold"
+                      >
                         {activeFilterCount}
                       </Badge>
                     )}
@@ -431,7 +439,10 @@ export function ProblemLibraryShell({
                 <AlertTitle>Sign in to use status filters</AlertTitle>
                 <AlertDescription>
                   Progress filters rely on your submission history.{" "}
-                  <Link href="/sign-in" className="font-medium text-primary underline underline-offset-4">
+                  <Link
+                    href="/sign-in"
+                    className="font-medium text-primary underline underline-offset-4"
+                  >
                     Sign in
                   </Link>{" "}
                   to filter by solved or attempted problems.

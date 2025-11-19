@@ -4,10 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  contestDetailQueryOptions,
-  contestOverviewQueryOptions,
-} from "@/lib/react-query/policies";
+import { contestDetailQueryOptions, contestOverviewQueryOptions } from "@/lib/react-query/policies";
 import type { ContestSummary } from "@/lib/contests/types";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -33,10 +30,7 @@ export const ContestsOverview = () => {
         prefetchedSlugs.current.clear();
       }
       prefetchedSlugs.current.add(slug);
-      utils.contests.detail.prefetch(
-        { slug },
-        { staleTime: contestDetailQueryOptions.staleTime },
-      );
+      utils.contests.detail.prefetch({ slug }, { staleTime: contestDetailQueryOptions.staleTime });
       router.prefetch(`/contests/${slug}`);
     },
     [router, utils],
@@ -45,14 +39,14 @@ export const ContestsOverview = () => {
   const contestRows = useMemo(() => {
     if (!overview.data) return [];
     const rows: ContestSummary[] = [];
-    
+
     if (overview.data.featured) {
       rows.push(overview.data.featured);
     }
     rows.push(...overview.data.live);
     rows.push(...overview.data.upcoming);
     rows.push(...overview.data.past.slice(0, 10));
-    
+
     return rows;
   }, [overview.data]);
 
@@ -74,7 +68,7 @@ export const ContestsOverview = () => {
                   ? "border-success/50 bg-success/10 text-success"
                   : row.original.state === "UPCOMING"
                     ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/60 bg-muted/60 text-muted-foreground"
+                    : "border-border/60 bg-muted/60 text-muted-foreground",
               )}
             >
               {row.original.name.slice(0, 2)}
@@ -91,8 +85,12 @@ export const ContestsOverview = () => {
         header: "Timing",
         cell: ({ row }: CellContext<ContestSummary, unknown>) => (
           <div className="text-xs">
-            <p className="font-medium">{formatDistanceToNow(new Date(row.original.startsAt), { addSuffix: true })}</p>
-            <p className="text-muted-foreground">{format(new Date(row.original.startsAt), "MMM d, HH:mm")}</p>
+            <p className="font-medium">
+              {formatDistanceToNow(new Date(row.original.startsAt), { addSuffix: true })}
+            </p>
+            <p className="text-muted-foreground">
+              {format(new Date(row.original.startsAt), "MMM d, HH:mm")}
+            </p>
           </div>
         ),
       },
@@ -103,7 +101,10 @@ export const ContestsOverview = () => {
           <div className="flex flex-col gap-1.5">
             <ContestStateBadge state={row.original.state} />
             {row.original.isRated ? (
-              <Badge variant="secondary" className="w-fit rounded-full border border-primary/30 bg-primary/5 text-[10px] text-primary">
+              <Badge
+                variant="secondary"
+                className="w-fit rounded-full border border-primary/30 bg-primary/5 text-[10px] text-primary"
+              >
                 Rated
               </Badge>
             ) : null}
@@ -169,7 +170,7 @@ export const ContestsOverview = () => {
         <p className="text-base text-muted-foreground">
           Compete in rated coding challenges and climb the leaderboard
         </p>
-        
+
         <div className="flex flex-wrap gap-3 pt-2">
           <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -186,7 +187,7 @@ export const ContestsOverview = () => {
         <div className="premium-card group overflow-hidden rounded-2xl p-0">
           <div className="relative flex flex-col gap-6 p-8 md:flex-row md:items-center">
             <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-            
+
             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg">
               <Trophy className="h-8 w-8 text-primary-foreground" />
             </div>
@@ -265,16 +266,21 @@ const ContestStateBadge = ({ state }: { state: string }) => {
     FINISHED: "bg-muted text-muted-foreground",
     ARCHIVED: "bg-muted text-muted-foreground",
   };
-  
+
   const labelMap: Record<string, string> = {
     UPCOMING: "Upcoming",
     RUNNING: "Live",
     FINISHED: "Finished",
     ARCHIVED: "Archived",
   };
-  
+
   return (
-    <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", styles[state] ?? "bg-muted text-muted-foreground")}>
+    <span
+      className={cn(
+        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        styles[state] ?? "bg-muted text-muted-foreground",
+      )}
+    >
       {labelMap[state] ?? state.toLowerCase()}
     </span>
   );

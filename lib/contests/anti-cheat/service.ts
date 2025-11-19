@@ -165,7 +165,10 @@ export async function ingestContestAntiCheatEvents({
               const flag = await bumpFlag(tx, context, { suspiciousSessions: 1 });
               currentStatus = flag.status;
             }
-          } else if (context.antiCheat.multiDevice.requireLock && !context.registration.deviceFingerprint) {
+          } else if (
+            context.antiCheat.multiDevice.requireLock &&
+            !context.registration.deviceFingerprint
+          ) {
             const fingerprint = buildFingerprint(event, ipHash);
             await tx.contestRegistration.update({
               where: { id: context.registration.id },
@@ -212,7 +215,12 @@ export async function ingestContestAntiCheatEvents({
           if (tabDelta === 0 && outOfFocusDelta === 0) {
             break;
           }
-          const sessionRecordId = await resolveSessionId(tx, context, event.sessionId, sessionCache);
+          const sessionRecordId = await resolveSessionId(
+            tx,
+            context,
+            event.sessionId,
+            sessionCache,
+          );
           const existingMetric = await tx.contestAntiCheatFocusMetric.findFirst({
             where: {
               contestId: context.contest.id,
@@ -228,10 +236,7 @@ export async function ingestContestAntiCheatEvents({
               data: {
                 tabSwitchCount: { increment: tabDelta },
                 totalOutOfFocusMs: { increment: outOfFocusDelta },
-                maxConsecutiveOutMs: Math.max(
-                  existingMetric.maxConsecutiveOutMs,
-                  maxStreak,
-                ),
+                maxConsecutiveOutMs: Math.max(existingMetric.maxConsecutiveOutMs, maxStreak),
                 lastEventAt: new Date(),
               },
             });
@@ -309,10 +314,7 @@ export async function ingestContestAntiCheatEvents({
           ) {
             warnings.push("Extended time away from the contest window detected.");
           }
-          if (
-            focusSettings.flagOutMs &&
-            focusRecord.totalOutOfFocusMs >= focusSettings.flagOutMs
-          ) {
+          if (focusSettings.flagOutMs && focusRecord.totalOutOfFocusMs >= focusSettings.flagOutMs) {
             flagged = true;
             await logEvent(tx, context, {
               type: ContestAntiCheatEventType.FOCUS_LOSS,
@@ -360,10 +362,7 @@ export async function ingestContestAntiCheatEvents({
               type: ContestAntiCheatEventType.LARGE_PASTE,
             },
           });
-          if (
-            contestPasteCount >= context.antiCheat.paste.perContestLimit &&
-            !disqualified
-          ) {
+          if (contestPasteCount >= context.antiCheat.paste.perContestLimit && !disqualified) {
             disqualified = true;
             await disqualifyParticipant(tx, context, "Excessive large paste events");
             currentStatus = ContestAntiCheatFlagStatus.DISQUALIFIED;
@@ -488,10 +487,7 @@ async function bumpFlag(
   const largePastes = delta.largePastes ?? 0;
   const suspiciousSessions = delta.suspiciousSessions ?? 0;
   const deltaRisk =
-    tabSwitches * 3 +
-    Math.floor(outOfFocusMs / 30000) +
-    largePastes * 4 +
-    suspiciousSessions * 8;
+    tabSwitches * 3 + Math.floor(outOfFocusMs / 30000) + largePastes * 4 + suspiciousSessions * 8;
   return tx.contestAntiCheatFlag.upsert({
     where: { registrationId: context.registration.id },
     update: {
@@ -588,7 +584,10 @@ async function logEvent(
   }
 }
 
-function buildFingerprint(event: Extract<ContestAntiCheatClientEvent, { type: "session_start" }>, ipHash?: string | null) {
+function buildFingerprint(
+  event: Extract<ContestAntiCheatClientEvent, { type: "session_start" }>,
+  ipHash?: string | null,
+) {
   return [
     event.deviceType,
     event.osFamily ?? "unknown-os",

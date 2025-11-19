@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/auth/permissions";
 import type { EditorialPayload, EditorialScheduleInput } from "@/lib/editorials/types";
-import type { EditorialReleaseStrategy, Prisma, UserRole } from "@prisma/client";
+import type { Prisma, UserRole } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { addDays } from "date-fns";
 import { resolveEditorialRelease } from "@/lib/editorials/release";
@@ -16,7 +16,9 @@ export async function getEditorialByProblem(params: {
   const problem = await prisma.problem.findFirst({
     where: params.problemId ? { id: params.problemId } : { slug: params.slug },
     include: {
-      currentVersion: { select: { id: true, versionNumber: true, editorial: true, updatedAt: true } },
+      currentVersion: {
+        select: { id: true, versionNumber: true, editorial: true, updatedAt: true },
+      },
       contestProblems: {
         take: 1,
         include: {
@@ -90,7 +92,10 @@ async function buildReleaseData(input: EditorialScheduleInput) {
       break;
     case "OFFSET_DAYS":
       if (typeof input.offsetDays !== "number") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Offset strategy requires days value" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Offset strategy requires days value",
+        });
       }
       offsetDays = input.offsetDays;
       releaseAt = input.releaseAt ?? addDays(new Date(), offsetDays);
@@ -103,7 +108,10 @@ async function buildReleaseData(input: EditorialScheduleInput) {
       if (input.releaseAt) {
         releaseAt = input.releaseAt;
       } else {
-        const contest = await prisma.contest.findUnique({ where: { id: contestId }, select: { endsAt: true } });
+        const contest = await prisma.contest.findUnique({
+          where: { id: contestId },
+          select: { endsAt: true },
+        });
         releaseAt = contest?.endsAt ?? null;
       }
       break;
@@ -125,9 +133,7 @@ async function buildReleaseData(input: EditorialScheduleInput) {
     editorialReleaseAt: releaseAt,
     editorialReleasedAt: releaseEffective,
     editorialReleaseOffsetDays: offsetDays,
-    editorialReleaseContest: contestId
-      ? { connect: { id: contestId } }
-      : { disconnect: true },
+    editorialReleaseContest: contestId ? { connect: { id: contestId } } : { disconnect: true },
   };
   return payload;
 }

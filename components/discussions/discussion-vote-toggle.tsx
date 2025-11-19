@@ -14,7 +14,12 @@ type DiscussionVoteToggleProps = {
   size?: "sm" | "md";
 };
 
-export function DiscussionVoteToggle({ discussionId, initialScore, initialVote = 0, size = "md" }: DiscussionVoteToggleProps) {
+export function DiscussionVoteToggle({
+  discussionId,
+  initialScore,
+  initialVote = 0,
+  size = "md",
+}: DiscussionVoteToggleProps) {
   const utils = trpc.useUtils();
   const [score, setScore] = useState(initialScore);
   const [vote, setVote] = useState<-1 | 0 | 1>(initialVote);
@@ -43,7 +48,11 @@ export function DiscussionVoteToggle({ discussionId, initialScore, initialVote =
   };
 
   return (
-    <div className={cn("inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3", size === "sm" && "px-2 text-xs")}
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3",
+        size === "sm" && "px-2 text-xs",
+      )}
     >
       <Button
         type="button"

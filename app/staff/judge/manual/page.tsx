@@ -24,7 +24,8 @@ export default async function ManualJudgePage() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Validate submissions flagged by the judge for plagiarism, hybrid scoring, or policy reasons.
+            Validate submissions flagged by the judge for plagiarism, hybrid scoring, or policy
+            reasons.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

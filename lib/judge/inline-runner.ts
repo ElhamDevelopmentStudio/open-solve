@@ -103,7 +103,9 @@ export const runInlineJudge = async (submissionId: string) => {
     where: { id: submission.id },
     data: {
       status,
-      verdictCode: submission.requiresManualReview ? "MANUAL_PENDING" : simulation.summary.verdictCode,
+      verdictCode: submission.requiresManualReview
+        ? "MANUAL_PENDING"
+        : simulation.summary.verdictCode,
       finishedAt: simulation.summary.finishedAt,
       timeUsedMs: simulation.summary.runtimeMs,
       memoryUsedKb: simulation.summary.memoryKb,

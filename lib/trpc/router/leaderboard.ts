@@ -23,9 +23,11 @@ export const leaderboardRouter = router({
   ),
   global: publicProcedure
     .input(
-      z.object({
-        window: leaderboardWindowEnum,
-      }).merge(paginationSchema),
+      z
+        .object({
+          window: leaderboardWindowEnum,
+        })
+        .merge(paginationSchema),
     )
     .query(({ input, ctx }) =>
       getSnapshotLeaderboard({
@@ -37,10 +39,12 @@ export const leaderboardRouter = router({
     ),
   difficulty: publicProcedure
     .input(
-      z.object({
-        difficulty: difficultyEnum,
-        window: leaderboardWindowEnum,
-      }).merge(paginationSchema),
+      z
+        .object({
+          difficulty: difficultyEnum,
+          window: leaderboardWindowEnum,
+        })
+        .merge(paginationSchema),
     )
     .query(({ input, ctx }) =>
       getDifficultyLeaderboard({
@@ -53,10 +57,12 @@ export const leaderboardRouter = router({
     ),
   tag: publicProcedure
     .input(
-      z.object({
-        slug: z.string().min(1),
-        window: leaderboardWindowEnum,
-      }).merge(paginationSchema),
+      z
+        .object({
+          slug: z.string().min(1),
+          window: leaderboardWindowEnum,
+        })
+        .merge(paginationSchema),
     )
     .query(({ input, ctx }) =>
       getTagLeaderboard({

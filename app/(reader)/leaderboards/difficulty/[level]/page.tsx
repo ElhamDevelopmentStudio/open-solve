@@ -11,7 +11,11 @@ const DEFAULT_WINDOW: LeaderboardWindow = "all_time";
 
 type Params = { level: string };
 
-export async function generateMetadata({ params }: { params: Params | Promise<Params> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}): Promise<Metadata> {
   const { level } = await params;
   const upper = level.toUpperCase();
   if (!DIFFICULTIES.includes(upper as (typeof DIFFICULTIES)[number])) {
@@ -24,7 +28,11 @@ export async function generateMetadata({ params }: { params: Params | Promise<Pa
   };
 }
 
-export default async function DifficultyLeaderboardPage({ params }: { params: Params | Promise<Params> }) {
+export default async function DifficultyLeaderboardPage({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}) {
   const { level } = await params;
   const upper = level.toUpperCase();
   if (!DIFFICULTIES.includes(upper as (typeof DIFFICULTIES)[number])) {
@@ -47,7 +55,7 @@ export default async function DifficultyLeaderboardPage({ params }: { params: Pa
       <DifficultyLeaderboardClient
         initialWindow={DEFAULT_WINDOW}
         title={`${label} leaderboard`}
-        subtitle={`Focused look at ${label.toLowerCase()} practice`} 
+        subtitle={`Focused look at ${label.toLowerCase()} practice`}
         difficulty={difficulty}
       />
     </HydrationBoundary>

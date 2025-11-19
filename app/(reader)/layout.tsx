@@ -80,11 +80,20 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {isLoggedIn ? (
-              <Button asChild size="sm" className="hidden rounded-full shadow-lg shadow-primary/20 lg:inline-flex">
+              <Button
+                asChild
+                size="sm"
+                className="hidden rounded-full shadow-lg shadow-primary/20 lg:inline-flex"
+              >
                 <Link href="/dashboard">Workspace</Link>
               </Button>
             ) : (
-              <Button asChild variant="outline" size="sm" className="hidden rounded-full lg:inline-flex">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="hidden rounded-full lg:inline-flex"
+              >
                 <Link href="/sign-in">Sign in</Link>
               </Button>
             )}

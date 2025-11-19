@@ -1,4 +1,4 @@
-import type { EditorialReleaseStrategy, ProblemState, Prisma } from "@prisma/client";
+import type { EditorialReleaseStrategy, ProblemState } from "@prisma/client";
 import { addDays } from "date-fns";
 
 type ReleaseSource = {
@@ -9,7 +9,7 @@ type ReleaseSource = {
   state: ProblemState;
   createdAt: Date;
   updatedAt: Date;
-  contestProblems: Array<{ contest: { endsAt: Date | null } | null }>; 
+  contestProblems: Array<{ contest: { endsAt: Date | null } | null }>;
 };
 
 export type EditorialReleaseState = {
@@ -20,7 +20,9 @@ export type EditorialReleaseState = {
 export function resolveEditorialRelease(problem: ReleaseSource): EditorialReleaseState {
   const releaseAt = determineReleaseAt(problem);
   const now = new Date();
-  const isReleased = Boolean(problem.editorialReleasedAt && problem.editorialReleasedAt <= now) || Boolean(releaseAt && releaseAt <= now);
+  const isReleased =
+    Boolean(problem.editorialReleasedAt && problem.editorialReleasedAt <= now) ||
+    Boolean(releaseAt && releaseAt <= now);
   return {
     releaseAt: releaseAt ?? problem.editorialReleasedAt,
     isReleased,

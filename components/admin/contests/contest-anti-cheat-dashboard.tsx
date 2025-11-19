@@ -7,11 +7,7 @@ import type { AppRouter } from "@/lib/trpc/router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DataTable,
-  type DataTableColumn,
-  DataTableColumnHeader,
-} from "@/components/ui/data-table";
+import { DataTable, type DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  ContestAntiCheatFlagStatus,
-  type ContestState,
-  type ContestType,
-} from "@prisma/client";
+import { ContestAntiCheatFlagStatus, type ContestState, type ContestType } from "@prisma/client";
 import { formatDistanceToNow } from "date-fns";
 import { Clock, Shield, Sparkles } from "@/components/icons";
 import { Alert01Icon } from "hugeicons-react";
@@ -78,7 +70,9 @@ export function ContestAntiCheatDashboard({
         header: ({ column }) => <DataTableColumnHeader column={column} title="Participant" />,
         cell: ({ row }) => (
           <div>
-            <p className="font-medium">{row.original.participant.name ?? row.original.participant.handle}</p>
+            <p className="font-medium">
+              {row.original.participant.name ?? row.original.participant.handle}
+            </p>
             <p className="text-xs text-muted-foreground">@{row.original.participant.handle}</p>
           </div>
         ),
@@ -96,9 +90,7 @@ export function ContestAntiCheatDashboard({
       {
         accessorKey: "metrics.outOfFocusMs",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Out of focus" />,
-        cell: ({ row }) => (
-          <span>{Math.round(row.original.metrics.outOfFocusMs / 1000)}s</span>
-        ),
+        cell: ({ row }) => <span>{Math.round(row.original.metrics.outOfFocusMs / 1000)}s</span>,
       },
       {
         accessorKey: "metrics.largePastes",
@@ -168,7 +160,9 @@ export function ContestAntiCheatDashboard({
           <CardHeader className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle className="text-lg">Participants</CardTitle>
-              <p className="text-sm text-muted-foreground">Click a row for the anti-cheat timeline.</p>
+              <p className="text-sm text-muted-foreground">
+                Click a row for the anti-cheat timeline.
+              </p>
             </div>
           </CardHeader>
           <CardContent>
@@ -224,9 +218,13 @@ export function ContestAntiCheatDashboard({
                             className="rounded-xl border border-border/50 bg-muted/40 p-3 text-sm"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-medium">{event.type.replaceAll("_", " ").toLowerCase()}</span>
+                              <span className="font-medium">
+                                {event.type.replaceAll("_", " ").toLowerCase()}
+                              </span>
                               <span className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(event.occurredAt), { addSuffix: true })}
+                                {formatDistanceToNow(new Date(event.occurredAt), {
+                                  addSuffix: true,
+                                })}
                               </span>
                             </div>
                             {event.note ? (
@@ -234,9 +232,11 @@ export function ContestAntiCheatDashboard({
                             ) : null}
                           </li>
                         ))
-                      : new Array(4).fill(null).map((_, index) => (
-                          <li key={index} className="h-16 rounded-xl bg-muted/40" />
-                        ))}
+                      : new Array(4)
+                          .fill(null)
+                          .map((_, index) => (
+                            <li key={index} className="h-16 rounded-xl bg-muted/40" />
+                          ))}
                   </ul>
                 </ScrollArea>
               </>

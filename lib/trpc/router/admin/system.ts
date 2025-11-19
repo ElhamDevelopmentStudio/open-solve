@@ -20,7 +20,7 @@ const submissionLimitsInput = z.object({
   contestMultiplier: z.number().int().min(1).max(10).default(2),
 });
 
-const parseSetting = <T,>(value: Prisma.JsonValue | null | undefined, fallback: T): T => {
+const parseSetting = <T>(value: Prisma.JsonValue | null | undefined, fallback: T): T => {
   if (!value || typeof value !== "object") {
     return fallback;
   }
@@ -36,18 +36,17 @@ export const adminSystemRouter = router({
       systemHealth,
       activeSessions,
       judgeQueues,
-    ] =
-      await Promise.all([
-        prisma.systemSetting.findUnique({ where: { key: "maintenance_mode" } }),
-        prisma.systemSetting.findUnique({ where: { key: "submission_limits" } }),
-        prisma.submission.groupBy({
-          by: ["status"],
-          _count: true,
-        }),
-        runCoreChecks(),
-        prisma.session.count(),
-        inspectJudgeQueues(),
-      ]);
+    ] = await Promise.all([
+      prisma.systemSetting.findUnique({ where: { key: "maintenance_mode" } }),
+      prisma.systemSetting.findUnique({ where: { key: "submission_limits" } }),
+      prisma.submission.groupBy({
+        by: ["status"],
+        _count: true,
+      }),
+      runCoreChecks(),
+      prisma.session.count(),
+      inspectJudgeQueues(),
+    ]);
 
     return {
       maintenance: parseSetting(maintenanceSetting?.value, {

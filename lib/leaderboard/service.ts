@@ -118,9 +118,13 @@ const fetchRealtimeDeltaRows = async (snapshotId: string): Promise<RealtimeSolve
     return [];
   }
   try {
-    return await (prisma.leaderboardRealtimeSolve as unknown as {
-      groupBy: (args: Prisma.LeaderboardRealtimeSolveGroupByArgs) => Promise<RealtimeSolveAggregateRow[]>;
-    }).groupBy({
+    return await (
+      prisma.leaderboardRealtimeSolve as unknown as {
+        groupBy: (
+          args: Prisma.LeaderboardRealtimeSolveGroupByArgs,
+        ) => Promise<RealtimeSolveAggregateRow[]>;
+      }
+    ).groupBy({
       by: ["userId"],
       where: { snapshotId },
       _sum: { score: true },
@@ -368,7 +372,9 @@ export async function getSnapshotLeaderboard(params: {
   const slice = paginated.slice(0, limit);
   const nextCursor = paginated.length > limit ? slice[slice.length - 1]?.rank : undefined;
   const hero = ranked.slice(0, 3).map((entry) => toPublicEntry(entry));
-  const viewerEntry = viewer?.id ? ranked.find((entry) => entry.userId === viewer.id) ?? null : null;
+  const viewerEntry = viewer?.id
+    ? (ranked.find((entry) => entry.userId === viewer.id) ?? null)
+    : null;
   const totalEntries = ranked.length;
 
   return {
@@ -393,13 +399,22 @@ type PracticeParams = {
 
 type PracticeResult = LeaderboardResponse & { context: string };
 
-export async function getDifficultyLeaderboard(params: PracticeParams & { difficulty: (typeof DIFFICULTIES)[number] }): Promise<PracticeResult> {
+export async function getDifficultyLeaderboard(
+  params: PracticeParams & { difficulty: (typeof DIFFICULTIES)[number] },
+): Promise<PracticeResult> {
   const { difficulty } = params;
   const title = `${difficulty.charAt(0)}${difficulty.slice(1).toLowerCase()} leaderboard`;
-  return buildPracticeLeaderboard({ ...params, problemFilter: { difficulty: { code: difficulty } }, title, context: difficulty });
+  return buildPracticeLeaderboard({
+    ...params,
+    problemFilter: { difficulty: { code: difficulty } },
+    title,
+    context: difficulty,
+  });
 }
 
-export async function getTagLeaderboard(params: PracticeParams & { slug: string }): Promise<PracticeResult> {
+export async function getTagLeaderboard(
+  params: PracticeParams & { slug: string },
+): Promise<PracticeResult> {
   const tag = await prisma.tag.findUnique({ where: { slug: params.slug } });
   if (!tag) {
     return {
@@ -426,13 +441,24 @@ export async function getTagLeaderboard(params: PracticeParams & { slug: string 
   });
 }
 
-async function buildPracticeLeaderboard(params: PracticeParams & {
-  problemFilter: Prisma.ProblemWhereInput;
-  title: string;
-  subtitle?: string;
-  context: string;
-}): Promise<PracticeResult> {
-  const { window, problemFilter, cursor, limit = DEFAULT_LIMIT, viewer, title, subtitle, context } = params;
+async function buildPracticeLeaderboard(
+  params: PracticeParams & {
+    problemFilter: Prisma.ProblemWhereInput;
+    title: string;
+    subtitle?: string;
+    context: string;
+  },
+): Promise<PracticeResult> {
+  const {
+    window,
+    problemFilter,
+    cursor,
+    limit = DEFAULT_LIMIT,
+    viewer,
+    title,
+    subtitle,
+    context,
+  } = params;
   const viewerIsStaff = Boolean(viewer?.role && isStaffRole(viewer.role));
   const rangeStart = calculateRangeStart(window);
 
@@ -528,7 +554,7 @@ async function buildPracticeLeaderboard(params: PracticeParams & {
       const weight =
         typeof submission.score === "number"
           ? submission.score
-          : problemWeight.get(submission.problemId) ?? difficultyScore[difficultyKey];
+          : (problemWeight.get(submission.problemId) ?? difficultyScore[difficultyKey]);
       entry.score += weight;
     }
     if (!entry.lastSolvedAt || submission.createdAt > entry.lastSolvedAt) {
@@ -630,29 +656,31 @@ async function buildPracticeLeaderboard(params: PracticeParams & {
   const viewerRow = viewer?.id ? ranked.find((row) => row.userId === viewer.id) : undefined;
   let viewerUser = viewerRow ? userMap.get(viewerRow.userId) : undefined;
   if (viewerRow && !viewerUser) {
-    viewerUser = await prisma.user.findUnique({
-      where: { id: viewerRow.userId },
-      select: {
-        id: true,
-        handle: true,
-        name: true,
-        avatarUrl: true,
-        country: true,
-        role: true,
-        status: true,
-      },
-    }) ?? undefined;
+    viewerUser =
+      (await prisma.user.findUnique({
+        where: { id: viewerRow.userId },
+        select: {
+          id: true,
+          handle: true,
+          name: true,
+          avatarUrl: true,
+          country: true,
+          role: true,
+          status: true,
+        },
+      })) ?? undefined;
   }
-  const viewerEntry = viewerRow && viewerUser
-    ? mapEntry({
-        rank: viewerRow.rank,
-        score: viewerRow.score,
-        solved: viewerRow.solved,
-        submissions: viewerRow.submissions,
-        avgRuntimeMs: viewerRow.avgRuntimeMs,
-        user: viewerUser,
-      })
-    : undefined;
+  const viewerEntry =
+    viewerRow && viewerUser
+      ? mapEntry({
+          rank: viewerRow.rank,
+          score: viewerRow.score,
+          solved: viewerRow.solved,
+          submissions: viewerRow.submissions,
+          avgRuntimeMs: viewerRow.avgRuntimeMs,
+          user: viewerUser,
+        })
+      : undefined;
 
   return {
     window,

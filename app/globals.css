@@ -50,48 +50,48 @@
   --font-geist-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-geist-mono: "JetBrains Mono", "Menlo", ui-monospace, SFMono-Regular, monospace;
   --radius: 0.75rem;
-  
+
   --background: 220 26% 97%;
   --foreground: 227 25% 10%;
   --card: 0 0% 100%;
   --card-foreground: 227 25% 10%;
   --popover: 210 33% 98%;
   --popover-foreground: 227 25% 10%;
-  
+
   --primary: 226 78% 58%;
   --primary-foreground: 0 0% 100%;
-  
+
   --secondary: 221 24% 94%;
   --secondary-foreground: 226 28% 20%;
-  
+
   --muted: 215 28% 93%;
   --muted-foreground: 224 18% 48%;
-  
+
   --accent: 182 65% 88%;
   --accent-foreground: 185 34% 20%;
-  
+
   --destructive: 358 76% 61%;
   --destructive-foreground: 0 0% 100%;
-  
+
   --success: 156 63% 40%;
   --success-foreground: 0 0% 100%;
-  
+
   --warning: 31 92% 54%;
   --warning-foreground: 0 0% 100%;
-  
+
   --info: 199 84% 52%;
   --info-foreground: 0 0% 100%;
-  
+
   --border: 214 28% 86%;
   --input: 214 28% 86%;
   --ring: 226 78% 58%;
-  
+
   --chart-1: 226 78% 58%;
   --chart-2: 267 69% 60%;
   --chart-3: 199 84% 52%;
   --chart-4: 156 63% 40%;
   --chart-5: 32 94% 52%;
-  
+
   --sidebar: 216 32% 96%;
   --sidebar-foreground: 222 28% 16%;
   --sidebar-primary: 226 78% 58%;
@@ -109,41 +109,41 @@
   --card-foreground: 220 27% 96%;
   --popover: 233 32% 9%;
   --popover-foreground: 220 27% 96%;
-  
+
   --primary: 226 100% 77%;
   --primary-foreground: 234 32% 10%;
-  
+
   --secondary: 229 26% 16%;
   --secondary-foreground: 220 27% 96%;
-  
+
   --muted: 230 23% 18%;
   --muted-foreground: 227 18% 72%;
-  
+
   --accent: 189 42% 22%;
   --accent-foreground: 180 45% 90%;
-  
+
   --destructive: 358 72% 55%;
   --destructive-foreground: 0 0% 100%;
-  
+
   --success: 150 47% 45%;
   --success-foreground: 0 0% 100%;
-  
+
   --warning: 36 96% 63%;
   --warning-foreground: 234 32% 10%;
-  
+
   --info: 202 100% 70%;
   --info-foreground: 234 32% 10%;
-  
+
   --border: 230 21% 22%;
   --input: 230 21% 22%;
   --ring: 226 100% 77%;
-  
+
   --chart-1: 226 100% 77%;
   --chart-2: 267 80% 72%;
   --chart-3: 202 100% 70%;
   --chart-4: 150 47% 45%;
   --chart-5: 36 96% 63%;
-  
+
   --sidebar: 232 32% 9%;
   --sidebar-foreground: 222 22% 88%;
   --sidebar-primary: 226 100% 77%;
@@ -398,7 +398,7 @@
   .elevated-surface {
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border) / 0.4);
-    box-shadow: 
+    box-shadow:
       0 1px 2px hsl(var(--foreground) / 0.04),
       0 0 0 1px hsl(var(--foreground) / 0.02);
   }

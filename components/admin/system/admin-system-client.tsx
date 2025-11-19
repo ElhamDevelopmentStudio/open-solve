@@ -22,11 +22,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  DataTable,
-  type DataTableColumn,
-  DataTableColumnHeader,
-} from "@/components/ui/data-table";
+import { DataTable, type DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
 import {
   Activity,
   AlertCircle,
@@ -43,6 +39,18 @@ type SystemOverview = inferRouterOutputs<AppRouter>["admin"]["system"]["overview
 type FlagList = inferRouterOutputs<AppRouter>["admin"]["flags"]["list"];
 type QueueRow = SystemOverview["judgeQueues"][number] & {
   severity: "healthy" | "warning" | "critical";
+};
+
+const QUEUE_SEVERITY_COPY: Record<QueueRow["severity"], string> = {
+  healthy: "Flow normal",
+  warning: "Watch",
+  critical: "Backlogged",
+};
+
+const QUEUE_SEVERITY_DOTS: Record<QueueRow["severity"], string> = {
+  healthy: "bg-emerald-500/80",
+  warning: "bg-amber-500/80",
+  critical: "bg-rose-500/80",
 };
 
 export function AdminSystemClient({
@@ -159,24 +167,11 @@ export function AdminSystemClient({
     (statusMap.get("RETRYING") ?? 0);
   const manualCount = statusMap.get("MANUAL_PENDING") ?? 0;
 
-  const queueSeverityCopy: Record<QueueRow["severity"], string> = {
-    healthy: "Stable",
-    warning: "Watch",
-    critical: "Backlogged",
-  };
-
-  const severityDots: Record<QueueRow["severity"], string> = {
-    healthy: "bg-emerald-500/80",
-    warning: "bg-amber-500/80",
-    critical: "bg-rose-500/80",
-  };
-
   const queueRows = useMemo<QueueRow[]>(
     () =>
       system.judgeQueues.map((queue) => ({
         ...queue,
-        severity:
-          queue.messages > 25 ? "critical" : queue.messages > 5 ? "warning" : "healthy",
+        severity: queue.messages > 25 ? "critical" : queue.messages > 5 ? "warning" : "healthy",
       })),
     [system.judgeQueues],
   );
@@ -192,7 +187,7 @@ export function AdminSystemClient({
               {row.original.name}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              {queueSeverityCopy[row.original.severity]}
+              {QUEUE_SEVERITY_COPY[row.original.severity]}
             </span>
           </div>
         ),
@@ -204,7 +199,7 @@ export function AdminSystemClient({
           <div className="flex items-center gap-2">
             <span className="font-semibold">{row.original.messages}</span>
             <span
-              className={`h-2 w-2 rounded-full ${severityDots[row.original.severity]}`}
+              className={`h-2 w-2 rounded-full ${QUEUE_SEVERITY_DOTS[row.original.severity]}`}
               aria-hidden
             />
           </div>
@@ -345,7 +340,7 @@ export function AdminSystemClient({
                       : "border-emerald-500/40 text-emerald-500"
                 }`}
               >
-                {queueSeverityCopy[queueSeverity]}
+                {QUEUE_SEVERITY_COPY[queueSeverity]}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">Messages waiting across all queues.</p>
@@ -492,7 +487,11 @@ export function AdminSystemClient({
                 placeholder="We'll be back at HH:MM UTC…"
               />
             </div>
-            <Button onClick={saveMaintenance} disabled={updateMaintenance.isPending} className="gap-2">
+            <Button
+              onClick={saveMaintenance}
+              disabled={updateMaintenance.isPending}
+              className="gap-2"
+            >
               {updateMaintenance.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -548,7 +547,11 @@ export function AdminSystemClient({
                 />
               </div>
             </div>
-            <Button onClick={saveLimits} disabled={updateSubmissionLimits.isPending} className="gap-2">
+            <Button
+              onClick={saveLimits}
+              disabled={updateSubmissionLimits.isPending}
+              className="gap-2"
+            >
               {updateSubmissionLimits.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -638,7 +641,9 @@ export function AdminSystemClient({
                 <Input
                   id="flag-key"
                   value={flagForm.key}
-                  onChange={(event) => setFlagForm((prev) => ({ ...prev, key: event.target.value }))}
+                  onChange={(event) =>
+                    setFlagForm((prev) => ({ ...prev, key: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -646,7 +651,9 @@ export function AdminSystemClient({
                 <Input
                   id="flag-name"
                   value={flagForm.name}
-                  onChange={(event) => setFlagForm((prev) => ({ ...prev, name: event.target.value }))}
+                  onChange={(event) =>
+                    setFlagForm((prev) => ({ ...prev, name: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -678,14 +685,18 @@ export function AdminSystemClient({
                 <Textarea
                   id="flag-targeting"
                   value={flagForm.targeting}
-                  onChange={(event) => setFlagForm((prev) => ({ ...prev, targeting: event.target.value }))}
+                  onChange={(event) =>
+                    setFlagForm((prev) => ({ ...prev, targeting: event.target.value }))
+                  }
                 />
               </div>
               <div className="flex items-center justify-between rounded-xl border border-border/60 px-3 py-2">
                 <span className="text-sm font-medium">Enabled</span>
                 <Switch
                   checked={flagForm.enabled}
-                  onCheckedChange={(checked) => setFlagForm((prev) => ({ ...prev, enabled: checked }))}
+                  onCheckedChange={(checked) =>
+                    setFlagForm((prev) => ({ ...prev, enabled: checked }))
+                  }
                 />
               </div>
               <Button
@@ -769,7 +780,11 @@ export function AdminSystemClient({
                 >
                   Toggle
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => deleteFlag.mutate({ id: flag.id })}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteFlag.mutate({ id: flag.id })}
+                >
                   Delete
                 </Button>
               </div>

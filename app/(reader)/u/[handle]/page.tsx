@@ -10,7 +10,11 @@ export const dynamic = "force-dynamic";
 
 type Params = { handle: string };
 
-export async function generateMetadata({ params }: { params: Params | Promise<Params> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}): Promise<Metadata> {
   const resolved = await params;
   const caller = await createTRPCCaller();
   try {
@@ -33,17 +37,17 @@ export default async function UserProfilePage({ params }: { params: Params | Pro
   let state;
   try {
     state = await buildHydrationState([
-      prefetchTrpcQuery(
-        "profile.detail",
-        () => caller.profile.detail({ handle }),
-        {
-          input: { handle },
-          staleTime: publicContentQueryOptions.staleTime,
-        },
-      ),
+      prefetchTrpcQuery("profile.detail", () => caller.profile.detail({ handle }), {
+        input: { handle },
+        staleTime: publicContentQueryOptions.staleTime,
+      }),
     ]);
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;

@@ -21,10 +21,14 @@ import {
   Textarea,
 } from "@/components/ui";
 import { formatDistanceToNow } from "date-fns";
-import { IncidentSeverity } from "@prisma/client";
+import { AuthAuditAction, IncidentSeverity } from "@prisma/client";
 import { toast } from "sonner";
 
-type AuditLogs = inferRouterOutputs<AppRouter>["admin"]["audit"]["logs"];
+type BaseAuditLog = inferRouterOutputs<AppRouter>["admin"]["audit"]["logs"][number];
+type AuditLogEntry = BaseAuditLog & {
+  user?: { id: string; handle: string | null; email: string | null } | null;
+};
+type AuditLogs = AuditLogEntry[];
 type Incidents = inferRouterOutputs<AppRouter>["admin"]["audit"]["incidents"];
 
 export function AdminAuditClient({
@@ -34,7 +38,7 @@ export function AdminAuditClient({
   initialLogs: AuditLogs;
   initialIncidents: Incidents;
 }) {
-  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [actionFilter, setActionFilter] = useState<"all" | AuthAuditAction>("all");
   const [incidentForm, setIncidentForm] = useState<{
     title: string;
     summary: string;
@@ -71,7 +75,7 @@ export function AdminAuditClient({
     onError: (error) => toast.error("Failed to resolve incident", { description: error.message }),
   });
 
-  const logs = logsQuery.data ?? initialLogs;
+  const logs = (logsQuery.data ?? initialLogs) as AuditLogs;
   const incidents = incidentsQuery.data ?? initialIncidents;
 
   return (
@@ -82,7 +86,10 @@ export function AdminAuditClient({
             <p className="text-xs uppercase text-muted-foreground">Traceability</p>
             <CardTitle className="text-xl">Audit log</CardTitle>
           </div>
-          <Select value={actionFilter} onValueChange={setActionFilter}>
+          <Select
+            value={actionFilter}
+            onValueChange={(value) => setActionFilter(value as AuthAuditAction | "all")}
+          >
             <SelectTrigger className="sm:w-64">
               <SelectValue placeholder="Filter actions" />
             </SelectTrigger>
@@ -125,7 +132,9 @@ export function AdminAuditClient({
             <Input
               id="incident-title"
               value={incidentForm.title}
-              onChange={(event) => setIncidentForm((prev) => ({ ...prev, title: event.target.value }))}
+              onChange={(event) =>
+                setIncidentForm((prev) => ({ ...prev, title: event.target.value }))
+              }
             />
           </div>
           <div className="space-y-2">

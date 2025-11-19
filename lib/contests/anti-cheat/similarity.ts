@@ -6,13 +6,6 @@ import { ContestAntiCheatFlagStatus } from "@prisma/client";
 const MAX_SUBMISSIONS_PER_PROBLEM = 60;
 const SIMILARITY_THRESHOLD = 0.92;
 
-type SubmissionEntry = {
-  id: string;
-  userId: string;
-  problemId: string;
-  code: string;
-};
-
 type ClusterCandidate = {
   problemId: string;
   similarityScore: number;

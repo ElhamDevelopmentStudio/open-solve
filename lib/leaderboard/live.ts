@@ -29,7 +29,11 @@ type SubmissionForRealtime = {
 };
 
 const resolveSubmissionScore = (submission: SubmissionForRealtime): number => {
-  if (typeof submission.score === "number" && Number.isFinite(submission.score) && submission.score > 0) {
+  if (
+    typeof submission.score === "number" &&
+    Number.isFinite(submission.score) &&
+    submission.score > 0
+  ) {
     return submission.score;
   }
   const difficultyKey = resolveDifficulty(submission.problem?.difficulty?.code);
@@ -90,7 +94,10 @@ export async function syncRealtimeLeaderboards(submissionId: string): Promise<Le
   if (submission.status !== SubmissionStatus.SUCCEEDED) {
     return [];
   }
-  if (!submission.verdictCode || !ACCEPTED_VERDICTS.includes(submission.verdictCode as typeof ACCEPTED_VERDICTS[number])) {
+  if (
+    !submission.verdictCode ||
+    !ACCEPTED_VERDICTS.includes(submission.verdictCode as (typeof ACCEPTED_VERDICTS)[number])
+  ) {
     return [];
   }
   if (!submission.user?.showOnLeaderboard || submission.user.status === UserStatus.BANNED) {

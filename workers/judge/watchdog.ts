@@ -54,7 +54,7 @@ async function requeueStaleSubmissions() {
       requiresManualReview: submission.requiresManualReview,
       manualOnly: false,
       userId: submission.userId,
-      trigger: "watchdog",
+      trigger: "rejudge",
       reason: "stale",
     }).catch((error) => {
       logger.error({ err: error, submissionId: submission.id }, "watchdog dispatch failed");

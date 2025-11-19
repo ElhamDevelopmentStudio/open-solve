@@ -27,7 +27,11 @@ export default async function ProblemSubmissionsPage({
       getCachedProblemDetail(resolvedParams.slug),
     ]);
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;

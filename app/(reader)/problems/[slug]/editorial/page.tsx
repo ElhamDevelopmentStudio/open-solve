@@ -15,7 +15,11 @@ import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 type Params = { slug: string };
 
-export default async function ProblemEditorialPage({ params }: { params: Params | Promise<Params> }) {
+export default async function ProblemEditorialPage({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}) {
   const { slug } = await params;
   const caller = await createTRPCCaller();
   const problem = await getCachedProblemDetail(slug).catch(() => null);
@@ -25,7 +29,8 @@ export default async function ProblemEditorialPage({ params }: { params: Params 
   const editorial = await caller.editorials.getByProblem({ slug }).catch(() => null);
   const releaseAt = editorial?.releaseAt ?? problem.editorialReleaseAt;
   const isReleased = editorial?.isReleased ?? problem.editorialIsReleased;
-  const content = editorial?.content ?? (problem.editorialIsReleased ? problem.content.editorial : null);
+  const content =
+    editorial?.content ?? (problem.editorialIsReleased ? problem.content.editorial : null);
 
   return (
     <div className="space-y-8 py-10">
@@ -60,13 +65,20 @@ export default async function ProblemEditorialPage({ params }: { params: Params 
 
       {isReleased && content ? (
         <article className="prose prose-neutral max-w-none rounded-3xl border border-border/60 bg-card/80 p-6 text-foreground dark:prose-invert">
-          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>{content}</ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkMath]}
+            rehypePlugins={[rehypeKatex, rehypeHighlight]}
+          >
+            {content}
+          </ReactMarkdown>
         </article>
       ) : (
         <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-10 text-center">
           <h2 className="text-xl font-semibold">Editorial locked</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {releaseAt ? `This write-up unlocks ${format(releaseAt, "PPP p")}.` : "Editors will publish this walkthrough soon."}
+            {releaseAt
+              ? `This write-up unlocks ${format(releaseAt, "PPP p")}.`
+              : "Editors will publish this walkthrough soon."}
           </p>
         </div>
       )}
@@ -75,7 +87,9 @@ export default async function ProblemEditorialPage({ params }: { params: Params 
         <section className="rounded-3xl border border-border/60 bg-card/70 p-6">
           <h3 className="text-lg font-semibold">Hints refresher</h3>
           <Separator className="my-3" />
-          <p className="text-sm text-muted-foreground whitespace-pre-line">{problem.content.hints}</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {problem.content.hints}
+          </p>
         </section>
       ) : null}
     </div>

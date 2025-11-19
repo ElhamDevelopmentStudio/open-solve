@@ -40,13 +40,9 @@ export async function renderProblemLibraryPage({
         staleTime: viewerHasSession ? 0 : publicContentQueryOptions.staleTime,
       },
     ),
-    prefetchTrpcQuery(
-      "problems.filterMetadata",
-      () => getCachedProblemFilterMetadata(),
-      {
-        staleTime: publicContentQueryOptions.staleTime,
-      },
-    ),
+    prefetchTrpcQuery("problems.filterMetadata", () => getCachedProblemFilterMetadata(), {
+      staleTime: publicContentQueryOptions.staleTime,
+    }),
   ]);
 
   return (

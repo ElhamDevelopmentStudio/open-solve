@@ -8,17 +8,27 @@ export const dynamic = "force-dynamic";
 
 type Params = { slug: string };
 
-export default async function ContestClarificationsPage({ params }: { params: Params | Promise<Params> }) {
+export default async function ContestClarificationsPage({
+  params,
+}: {
+  params: Params | Promise<Params>;
+}) {
   const { slug } = await params;
   const caller = await createTRPCCaller();
 
   let state;
   try {
     state = await buildHydrationState([
-      prefetchTrpcQuery("contests.detail", () => caller.contests.detail({ slug }), { input: { slug } }),
+      prefetchTrpcQuery("contests.detail", () => caller.contests.detail({ slug }), {
+        input: { slug },
+      }),
     ]);
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;
@@ -30,5 +40,3 @@ export default async function ContestClarificationsPage({ params }: { params: Pa
     </HydrationBoundary>
   );
 }
-
-

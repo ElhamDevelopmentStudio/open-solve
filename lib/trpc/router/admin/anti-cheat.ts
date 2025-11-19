@@ -36,8 +36,12 @@ export const adminAntiCheatRouter = router({
         take: 200,
       });
       return flags.map((flag) => {
-        const activeSession = sessions.find((session) => session.registrationId === flag.registrationId);
-        const recentEvents = latestEvents.filter((event) => event.registrationId === flag.registrationId).slice(0, 5);
+        const activeSession = sessions.find(
+          (session) => session.registrationId === flag.registrationId,
+        );
+        const recentEvents = latestEvents
+          .filter((event) => event.registrationId === flag.registrationId)
+          .slice(0, 5);
         return {
           id: flag.id,
           registrationId: flag.registrationId,

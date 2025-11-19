@@ -8,7 +8,16 @@ import { contestDetailQueryOptions, sessionQueryOptions } from "@/lib/react-quer
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
-import { AlertCircle, ArrowLeft, Clock, ExternalLink, Flame, Shield, Trophy, Users } from "@/components/icons";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Clock,
+  ExternalLink,
+  Flame,
+  Shield,
+  Trophy,
+  Users,
+} from "@/components/icons";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { ContestSettings } from "@/lib/contests/schema";
@@ -69,7 +78,9 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
         <div className="premium-card rounded-2xl border-destructive/20 p-8 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
           <h2 className="mt-4 text-xl font-semibold">Contest Not Found</h2>
-          <p className="mt-2 text-sm text-muted-foreground">The contest you&apos;re looking for doesn&apos;t exist.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The contest you&apos;re looking for doesn&apos;t exist.
+          </p>
           <Button asChild className="mt-6 rounded-xl" variant="outline">
             <Link href="/contests">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -215,7 +226,9 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tie Breakers</span>
-                  <span className="font-medium">{contest.settings.scoring.tieBreakers.join(", ")}</span>
+                  <span className="font-medium">
+                    {contest.settings.scoring.tieBreakers.join(", ")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -253,7 +266,9 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                   <>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Offset</span>
-                      <span className="font-medium">{contest.settings.freeze.offsetMinutes}m before end</span>
+                      <span className="font-medium">
+                        {contest.settings.freeze.offsetMinutes}m before end
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Mode</span>
@@ -270,7 +285,14 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex flex-wrap gap-2 text-xs">
-                  <Badge variant="outline" className={contest.settings.antiCheat.enabled ? "border-emerald-400/40 text-emerald-500" : "border-muted text-muted-foreground"}>
+                  <Badge
+                    variant="outline"
+                    className={
+                      contest.settings.antiCheat.enabled
+                        ? "border-emerald-400/40 text-emerald-500"
+                        : "border-muted text-muted-foreground"
+                    }
+                  >
                     {contest.settings.antiCheat.enabled ? "Enabled" : "Disabled"}
                   </Badge>
                   {contest.settings.antiCheat.examMode?.enabled ? (
@@ -287,12 +309,23 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                   )}
                 </div>
                 <p className="text-muted-foreground">
-                  Focus changes, large pastes, similarity scans, and device fingerprints feed the staff dashboard.
+                  Focus changes, large pastes, similarity scans, and device fingerprints feed the
+                  staff dashboard.
                 </p>
                 <ul className="space-y-1 text-xs text-muted-foreground">
-                  <li>• Soft warning at {contest.settings.antiCheat.focus.softWarningTabs} tab switches</li>
-                  <li>• Flag at {contest.settings.antiCheat.focus.flagTabs} tab switches or {Math.round(contest.settings.antiCheat.focus.flagOutMs / 60000)} minutes unfocused</li>
-                  <li>• Large paste limit: {contest.settings.antiCheat.paste.perProblemLimit} per problem</li>
+                  <li>
+                    • Soft warning at {contest.settings.antiCheat.focus.softWarningTabs} tab
+                    switches
+                  </li>
+                  <li>
+                    • Flag at {contest.settings.antiCheat.focus.flagTabs} tab switches or{" "}
+                    {Math.round(contest.settings.antiCheat.focus.flagOutMs / 60000)} minutes
+                    unfocused
+                  </li>
+                  <li>
+                    • Large paste limit: {contest.settings.antiCheat.paste.perProblemLimit} per
+                    problem
+                  </li>
                 </ul>
               </div>
             </div>
@@ -350,7 +383,9 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
           ) : (
             <div className="premium-card rounded-2xl p-12 text-center">
               <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">Problems will be revealed when the contest starts</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Problems will be revealed when the contest starts
+              </p>
             </div>
           )}
         </TabsContent>
@@ -369,7 +404,7 @@ export const ContestDetail = ({ slug }: ContestDetailProps) => {
                         ? "border-primary bg-primary"
                         : item.state === "active"
                           ? "border-success bg-success"
-                          : "border-muted bg-muted"
+                          : "border-muted bg-muted",
                     )}
                   />
                   <div className="flex-1">
@@ -419,10 +454,18 @@ const StatPill = ({
 
 const ContestAntiCheatNotice = ({ antiCheat }: { antiCheat: ContestSettings["antiCheat"] }) => {
   const highlights: string[] = [];
-  if (antiCheat.focus.monitorBlur) {
+  const focusMonitoringEnabled =
+    (antiCheat.focus.softWarningTabs ?? 0) > 0 ||
+    (antiCheat.focus.flagTabs ?? 0) > 0 ||
+    (antiCheat.focus.autoDQTabs ?? 0) > 0;
+  if (focusMonitoringEnabled) {
     highlights.push("Tab switches are tracked");
   }
-  if (antiCheat.paste.trackLength) {
+  const pasteMonitoringEnabled =
+    (antiCheat.paste.perProblemLimit ?? 0) > 0 ||
+    (antiCheat.paste.perContestLimit ?? 0) > 0 ||
+    (antiCheat.paste.largePasteThreshold ?? 0) > 0;
+  if (pasteMonitoringEnabled) {
     highlights.push("Clipboard and paste activity logged");
   }
   if (antiCheat.multiDevice.requireLock) {
@@ -435,7 +478,9 @@ const ContestAntiCheatNotice = ({ antiCheat }: { antiCheat: ContestSettings["ant
         <Shield className="h-4 w-4 text-primary" />
         <div>
           <p className="font-semibold">Exam mode enabled</p>
-          <p className="text-xs text-muted-foreground">This contest collects anti-cheat telemetry.</p>
+          <p className="text-xs text-muted-foreground">
+            This contest collects anti-cheat telemetry.
+          </p>
         </div>
       </div>
       {highlights.length > 0 ? (
@@ -468,7 +513,7 @@ const ContestStateBadge = ({ state }: { state: string }) => {
     <span
       className={cn(
         "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-        styles[state] ?? "bg-muted text-muted-foreground"
+        styles[state] ?? "bg-muted text-muted-foreground",
       )}
     >
       {labelMap[state] ?? state.toLowerCase()}

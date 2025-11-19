@@ -36,9 +36,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Fragment,
+  createContext,
+  createElement,
   useMemo,
   useState,
-  createContext,
   type ComponentType,
   type ReactNode,
   type SVGProps,
@@ -101,7 +102,10 @@ export function SidebarShell({
 }: SidebarShellProps) {
   const pathname = usePathname() || "/";
   const breadcrumbs = buildBreadcrumbs(pathname);
-  const navSignature = useMemo(() => JSON.stringify(nav.map((group) => group.items.map((item) => item.href))), [nav]);
+  const navSignature = useMemo(
+    () => JSON.stringify(nav.map((group) => group.items.map((item) => item.href))),
+    [nav],
+  );
   const [pageHeader, setPageHeader] = useState<ReactNode | null>(null);
 
   const headerContextValue = useMemo(() => ({ setHeader: setPageHeader }), [setPageHeader]);
@@ -110,77 +114,87 @@ export function SidebarShell({
     <HeaderContext.Provider value={headerContextValue}>
       <SidebarProvider defaultOpen>
         <div className="bg-muted/40 flex min-h-screen w-full">
-        <Sidebar
-          variant="inset"
-          collapsible="icon"
-          className="border-border/60 bg-linear-to-b from-background via-background to-muted/30"
-        >
-          <SidebarBrand brand={brand} />
-          <SidebarContent className="px-2 py-6 overflow-x-hidden">
-            <div key={navSignature} className="space-y-2 animate-slide-right">
-              {nav.map((group, index) => (
-                <SidebarGroup key={group.label ?? `group-${index}`}>
-                  {group.label ? <SidebarGroupLabel>{group.label}</SidebarGroupLabel> : null}
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {group.items.map((item) => (
-                <SidebarNavLink key={item.href} item={item} isActive={pathname.startsWith(item.href)} />
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                  {index < nav.length - 1 ? <SidebarSeparator /> : null}
-                </SidebarGroup>
-              ))}
-            </div>
-          </SidebarContent>
-          {sidebarFooter ? (
-            <SidebarFooter className="mt-auto border-t border-border/60 px-4 py-5">{sidebarFooter}</SidebarFooter>
-          ) : (
-            <SidebarFooter className="mt-auto px-4 py-5" />
-          )}
-          <SidebarRail />
-        </Sidebar>
-        <SidebarInset>
-          <div className="flex min-h-svh flex-col">
-            <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
-              <div className="flex flex-col gap-2 px-4 py-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger />
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{environmentLabel}</p>
-                      <nav className="flex items-center gap-1 text-sm font-medium text-foreground">
-                        {breadcrumbs.map((crumb, index) => (
-                          <Fragment key={crumb.href}>
-                            {index > 0 ? <span className="text-muted-foreground">/</span> : null}
-                            <Link
-                              href={crumb.href}
-                              className={cn(
-                                "capitalize",
-                                index === breadcrumbs.length - 1
-                                  ? "text-foreground"
-                                  : "text-muted-foreground transition-colors hover:text-foreground",
-                              )}
-                            >
-                              {crumb.label}
-                            </Link>
-                          </Fragment>
+          <Sidebar
+            variant="inset"
+            collapsible="icon"
+            className="border-border/60 bg-linear-to-b from-background via-background to-muted/30"
+          >
+            <SidebarBrand brand={brand} />
+            <SidebarContent className="px-2 py-6 overflow-x-hidden">
+              <div key={navSignature} className="space-y-2 animate-slide-right">
+                {nav.map((group, index) => (
+                  <SidebarGroup key={group.label ?? `group-${index}`}>
+                    {group.label ? <SidebarGroupLabel>{group.label}</SidebarGroupLabel> : null}
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {group.items.map((item) => (
+                          <SidebarNavLink
+                            key={item.href}
+                            item={item}
+                            isActive={pathname.startsWith(item.href)}
+                          />
                         ))}
-                      </nav>
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                    {index < nav.length - 1 ? <SidebarSeparator /> : null}
+                  </SidebarGroup>
+                ))}
+              </div>
+            </SidebarContent>
+            {sidebarFooter ? (
+              <SidebarFooter className="mt-auto border-t border-border/60 px-4 py-5">
+                {sidebarFooter}
+              </SidebarFooter>
+            ) : (
+              <SidebarFooter className="mt-auto px-4 py-5" />
+            )}
+            <SidebarRail />
+          </Sidebar>
+          <SidebarInset>
+            <div className="flex min-h-svh flex-col">
+              <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
+                <div className="flex flex-col gap-2 px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <SidebarTrigger />
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                          {environmentLabel}
+                        </p>
+                        <nav className="flex items-center gap-1 text-sm font-medium text-foreground">
+                          {breadcrumbs.map((crumb, index) => (
+                            <Fragment key={crumb.href}>
+                              {index > 0 ? <span className="text-muted-foreground">/</span> : null}
+                              <Link
+                                href={crumb.href}
+                                className={cn(
+                                  "capitalize",
+                                  index === breadcrumbs.length - 1
+                                    ? "text-foreground"
+                                    : "text-muted-foreground transition-colors hover:text-foreground",
+                                )}
+                              >
+                                {crumb.label}
+                              </Link>
+                            </Fragment>
+                          ))}
+                        </nav>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {headerBadge}
+                      <ThemeToggle />
+                      <UserMenu user={user} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {headerBadge}
-                    <ThemeToggle />
-                    <UserMenu user={user} />
-                  </div>
+                  {pageHeader ? (
+                    <div className="flex flex-wrap items-center gap-3">{pageHeader}</div>
+                  ) : null}
                 </div>
-                {pageHeader ? <div className="flex flex-wrap items-center gap-3">{pageHeader}</div> : null}
-              </div>
-            </header>
-            <div className="flex-1 px-4 py-8 sm:px-8">{children}</div>
-          </div>
-        </SidebarInset>
+              </header>
+              <div className="flex-1 px-4 py-8 sm:px-8">{children}</div>
+            </div>
+          </SidebarInset>
         </div>
       </SidebarProvider>
     </HeaderContext.Provider>
@@ -193,7 +207,9 @@ function SidebarBrand({ brand }: { brand: BrandConfig }) {
   const Icon = brand.icon ?? Target01Icon;
 
   return (
-    <SidebarHeader className={cn("border-border/60 border-b px-4 pb-5 pt-6", collapsed && "px-3 py-6")}>
+    <SidebarHeader
+      className={cn("border-border/60 border-b px-4 pb-5 pt-6", collapsed && "px-3 py-6")}
+    >
       <Link
         href={brand.href ?? "/dashboard"}
         aria-label={brand.title}
@@ -223,7 +239,20 @@ function SidebarBrand({ brand }: { brand: BrandConfig }) {
 function SidebarNavLink({ item, isActive }: { item: SidebarNavItem; isActive: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const Icon = typeof item.icon === "string" || !item.icon ? resolveNavIcon(item.icon) : item.icon;
+  const iconComponent = useMemo(() => {
+    if (typeof item.icon === "string" || !item.icon) {
+      return resolveNavIcon(item.icon);
+    }
+    return item.icon;
+  }, [item.icon]);
+  const iconNode = iconComponent
+    ? createElement(iconComponent, {
+        className: cn(
+          "h-4 w-4 transition-colors",
+          isActive ? "text-sidebar-primary" : "text-sidebar-foreground/60",
+        ),
+      })
+    : null;
 
   return (
     <SidebarMenuItem>
@@ -238,7 +267,7 @@ function SidebarNavLink({ item, isActive }: { item: SidebarNavItem; isActive: bo
           className={cn("inline-flex items-center gap-2", collapsed && "gap-0")}
           aria-label={collapsed ? item.label : undefined}
         >
-          <Icon className="h-4 w-4" />
+          {iconNode}
           <span className={cn(collapsed && "sr-only")}>{item.label}</span>
           {item.badge && !collapsed ? (
             <Badge variant="secondary" className="ml-auto text-[11px] uppercase">
@@ -279,7 +308,9 @@ function UserMenu({ user }: { user: UserIdentity }) {
               )}
             </Avatar>
             <div className="hidden text-left sm:block">
-              <p className="text-sm font-medium leading-tight">{user.name ?? user.handle ?? "Operator"}</p>
+              <p className="text-sm font-medium leading-tight">
+                {user.name ?? user.handle ?? "Operator"}
+              </p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
           </div>

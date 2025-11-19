@@ -12,10 +12,27 @@ export const staffTrailsRouter = router({
     .mutation(({ input }) => setTrailInsightHidden(input.insightId, input.hidden)),
   merge: moderatorProcedure
     .input(z.object({ sourceId: z.string().cuid(), targetId: z.string().cuid() }))
-    .mutation(({ input, ctx }) => mergeTrailInsights({ sourceId: input.sourceId, targetId: input.targetId, moderatorId: ctx.user.id })),
-  resolveReport: moderatorProcedure
-    .input(z.object({ reportId: z.string().cuid(), status: z.enum(["OPEN", "VALID", "INVALID"]), note: z.string().max(500).optional() }))
     .mutation(({ input, ctx }) =>
-      resolveTrailReport({ reportId: input.reportId, status: input.status, note: input.note, resolverId: ctx.user.id }),
+      mergeTrailInsights({
+        sourceId: input.sourceId,
+        targetId: input.targetId,
+        moderatorId: ctx.user.id,
+      }),
+    ),
+  resolveReport: moderatorProcedure
+    .input(
+      z.object({
+        reportId: z.string().cuid(),
+        status: z.enum(["OPEN", "VALID", "INVALID"]),
+        note: z.string().max(500).optional(),
+      }),
+    )
+    .mutation(({ input, ctx }) =>
+      resolveTrailReport({
+        reportId: input.reportId,
+        status: input.status,
+        note: input.note,
+        resolverId: ctx.user.id,
+      }),
     ),
 });

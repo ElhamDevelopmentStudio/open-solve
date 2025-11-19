@@ -99,7 +99,8 @@ export const authRouter = router({
     // Generate handle if not provided
     const providedHandle = input.handle?.trim();
     const handleSeed = input.name || email.split("@")[0];
-    let handle = providedHandle && providedHandle.length > 0 ? providedHandle : generateHandle(handleSeed);
+    let handle =
+      providedHandle && providedHandle.length > 0 ? providedHandle : generateHandle(handleSeed);
 
     // Check if handle is taken and regenerate automatically when it was not user-provided
     let handleExists = await prisma.user.findUnique({

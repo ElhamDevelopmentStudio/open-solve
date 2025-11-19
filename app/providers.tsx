@@ -33,7 +33,12 @@ export function AppProviders({ children, initialQueryState }: AppProvidersProps)
             <Suspense fallback={null}>
               <AnalyticsBridge />
             </Suspense>
-            <Toaster position="top-center" richColors closeButton toastOptions={{ duration: 4500 }} />
+            <Toaster
+              position="top-center"
+              richColors
+              closeButton
+              toastOptions={{ duration: 4500 }}
+            />
             {process.env.NODE_ENV === "development" ? (
               <ReactQueryDevtools position="bottom" />
             ) : null}

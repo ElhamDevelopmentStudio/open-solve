@@ -18,7 +18,12 @@ type DiscussionThreadCardProps = {
   active?: boolean;
 };
 
-export function DiscussionThreadCard({ thread, href, onSelect, active = false }: DiscussionThreadCardProps) {
+export function DiscussionThreadCard({
+  thread,
+  href,
+  onSelect,
+  active = false,
+}: DiscussionThreadCardProps) {
   const meta = `${formatDistanceToNow(thread.createdAt, { addSuffix: true })}`;
   const selectable = Boolean(onSelect);
   const handleSelect = useCallback(() => {
@@ -48,7 +53,8 @@ export function DiscussionThreadCard({ thread, href, onSelect, active = false }:
       className={cn(
         "group rounded-2xl border border-border/60 bg-card/80 p-4 transition hover:border-primary/40 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1",
         active && "border-primary/60 bg-primary/5",
-        selectable && "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60",
+        selectable &&
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60",
       )}
       role={selectable ? "button" : undefined}
       tabIndex={selectable ? 0 : undefined}

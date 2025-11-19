@@ -17,9 +17,13 @@ export default async function ProblemTrailsPage({ params }: { params: Params | P
     notFound();
   }
   const hydration = await buildHydrationState([
-    prefetchTrpcQuery("trails.getForProblem", () => caller.trails.getForProblem({ problemId: problem.id }), {
-      input: { problemId: problem.id },
-    }),
+    prefetchTrpcQuery(
+      "trails.getForProblem",
+      () => caller.trails.getForProblem({ problemId: problem.id }),
+      {
+        input: { problemId: problem.id },
+      },
+    ),
   ]);
   return (
     <div className="space-y-8 py-10">

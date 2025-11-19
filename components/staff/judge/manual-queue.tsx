@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ComponentType, type SVGProps } from "react";
+import { startTransition, useEffect, useMemo, useState, type ComponentType, type SVGProps } from "react";
 import { formatDistanceToNow } from "date-fns";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
-import {
-  CodeSquareIcon,
-  CpuSettingsIcon,
-  LegalHammerIcon,
-  Shield01Icon,
-} from "hugeicons-react";
+import { CodeSquareIcon, CpuSettingsIcon, LegalHammerIcon, Shield01Icon } from "hugeicons-react";
 import { toast } from "sonner";
 
 import type { AppRouter } from "@/lib/trpc/router";
@@ -58,7 +53,7 @@ export function ManualJudgeQueue() {
   const [problemFilter, setProblemFilter] = useState<string>("ALL");
   const [selectedId, setSelectedId] = useState<string>();
 
-  const entries = queue.data ?? [];
+  const entries = useMemo(() => queue.data ?? [], [queue.data]);
   const filteredEntries = entries.filter((entry) => {
     const matchesLanguage =
       languageFilter === "ALL" || entry.language.displayName === languageFilter;
@@ -68,7 +63,7 @@ export function ManualJudgeQueue() {
 
   useEffect(() => {
     if (filteredEntries.length > 0 && !selectedId) {
-      setSelectedId(filteredEntries[0].id);
+      startTransition(() => setSelectedId(filteredEntries[0].id));
     }
   }, [filteredEntries, selectedId]);
 
@@ -117,7 +112,11 @@ export function ManualJudgeQueue() {
 
   return (
     <div className="space-y-6">
-      <QueueSummary metrics={metrics} lastUpdated={queue.dataUpdatedAt} onRefresh={() => queue.refetch()} />
+      <QueueSummary
+        metrics={metrics}
+        lastUpdated={queue.dataUpdatedAt}
+        onRefresh={() => queue.refetch()}
+      />
       <div className="grid gap-6 lg:grid-cols-[320px,1fr]">
         <QueueSidebar
           entries={filteredEntries}
@@ -150,14 +149,27 @@ function QueueSummary({
   lastUpdated: number;
   onRefresh: () => void;
 }) {
-  const refreshedAt = lastUpdated || Date.now();
+  const [fallbackTimestamp, setFallbackTimestamp] = useState<number | null>(null);
+  useEffect(() => {
+    if (lastUpdated) {
+      startTransition(() => setFallbackTimestamp(null));
+      return;
+    }
+    startTransition(() => setFallbackTimestamp(Date.now()));
+  }, [lastUpdated]);
+  const refreshedAt = lastUpdated || fallbackTimestamp;
+  const lastSyncedLabel = refreshedAt
+    ? formatDistanceToNow(new Date(refreshedAt), { addSuffix: true })
+    : "moments ago";
 
   return (
     <Card>
       <CardHeader className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <CardTitle>Queue health</CardTitle>
-          <CardDescription>Signal from the auto-judge before you dive into the code.</CardDescription>
+          <CardDescription>
+            Signal from the auto-judge before you dive into the code.
+          </CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={onRefresh}>
           Refresh now
@@ -174,9 +186,7 @@ function QueueSummary({
             <p className="text-xs text-muted-foreground">{metric.meta}</p>
           </div>
         ))}
-        <p className="text-xs text-muted-foreground md:col-span-3">
-          Last synced {formatDistanceToNow(new Date(refreshedAt), { addSuffix: true })}
-        </p>
+        <p className="text-xs text-muted-foreground md:col-span-3">Last synced {lastSyncedLabel}</p>
       </CardContent>
     </Card>
   );
@@ -269,11 +279,13 @@ function QueueSidebar({
                   <Badge variant="outline">{entry.language.displayName}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {entry.user.handle} • {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                  {entry.user.handle} •{" "}
+                  {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
                 </p>
                 {entry.autoSummary ? (
                   <p className="mt-2 text-xs font-medium text-amber-600 dark:text-amber-300">
-                    Auto: {entry.autoSummary.verdictCode} ({entry.autoSummary.passed}/{entry.autoSummary.total})
+                    Auto: {entry.autoSummary.verdictCode} ({entry.autoSummary.passed}/
+                    {entry.autoSummary.total})
                   </p>
                 ) : (
                   <p className="mt-2 text-xs text-muted-foreground">No telemetry attached</p>
@@ -300,8 +312,10 @@ function ManualReviewPanel({
   const [score, setScore] = useState<string>("");
 
   useEffect(() => {
-    setNotes("");
-    setScore("");
+    startTransition(() => {
+      setNotes("");
+      setScore("");
+    });
   }, [entry?.id]);
 
   if (!entry) {

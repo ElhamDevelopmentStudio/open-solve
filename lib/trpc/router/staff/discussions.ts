@@ -10,13 +10,19 @@ import {
 export const staffDiscussionsRouter = router({
   hide: moderatorProcedure
     .input(z.object({ discussionId: z.string().cuid() }))
-    .mutation(({ input }) => updateDiscussionState({ discussionId: input.discussionId, state: "HIDDEN" })),
+    .mutation(({ input }) =>
+      updateDiscussionState({ discussionId: input.discussionId, state: "HIDDEN" }),
+    ),
   unhide: moderatorProcedure
     .input(z.object({ discussionId: z.string().cuid() }))
-    .mutation(({ input }) => updateDiscussionState({ discussionId: input.discussionId, state: "VISIBLE" })),
+    .mutation(({ input }) =>
+      updateDiscussionState({ discussionId: input.discussionId, state: "VISIBLE" }),
+    ),
   lockThread: moderatorProcedure
     .input(z.object({ threadId: z.string().cuid(), locked: z.boolean() }))
-    .mutation(({ input, ctx }) => setThreadLock({ threadId: input.threadId, locked: input.locked, moderatorId: ctx.user.id })),
+    .mutation(({ input, ctx }) =>
+      setThreadLock({ threadId: input.threadId, locked: input.locked, moderatorId: ctx.user.id }),
+    ),
   shadowBan: moderatorProcedure
     .input(z.object({ userId: z.string().cuid() }))
     .mutation(({ input }) => shadowBanUser(input.userId)),

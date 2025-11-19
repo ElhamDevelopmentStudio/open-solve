@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  containsSpoiler,
-  sanitizePlainInput,
-  sanitizeUserMarkdown,
-} from "@/lib/security/markdown";
+import { containsSpoiler, sanitizePlainInput, sanitizeUserMarkdown } from "@/lib/security/markdown";
 
 describe("security/markdown", () => {
   it("strips unsafe tags", () => {
@@ -15,8 +11,8 @@ describe("security/markdown", () => {
   });
 
   it("detects spoilers", () => {
-    expect(containsSpoiler("Here is a spoiler for the puzzle" )).toBe(true);
-    expect(containsSpoiler("Nothing to see here" )).toBe(false);
+    expect(containsSpoiler("Here is a spoiler for the puzzle")).toBe(true);
+    expect(containsSpoiler("Nothing to see here")).toBe(false);
   });
 
   it("sanitizes plain text inputs", () => {

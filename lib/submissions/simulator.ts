@@ -34,23 +34,21 @@ const VERDICT_LABELS: Record<JudgeVerdictCode, string> = {
   MANUAL_PARTIAL: "Manual Partial",
 };
 
-const KEYWORD_HINTS = [
-  "while",
-  "for",
-  "if",
-  "stack",
-  "queue",
-  "map",
-  "set",
-  "dp",
-  "binary_search",
-];
+const KEYWORD_HINTS = ["while", "for", "if", "stack", "queue", "map", "set", "dp", "binary_search"];
 
-const ERROR_KEYWORDS: Array<{ regex: RegExp; verdict: JudgeVerdictCode; failure: JudgeSimulationResult["failureMode"] }> = [
+const ERROR_KEYWORDS: Array<{
+  regex: RegExp;
+  verdict: JudgeVerdictCode;
+  failure: JudgeSimulationResult["failureMode"];
+}> = [
   { regex: /while\s*\(\s*true\s*\)|for\s*\(\s*;;\s*\)/i, verdict: "TLE", failure: "TIME" },
   { regex: /malloc\(|new\s+Array\(|\bbigint\b.*range/iu, verdict: "MLE", failure: "MEMORY" },
   { regex: /panic!|throw new|raise\s+\w+/i, verdict: "RE", failure: "RUNTIME" },
-  { regex: /TODO|FIXME|pass\s*(#.*)?$|raise NotImplementedError/imu, verdict: "CE", failure: "COMPILE" },
+  {
+    regex: /TODO|FIXME|pass\s*(#.*)?$|raise NotImplementedError/imu,
+    verdict: "CE",
+    failure: "COMPILE",
+  },
 ];
 
 const POSITIVE_KEYWORDS = [/two\s*sum/i, /dfs|bfs/i, /prefix/i, /optimize/i];
@@ -104,7 +102,17 @@ function analyzeSource(sourceCode: string) {
   const baseline = 0.15;
   const lengthScore = clamp(lines / 120, 0, 0.2);
   const penalty = /todo|pass/.test(normalized) ? 0.15 : 0;
-  const quality = clamp(baseline + structureScore + keywordScore + commentsScore + positiveScore + lengthScore - penalty, 0.05, 0.98);
+  const quality = clamp(
+    baseline +
+      structureScore +
+      keywordScore +
+      commentsScore +
+      positiveScore +
+      lengthScore -
+      penalty,
+    0.05,
+    0.98,
+  );
 
   return {
     forcedVerdict,
@@ -166,7 +174,11 @@ function buildCaseResult(params: {
     clamp((seed % DEFAULT_TIME_BUDGET) * (1 - quality / 2), 8, DEFAULT_TIME_BUDGET * 2),
   );
   const memoryKb = Math.round(
-    clamp(((seed >> 5) % DEFAULT_MEMORY_BUDGET) * (1 - quality / 1.5), 256, DEFAULT_MEMORY_BUDGET * 2),
+    clamp(
+      ((seed >> 5) % DEFAULT_MEMORY_BUDGET) * (1 - quality / 1.5),
+      256,
+      DEFAULT_MEMORY_BUDGET * 2,
+    ),
   );
   const hidden = testCase.kind === "HIDDEN" && !discloseIO;
   const status =
@@ -212,10 +224,7 @@ function mutateOutput(output: string, seed: number) {
   if (!output.trim()) return " ";
   const variation = (seed % 3) + 1;
   if (variation === 1) {
-    return output
-      .split(/\s+/)
-      .reverse()
-      .join(" ");
+    return output.split(/\s+/).reverse().join(" ");
   }
   if (variation === 2) {
     return `${output.trim()} ${seed % 9}`;
@@ -252,9 +261,7 @@ export function simulateJudgeRun({
   let runtimeAccumulator = 0;
   let memoryAccumulator = 0;
   const relevantTests =
-    mode === "sample"
-      ? testCases.filter((test) => test.kind === "SAMPLE").slice(0, 5)
-      : testCases;
+    mode === "sample" ? testCases.filter((test) => test.kind === "SAMPLE").slice(0, 5) : testCases;
   const effectiveTests = relevantTests.length > 0 ? relevantTests : testCases;
 
   for (const testCase of effectiveTests) {
@@ -283,9 +290,7 @@ export function simulateJudgeRun({
 
   const verdictPriority: JudgeVerdictCode[] = ["CE", "RE", "TLE", "MLE", "WA", "AC"];
   const firstNonAC =
-    cases
-      .map((caseResult) => caseResult.verdictCode)
-      .find((verdict) => verdict !== "AC") ?? "AC";
+    cases.map((caseResult) => caseResult.verdictCode).find((verdict) => verdict !== "AC") ?? "AC";
   const sortedVerdict = verdictPriority.find((code) =>
     cases.some((result) => result.verdictCode === code),
   );

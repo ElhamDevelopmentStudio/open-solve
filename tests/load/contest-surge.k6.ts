@@ -11,7 +11,7 @@ export const options = {
 
 const baseUrl = __ENV.LOADTEST_BASE_URL ?? "http://localhost:3000";
 
-export default function () {
+export default function contestSurgeScenario() {
   const res = http.get(`${baseUrl}/contests`);
   check(res, {
     "status is 200": (r) => r.status === 200,

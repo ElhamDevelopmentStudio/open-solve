@@ -215,15 +215,15 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "US",
     timezone: "America/New_York",
-  bio: "Keeps the lights on for OpenSolve.",
-  shareAcceptedCode: true,
-  showOnLeaderboard: false,
-  showSocials: false,
-  socials: {
-    github: "https://github.com/opensolve",
-    linkedin: "https://www.linkedin.com/company/opensolve"
-  },
-  stats: {
+    bio: "Keeps the lights on for OpenSolve.",
+    shareAcceptedCode: true,
+    showOnLeaderboard: false,
+    showSocials: false,
+    socials: {
+      github: "https://github.com/opensolve",
+      linkedin: "https://www.linkedin.com/company/opensolve",
+    },
+    stats: {
       totalSolved: 512,
       solvedEasy: 220,
       solvedMedium: 210,
@@ -243,13 +243,13 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "BG",
     timezone: "Europe/Sofia",
-  bio: "Curates graph problems with a focus on pedagogy.",
-  showSocials: true,
-  socials: {
-    twitter: "https://twitter.com/mira_q",
-    linkedin: "https://www.linkedin.com/in/mira-queue"
-  },
-  stats: {
+    bio: "Curates graph problems with a focus on pedagogy.",
+    showSocials: true,
+    socials: {
+      twitter: "https://twitter.com/mira_q",
+      linkedin: "https://www.linkedin.com/in/mira-queue",
+    },
+    stats: {
       totalSolved: 312,
       solvedEasy: 140,
       solvedMedium: 130,
@@ -290,14 +290,14 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "GB",
     timezone: "Europe/London",
-  bio: "Building a daily streak before internship season.",
-  shareAcceptedCode: true,
-  showOnLeaderboard: true,
-  socials: {
-    github: "https://github.com/lena-dev",
-    website: "https://lena.dev"
-  },
-  stats: {
+    bio: "Building a daily streak before internship season.",
+    shareAcceptedCode: true,
+    showOnLeaderboard: true,
+    socials: {
+      github: "https://github.com/lena-dev",
+      website: "https://lena.dev",
+    },
+    stats: {
       totalSolved: 188,
       solvedEasy: 110,
       solvedMedium: 66,
@@ -317,10 +317,10 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.SHADOW_BANNED,
     country: "US",
     timezone: "America/Chicago",
-  bio: "Experimenting with unusual heuristics.",
-  showOnLeaderboard: false,
-  showCountry: false,
-  stats: {
+    bio: "Experimenting with unusual heuristics.",
+    showOnLeaderboard: false,
+    showCountry: false,
+    stats: {
       totalSolved: 96,
       solvedEasy: 60,
       solvedMedium: 32,
@@ -340,11 +340,11 @@ const userSeeds: UserSeed[] = [
     status: UserStatus.ACTIVE,
     country: "SG",
     timezone: "Asia/Singapore",
-  bio: "Hard-mode grinder focused on graphs.",
-  socials: {
-    twitter: "https://twitter.com/kaicode"
-  },
-  stats: {
+    bio: "Hard-mode grinder focused on graphs.",
+    socials: {
+      twitter: "https://twitter.com/kaicode",
+    },
+    stats: {
       totalSolved: 244,
       solvedEasy: 80,
       solvedMedium: 120,
@@ -494,10 +494,7 @@ const problemSeeds: ProblemSeed[] = [
     extraCurators: ["curatorTwo"],
     tags: ["arrays", "hashing", "two-pointers"],
     companies: ["google", "uber"],
-    languages: [
-      { code: "cpp17" },
-      { code: "python3" },
-    ],
+    languages: [{ code: "cpp17" }, { code: "python3" }],
     stats: {
       acceptedCount: 1,
       submissionCount: 2,
@@ -566,11 +563,7 @@ const problemSeeds: ProblemSeed[] = [
     difficulty: "MEDIUM",
     authorKey: "curatorTwo",
     createdByKey: "curatorTwo",
-    languages: [
-      { code: "cpp17" },
-      { code: "python3" },
-      { code: "node20" },
-    ],
+    languages: [{ code: "cpp17" }, { code: "python3" }, { code: "node20" }],
     tags: ["prefix-sum", "binary-search", "greedy"],
     companies: ["amazon", "meta"],
     stats: {
@@ -1173,8 +1166,7 @@ async function main() {
           checksum: contentHash(seed.slug, testCase.ordinal, testCase.input, testCase.output),
           timeLimitMs: testCase.timeLimitMs,
           memoryLimitMb: testCase.memoryLimitMb,
-          strength:
-            testCase.kind === TestCaseKind.SAMPLE ? 0 : Math.max(testCase.strength ?? 0, 0),
+          strength: testCase.kind === TestCaseKind.SAMPLE ? 0 : Math.max(testCase.strength ?? 0, 0),
           createdById: createdBy.id,
           updatedById: createdBy.id,
         })),
@@ -1227,8 +1219,12 @@ async function main() {
 
     await prisma.problemCurator.deleteMany({ where: { problemId: problem.id } });
     if (seed.extraCurators && seed.extraCurators.length > 0) {
-      const curatorData: Array<{ problemId: string; userId: string; createdById: string; updatedById: string }> =
-        [];
+      const curatorData: Array<{
+        problemId: string;
+        userId: string;
+        createdById: string;
+        updatedById: string;
+      }> = [];
       for (const key of new Set(seed.extraCurators)) {
         const curator = userMap.get(key);
         if (!curator || curator.id === author.id) {
@@ -1330,7 +1326,7 @@ async function main() {
 
   console.info("✅ Proposal seeds ready");
 
-  for (const [slug, tagRecord] of tagMap.entries()) {
+  for (const [, tagRecord] of tagMap.entries()) {
     await prisma.tagStats.upsert({
       where: { tagId: tagRecord.id },
       update: {
@@ -1348,7 +1344,7 @@ async function main() {
     });
   }
 
-  for (const [slug, companyRecord] of companyMap.entries()) {
+  for (const [, companyRecord] of companyMap.entries()) {
     await prisma.companyStats.upsert({
       where: { companyId: companyRecord.id },
       update: {
@@ -1786,7 +1782,10 @@ async function main() {
       impact: "Average wait time increased to 8 minutes.",
       timeline: [
         { at: new Date(Date.now() - 1000 * 60 * 45), note: "Alert fired for queue depth > 500." },
-        { at: new Date(Date.now() - 1000 * 60 * 20), note: "Scaled runners + enabled low power mode." },
+        {
+          at: new Date(Date.now() - 1000 * 60 * 20),
+          note: "Scaled runners + enabled low power mode.",
+        },
       ] as Prisma.InputJsonValue,
     },
     {

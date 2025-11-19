@@ -30,8 +30,8 @@ export default async function WorkspaceTrailsPage() {
         <p className="text-xs uppercase text-muted-foreground">Approach trails</p>
         <h1 className="text-3xl font-semibold">Strategy graphs</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Trails capture the insight breadcrumbs crowdsourced from solvers. Explore popular problems to see how
-          others navigated to an AC.
+          Trails capture the insight breadcrumbs crowdsourced from solvers. Explore popular problems
+          to see how others navigated to an AC.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button asChild>
@@ -53,7 +53,8 @@ export default async function WorkspaceTrailsPage() {
         </div>
         {featured.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/60 p-8 text-sm text-muted-foreground">
-            No problems have public trails yet. Publish an insight from any problem page to seed the graph.
+            No problems have public trails yet. Publish an insight from any problem page to seed the
+            graph.
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -66,7 +67,9 @@ export default async function WorkspaceTrailsPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm text-muted-foreground">#{problem.slug}</p>
-                    <p className="text-lg font-semibold">{problem.currentVersion?.title ?? problem.slug}</p>
+                    <p className="text-lg font-semibold">
+                      {problem.currentVersion?.title ?? problem.slug}
+                    </p>
                   </div>
                   <Badge variant="outline">{problem.difficulty?.code ?? "UNRATED"}</Badge>
                 </div>

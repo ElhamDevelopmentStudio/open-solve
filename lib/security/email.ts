@@ -7,9 +7,7 @@ const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 
 export function hashEmail(email: string) {
-  return createHash("sha256")
-    .update(email.trim().toLowerCase())
-    .digest("hex");
+  return createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
 }
 
 export function encryptEmail(email: string) {

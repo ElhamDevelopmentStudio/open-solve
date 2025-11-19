@@ -16,7 +16,10 @@ export default async function AuthLayout({ children }: PropsWithChildren) {
     <div className="relative flex min-h-screen">
       <div className="hidden w-2/5 bg-gradient-to-br from-primary/5 via-background to-purple-500/5 lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div>
-          <Link href="/" className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight"
+          >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Code2 className="h-5 w-5" />
             </div>
@@ -34,7 +37,8 @@ export default async function AuthLayout({ children }: PropsWithChildren) {
               Master algorithms through deliberate practice
             </h2>
             <p className="max-w-sm text-muted-foreground">
-              Join a community of engineers solving problems, competing in contests, and sharpening their craft every day.
+              Join a community of engineers solving problems, competing in contests, and sharpening
+              their craft every day.
             </p>
           </div>
 
@@ -54,15 +58,16 @@ export default async function AuthLayout({ children }: PropsWithChildren) {
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground">
-          © 2025 OpenSolve. Built with care.
-        </div>
+        <div className="text-xs text-muted-foreground">© 2025 OpenSolve. Built with care.</div>
       </div>
 
       <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
-            <Link href="/" className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight"
+            >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Code2 className="h-5 w-5" />
               </div>

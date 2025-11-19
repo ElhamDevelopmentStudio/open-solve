@@ -1,12 +1,15 @@
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import type { Language, TestCaseKind } from "@prisma/client";
 import { SANDBOX_PROFILES, JUDGE_WORKSPACE_ROOT } from "@/lib/judge/config";
-import type { JudgeCaseResult, JudgeSummary, JudgeSimulationTestCase } from "@/lib/submissions/types";
+import type {
+  JudgeCaseResult,
+  JudgeSummary,
+  JudgeSimulationTestCase,
+} from "@/lib/submissions/types";
 import { simulateJudgeRun } from "@/lib/submissions/simulator";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
@@ -86,7 +89,10 @@ export const executeInSandbox = async ({
   try {
     await mkdir(workspaceRoot, { recursive: true });
   } catch (error) {
-    logger.warn({ error, workspaceRoot }, "failed to prepare judge workspace root, falling back to tmpdir");
+    logger.warn(
+      { error, workspaceRoot },
+      "failed to prepare judge workspace root, falling back to tmpdir",
+    );
     workspaceRoot = path.resolve(tmpdir());
     await mkdir(workspaceRoot, { recursive: true }).catch((fallbackError) => {
       logger.error({ fallbackError }, "failed to initialize fallback judge workspace root");
@@ -99,7 +105,8 @@ export const executeInSandbox = async ({
   };
 
   const consoleLog: string[] = [];
-  const profile = SANDBOX_PROFILES[language.sandboxProfile ?? "default"] ?? SANDBOX_PROFILES.default;
+  const profile =
+    SANDBOX_PROFILES[language.sandboxProfile ?? "default"] ?? SANDBOX_PROFILES.default;
   const sourceFilename = `Main.${language.fileExtension ?? "txt"}`;
   const sourcePath = path.join(workspace, sourceFilename);
   await writeFile(sourcePath, sourceCode, "utf8");
@@ -181,7 +188,13 @@ export const executeInSandbox = async ({
 
     const summaryVerdict = failedCase?.verdictCode ?? "AC";
     const totalRuntime = caseResults.reduce((sum, item) => sum + (item.runtimeMs ?? 0), 0);
-    const summary = buildSummary(summaryVerdict, caseResults.filter((c) => c.verdictCode === "AC").length, caseResults.filter((c) => c.verdictCode !== "AC").length, totalRuntime, tests.length);
+    const summary = buildSummary(
+      summaryVerdict,
+      caseResults.filter((c) => c.verdictCode === "AC").length,
+      caseResults.filter((c) => c.verdictCode !== "AC").length,
+      totalRuntime,
+      tests.length,
+    );
 
     return {
       summary,

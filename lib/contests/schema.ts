@@ -65,7 +65,10 @@ export const contestSettingsSchema = z.object({
     customBasePoints: z.number().int().min(0).max(2000).default(500),
     customAttemptPenalty: z.number().int().min(0).max(200).default(25),
     customTimeDecay: z.number().int().min(0).max(50).default(2),
-    tieBreakers: z.array(z.enum(CONTEST_TIE_BREAKERS)).min(1).default(["solved", "points", "penalty", "lastSolve"]),
+    tieBreakers: z
+      .array(z.enum(CONTEST_TIE_BREAKERS))
+      .min(1)
+      .default(["solved", "points", "penalty", "lastSolve"]),
   }),
   scoreboard: z.object({
     visibility: z.enum(CONTEST_SCOREBOARD_VISIBILITY).default("full"),

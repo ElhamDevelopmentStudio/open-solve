@@ -1,4 +1,12 @@
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, ThemeToggle } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ThemeToggle,
+} from "@/components/ui";
 import { siteConfig } from "@/config/site";
 import Link from "next/link";
 import { Code2, Sparkles } from "@/components/icons";
@@ -28,13 +36,27 @@ export default function Home() {
             <Code2 className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-base font-bold text-transparent">{siteConfig.name}</span>
-            <Badge variant="outline" className="text-xs">Pre-alpha</Badge>
+            <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-base font-bold text-transparent">
+              {siteConfig.name}
+            </span>
+            <Badge variant="outline" className="text-xs">
+              Pre-alpha
+            </Badge>
           </div>
         </div>
         <nav className="flex items-center gap-2 text-sm">
-          <Link href={siteConfig.links.docs} className="text-muted-foreground transition-colors hover:text-foreground">Docs</Link>
-          <Link href={siteConfig.links.github} className="text-muted-foreground transition-colors hover:text-foreground">GitHub</Link>
+          <Link
+            href={siteConfig.links.docs}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Docs
+          </Link>
+          <Link
+            href={siteConfig.links.github}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            GitHub
+          </Link>
           <ThemeToggle />
         </nav>
       </header>

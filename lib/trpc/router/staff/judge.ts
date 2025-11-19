@@ -47,7 +47,8 @@ export const staffJudgeRouter = router({
           },
           language: submission.language,
           autoSummary: (metadata.autoSummary as JudgeSummary) ?? null,
-          sourceCode: typeof metadata.sourceCode === "string" ? (metadata.sourceCode as string) : "",
+          sourceCode:
+            typeof metadata.sourceCode === "string" ? (metadata.sourceCode as string) : "",
         };
       });
     }),
@@ -109,7 +110,7 @@ export const staffJudgeRouter = router({
         reason: z.string().max(200).optional(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const submission = await prisma.submission.findUnique({
         where: { id: input.submissionId },
         select: {

@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { resolveContestSettings, defaultContestSettings } from "@/lib/contests/settings";
 import {
   contestProblemSettingsSchema,
-  contestSettingsSchema,
   type ContestBuilderValues,
   type ContestProblemSettings,
   type ContestSettings,
@@ -25,7 +24,6 @@ import {
   Contest,
   ContestProblem,
   ContestRegistrationStatus,
-  ContestRuleset,
   ContestState,
   ContestType,
   UserRole,
@@ -76,7 +74,9 @@ const mapContestSummary = (
   };
 };
 
-export async function getContestOverview(viewerId?: string | null): Promise<ContestOverviewPayload> {
+export async function getContestOverview(
+  viewerId?: string | null,
+): Promise<ContestOverviewPayload> {
   const contests = await prisma.contest.findMany({
     where: { deletedAt: null },
     orderBy: [{ startsAt: "asc" }],
@@ -118,7 +118,10 @@ export async function getContestOverview(viewerId?: string | null): Promise<Cont
       ...contest,
       viewerRegistration,
     });
-    if (contest.state === ContestState.RUNNING || (now >= contest.startsAt && now <= contest.endsAt)) {
+    if (
+      contest.state === ContestState.RUNNING ||
+      (now >= contest.startsAt && now <= contest.endsAt)
+    ) {
       live.push(summary);
     } else if (now < contest.startsAt) {
       upcoming.push(summary);
@@ -189,7 +192,12 @@ function buildTimeline(contest: Contest): ContestDetailPayload["timeline"] {
   });
   return steps.map((step) => ({
     ...step,
-    state: now > step.at ? "complete" : now.toISOString() === step.at.toISOString() ? "active" : "upcoming",
+    state:
+      now > step.at
+        ? "complete"
+        : now.toISOString() === step.at.toISOString()
+          ? "active"
+          : "upcoming",
   }));
 }
 
@@ -271,8 +279,12 @@ export async function getContestDetail({
     problems,
     registration: {
       total: contest._count.registrations,
-      virtual: await prisma.contestRegistration.count({ where: { contestId: contest.id, isVirtual: true } }),
-      disqualified: await prisma.contestRegistration.count({ where: { contestId: contest.id, isDisqualified: true } }),
+      virtual: await prisma.contestRegistration.count({
+        where: { contestId: contest.id, isVirtual: true },
+      }),
+      disqualified: await prisma.contestRegistration.count({
+        where: { contestId: contest.id, isDisqualified: true },
+      }),
     },
     viewerRegistration,
     timeline: buildTimeline(contest),
@@ -338,7 +350,11 @@ const compareRows = (a: ContestStandingRow, b: ContestStandingRow, tieBreakers: 
         }
         break;
       case "lastSolve":
-        if (a.lastSolvedAt && b.lastSolvedAt && a.lastSolvedAt.getTime() !== b.lastSolvedAt.getTime()) {
+        if (
+          a.lastSolvedAt &&
+          b.lastSolvedAt &&
+          a.lastSolvedAt.getTime() !== b.lastSolvedAt.getTime()
+        ) {
           return a.lastSolvedAt.getTime() - b.lastSolvedAt.getTime();
         }
         if (a.lastSolvedAt && !b.lastSolvedAt) return -1;
@@ -346,8 +362,12 @@ const compareRows = (a: ContestStandingRow, b: ContestStandingRow, tieBreakers: 
         break;
       case "firstSolve":
         {
-          const firstA = a.entries.filter((entry) => entry.status === "AC" && entry.timeMinutes !== null).sort((x, y) => (x.timeMinutes ?? 0) - (y.timeMinutes ?? 0))[0];
-          const firstB = b.entries.filter((entry) => entry.status === "AC" && entry.timeMinutes !== null).sort((x, y) => (x.timeMinutes ?? 0) - (y.timeMinutes ?? 0))[0];
+          const firstA = a.entries
+            .filter((entry) => entry.status === "AC" && entry.timeMinutes !== null)
+            .sort((x, y) => (x.timeMinutes ?? 0) - (y.timeMinutes ?? 0))[0];
+          const firstB = b.entries
+            .filter((entry) => entry.status === "AC" && entry.timeMinutes !== null)
+            .sort((x, y) => (x.timeMinutes ?? 0) - (y.timeMinutes ?? 0))[0];
           if (firstA && firstB && firstA.timeMinutes !== firstB.timeMinutes) {
             return (firstA.timeMinutes ?? 0) - (firstB.timeMinutes ?? 0);
           }
@@ -459,7 +479,10 @@ export async function getContestStandings({
     penalty: number;
     attempts: number;
     lastSolvedAt: Date | null;
-    entries: Map<string, ContestStandingProblemCell & { wrongAttempts: number; solvedAt?: Date | null }>;
+    entries: Map<
+      string,
+      ContestStandingProblemCell & { wrongAttempts: number; solvedAt?: Date | null }
+    >;
     isVirtual: boolean;
     isDisqualified: boolean;
     tieBreakers: string[];
@@ -471,7 +494,6 @@ export async function getContestStandings({
   const ensureParticipant = (registration: (typeof registrations)[number]): ParticipantState => {
     const existing = participants.get(registration.userId);
     if (existing) return existing;
-    const entryMap = new Map<string, ParticipantState["entries"]>();
     const state: ParticipantState = {
       userId: registration.userId,
       user: {
@@ -550,7 +572,8 @@ export async function getContestStandings({
       participant.solved += 1;
       participant.lastSolvedAt = submissionTime;
       if (settings.scoring.mode === "ICPC") {
-        const penalty = (minutesFromStart ?? 0) + entry.wrongAttempts * settings.scoring.icpcPenaltyMinutes;
+        const penalty =
+          (minutesFromStart ?? 0) + entry.wrongAttempts * settings.scoring.icpcPenaltyMinutes;
         participant.penalty += penalty;
         entry.score = 1;
         participant.score += 1;
@@ -560,7 +583,9 @@ export async function getContestStandings({
         if (settings.scoring.mode === "CF") {
           award = Math.max(
             0,
-            basePoints - settings.scoring.cfPenalty * entry.wrongAttempts - (minutesFromStart ?? 0) * settings.scoring.cfTimeDecay,
+            basePoints -
+              settings.scoring.cfPenalty * entry.wrongAttempts -
+              (minutesFromStart ?? 0) * settings.scoring.cfTimeDecay,
           );
         } else if (settings.scoring.mode === "ATCODER") {
           award = Math.max(0, basePoints + settings.scoring.atcoderBonus);
@@ -653,7 +678,8 @@ export async function getContestStandings({
     }
   }
   const pagedRows = rows.slice(startIndex, startIndex + limit);
-  const nextCursor = startIndex + limit < rows.length ? pagedRows[pagedRows.length - 1]?.user.id ?? null : null;
+  const nextCursor =
+    startIndex + limit < rows.length ? (pagedRows[pagedRows.length - 1]?.user.id ?? null) : null;
 
   const meta: ContestScoreboardMeta = {
     totalParticipants: allRows.length,
@@ -817,7 +843,9 @@ export async function registerForContest({
     throw new TRPCError({ code: "FORBIDDEN", message: "Invite-only contest" });
   }
   if (settings.registration.capacity) {
-    const total = await prisma.contestRegistration.count({ where: { contestId: contest.id, deletedAt: null } });
+    const total = await prisma.contestRegistration.count({
+      where: { contestId: contest.id, deletedAt: null },
+    });
     if (total >= settings.registration.capacity) {
       if (settings.registration.waitlistEnabled) {
         return prisma.contestRegistration.create({
@@ -941,7 +969,9 @@ export async function listContestClarifications({
   if (!contest) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Contest not found" });
   }
-  const labelMap = new Map(contest.problems.map((problem) => [problem.problemId, problem.label ?? null]));
+  const labelMap = new Map(
+    contest.problems.map((problem) => [problem.problemId, problem.label ?? null]),
+  );
   const viewerIsStaff = isStaffRole(viewerRole);
   const normalizedViewerId = viewerId ?? null;
   if (!viewerIsStaff) {
@@ -960,7 +990,9 @@ export async function listContestClarifications({
     contestId,
   };
   if (!viewerIsStaff) {
-    const visibilityFilter: Prisma.ContestClarificationWhereInput[] = [{ visibility: ClarificationVisibility.PUBLIC }];
+    const visibilityFilter: Prisma.ContestClarificationWhereInput[] = [
+      { visibility: ClarificationVisibility.PUBLIC },
+    ];
     if (normalizedViewerId) {
       visibilityFilter.push({ userId: normalizedViewerId });
     }
@@ -1037,7 +1069,9 @@ export async function submitContestClarification({
     },
     include: clarificationInclude,
   });
-  const labelMap = new Map(contest.problems.map((problem) => [problem.problemId, problem.label ?? null]));
+  const labelMap = new Map(
+    contest.problems.map((problem) => [problem.problemId, problem.label ?? null]),
+  );
   return mapClarificationRecord(created, userId, labelMap);
 }
 
@@ -1057,7 +1091,10 @@ export async function respondToContestClarification({
     throw new TRPCError({ code: "NOT_FOUND", message: "Clarification not found" });
   }
   if (contestId && existing.contestId !== contestId) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Clarification does not belong to contest" });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Clarification does not belong to contest",
+    });
   }
   const normalizedAnswer = answer.trim();
   if (!normalizedAnswer) {
@@ -1065,7 +1102,9 @@ export async function respondToContestClarification({
   }
   const finalStatus =
     status ??
-    (visibility === ClarificationVisibility.PUBLIC ? ClarificationStatus.ANNOUNCED : ClarificationStatus.ANSWERED);
+    (visibility === ClarificationVisibility.PUBLIC
+      ? ClarificationStatus.ANNOUNCED
+      : ClarificationStatus.ANSWERED);
   const updated = await prisma.contestClarification.update({
     where: { id: clarificationId },
     data: {
