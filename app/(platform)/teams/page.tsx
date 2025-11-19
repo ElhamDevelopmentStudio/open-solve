@@ -8,9 +8,7 @@ export default function TeamsPage() {
       </CardHeader>
       <CardContent className="space-y-2 text-sm text-muted-foreground">
         <p>Organize classrooms, bootcamps, or interview pods from this space.</p>
-        <p>
-          Collaboration tools, shared problem lists, and analytics can be added iteratively.
-        </p>
+        <p>Collaboration tools, shared problem lists, and analytics can be added iteratively.</p>
       </CardContent>
     </Card>
   );

@@ -5,7 +5,7 @@ export const siteConfig = {
   url: "https://opensolve.elhamullah.dev",
   ogImage: "/og.jpg",
   links: {
-    github: "https://github.com/opensolve/opensolve",
+    github: "https://github.com/ElhamDevelopmentStudio/open-solve",
     docs: "https://docs.opensolve.dev",
   },
 };

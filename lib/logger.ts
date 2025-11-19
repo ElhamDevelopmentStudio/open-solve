@@ -1,20 +1,9 @@
-import pino from "pino";
 import { env } from "@/lib/env";
+import pino from "pino";
 
-const isProd = process.env.NODE_ENV === "production";
-
+// Use a simple stdout logger in all environments to avoid worker thread transports
 export const logger = pino({
   level: env.LOG_LEVEL,
-  transport: isProd
-    ? undefined
-    : {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          translateTime: "HH:MM:ss.l",
-          ignore: "pid,hostname",
-        },
-      },
   formatters: {
     bindings(bindings) {
       return {
@@ -38,10 +27,33 @@ export type RequestLogFields = {
   userAgent?: string | null;
 };
 
+const SENSITIVE_KEYS = new Set(["password", "token", "code", "secret"]);
+
+const redactValue = (value: unknown): unknown => {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => redactValue(entry));
+  }
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, val]) => {
+        if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+          return [key, "[REDACTED]"];
+        }
+        return [key, redactValue(val)];
+      }),
+    );
+  }
+  return value;
+};
+
 export const logRequest = (fields: RequestLogFields) => {
-  logger.info(fields, "request completed");
+  logger.info(redactValue(fields), "request completed");
 };
 
 export const logError = (error: unknown, context?: Record<string, unknown>) => {
-  logger.error({ err: error, ...context }, "application error");
+  const safeContext = context ? (redactValue(context) as Record<string, unknown>) : undefined;
+  logger.error({ err: error, ...(safeContext ?? {}) }, "application error");
 };

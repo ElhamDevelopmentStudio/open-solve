@@ -41,11 +41,16 @@ if (isProd) {
   });
 }
 
+const devAllowedOrigins = process.env.NEXT_DEV_ALLOWED_ORIGINS?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean) ?? ["localhost", "127.0.0.1", "192.168.0.115", "172.30.10.193"];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
   output: "standalone",
+  allowedDevOrigins: devAllowedOrigins,
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
@@ -79,6 +84,7 @@ const nextConfig: NextConfig = {
       static: 10 * 60,
     },
   },
+  serverExternalPackages: ["amqplib", "ws", "cookie"],
   async headers() {
     return [
       {
@@ -98,8 +104,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  silent: true,
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-});
+const useSentry = Boolean(process.env.SENTRY_DSN);
+const wrappedConfig = useSentry
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+    })
+  : nextConfig;
+
+export default wrappedConfig;

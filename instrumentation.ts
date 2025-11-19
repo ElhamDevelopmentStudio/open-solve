@@ -1,6 +1,6 @@
-import * as Sentry from "@sentry/nextjs";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 
 const sentryEnabled = Boolean(env.SENTRY_DSN);
 
@@ -17,7 +17,6 @@ const sharedOptions = sentryEnabled
     };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __APP_PROCESS_HANDLERS_INITIALIZED__: boolean | undefined;
 }
 
@@ -44,7 +43,11 @@ export async function register() {
       return;
     }
 
-    const ignoredMessages = new Set(["the worker has exited"]);
+    const ignoredMessages = new Set([
+      "the worker has exited",
+      "Cannot find module '/ROOT/node_modules/thread-stream/lib/worker.js'",
+      "the worker thread exited",
+    ]);
 
     processRef.on("unhandledRejection", (reason) => {
       if (reason instanceof Error && ignoredMessages.has(reason.message)) {
@@ -76,8 +79,11 @@ export function onRequestError(
   context: Readonly<{
     routerKind: "Pages Router" | "App Router";
     routePath: string;
-    routeType: "render" | "route" | "action" | "proxy";
-    renderSource?: "react-server-components" | "react-server-components-payload" | "server-rendering";
+    routeType: "render" | "route" | "action" | "middleware";
+    renderSource?:
+      | "react-server-components"
+      | "react-server-components-payload"
+      | "server-rendering";
     revalidateReason: "on-demand" | "stale" | undefined;
   }>,
 ) {

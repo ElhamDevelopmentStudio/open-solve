@@ -7,8 +7,14 @@ type NavItem = {
 
 export const dashboardNav: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: "layout-dashboard" },
-  { title: "Problems", href: "/problems", icon: "list-checks" },
-  { title: "Contests", href: "/contests", icon: "trophy", soon: true },
+  { title: "Problems", href: "/workspace/problems", icon: "problems" },
+  { title: "Submissions", href: "/submissions", icon: "history" },
+  { title: "Leaderboards", href: "/workspace/leaderboards", icon: "trophy" },
+  { title: "Discussions", href: "/workspace/discuss", icon: "discussions" },
+  { title: "Trails", href: "/workspace/trails", icon: "trails" },
+  { title: "Editorials", href: "/workspace/editorials", icon: "editorial" },
+  { title: "Proposals", href: "/proposals", icon: "sparkles" },
+  { title: "Contests", href: "/contests", icon: "trophy" },
   { title: "Teams", href: "/teams", icon: "users", soon: true },
 ];
 
