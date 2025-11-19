@@ -1,0 +1,49 @@
+# Fly.io deployment descriptor for OpenSolve
+app = "opensolve-app"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[processes]
+  app = "node server.js"
+  worker = "npm run judge:worker"
+
+[[services]]
+  internal_port = 3000
+  processes = ["app"]
+  protocol = "tcp"
+  [services.concurrency]
+    hard_limit = 80
+    soft_limit = 60
+    type = "connections"
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+  [[services.http_checks]]
+    interval = "15s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/api/trpc/health.status"
+    protocol = "http"
+    timeout = "5s"
+
+[[vm]]
+  processes = ["app"]
+  size = "performance-2x"
+
+[[vm]]
+  processes = ["worker"]
+  size = "performance-1x"
