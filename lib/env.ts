@@ -25,10 +25,9 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     DIRECT_URL: z.string().url().optional(),
-    SESSION_SECRET: z
-      .string()
-      .min(32)
-      .default("opensolve-test-session-secret-please-change-me-1234567890"),
+    SESSION_SECRET: emptyToUndefined(z.string().min(32)).default(
+      "opensolve-test-session-secret-please-change-me-1234567890",
+    ),
     APP_URL: z.string().url(),
     DEPLOYMENT_ENVIRONMENT: z
       .enum(["development", "staging", "production", "preview"])
@@ -71,10 +70,9 @@ export const env = createEnv({
     JUDGE_SANDBOX_DRIVER: z.enum(["docker", "mock"]).default("docker"),
     JUDGE_SANDBOX_WORKDIR: emptyToUndefined(z.string()),
     REALTIME_WORKER_TOKEN: emptyToUndefined(z.string()),
-    SENSITIVE_DATA_KEY: z
-      .string()
-      .min(32, "SENSITIVE_DATA_KEY must be at least 32 characters")
-      .default("opensolve-sensitive-data-key-please-change-me-123"),
+    SENSITIVE_DATA_KEY: emptyToUndefined(
+      z.string().min(32, "SENSITIVE_DATA_KEY must be at least 32 characters"),
+    ).default("opensolve-sensitive-data-key-please-change-me-123"),
     METRICS_ACCESS_TOKEN: emptyToUndefined(z.string()),
   },
   client: {
