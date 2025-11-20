@@ -128,7 +128,7 @@ export function DataTable<TData, TValue>({
     : "";
 
   return (
-    <div className={cn("w-full space-y-4", className)}>
+    <div className={cn("w-full space-y-4 font-mono text-sm", className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {searchKey && (
           <div className="relative flex-1 sm:max-w-sm">
@@ -187,7 +187,7 @@ export function DataTable<TData, TValue>({
         )}
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border">
+      <div className="overflow-hidden rounded-none border-2 border-border shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -225,7 +225,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <span className="text-sm">{emptyMessage}</span>
+                    <span className="text-sm font-mono">{emptyMessage}</span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -246,7 +246,7 @@ export function DataTable<TData, TValue>({
           </div>
           <div className="flex flex-col items-center gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium">Rows per page</p>
+              <p className="text-sm font-bold uppercase tracking-tight">Rows per page</p>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
@@ -266,7 +266,7 @@ export function DataTable<TData, TValue>({
               </Select>
             </div>
             <div className="flex items-center gap-1">
-              <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+              <div className="flex w-[100px] items-center justify-center text-sm font-bold uppercase tracking-tight">
                 Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
               </div>
               <div className="flex items-center gap-1">
@@ -329,7 +329,11 @@ export function DataTableColumnHeader<TData, TValue>({
   className?: string;
 }) {
   if (!column.getCanSort()) {
-    return <div className={cn("text-xs font-medium uppercase", className)}>{title}</div>;
+    return (
+      <div className={cn("text-xs font-mono font-bold uppercase tracking-[0.08em]", className)}>
+        {title}
+      </div>
+    );
   }
 
   return (
@@ -340,7 +344,7 @@ export function DataTableColumnHeader<TData, TValue>({
         className="-ml-3 h-8 data-[state=open]:bg-accent"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        <span className="text-xs font-medium uppercase">{title}</span>
+        <span className="text-xs font-mono font-bold uppercase tracking-[0.08em]">{title}</span>
         {column.getIsSorted() === "desc" ? (
           <ArrowDown01Icon className="ml-2 h-3.5 w-3.5" />
         ) : column.getIsSorted() === "asc" ? (

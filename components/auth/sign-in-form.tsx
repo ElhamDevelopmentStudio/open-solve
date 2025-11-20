@@ -27,6 +27,8 @@ export function SignInForm() {
   const queryClient = useQueryClient();
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [sessionId, setSessionId] = useState("");
+  const labelClass =
+    "font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2";
 
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
@@ -84,21 +86,33 @@ export function SignInForm() {
   return (
     <Form {...form}>
       {requiresTwoFactor ? (
-        <form onSubmit={handleTwoFactorSubmit} className="space-y-8">
-          <div className="flex items-start gap-4 rounded-xl border border-primary/20 bg-primary/5 p-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <ShieldCheck className="h-5 w-5" />
+        <form onSubmit={handleTwoFactorSubmit} className="space-y-8 font-mono">
+          <div className="flex flex-col gap-4 border-2 border-primary/40 bg-primary/5 p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-primary/50 bg-background text-primary shadow-primary/20 shadow-sm">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-bold uppercase tracking-tight">
+                  Two-factor authentication
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app to complete sign in.
+                </p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <div className="font-semibold">Two-factor authentication</div>
-              <p className="text-sm text-muted-foreground">
-                Enter the 6-digit code from your authenticator app to complete sign in
-              </p>
+            <div className="grid gap-px bg-border/40 sm:grid-cols-2">
+              <div className="bg-background px-3 py-2 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                Session
+              </div>
+              <div className="bg-background px-3 py-2 text-xs font-bold text-foreground">
+                Secure challenge
+              </div>
             </div>
           </div>
 
           <div className="space-y-2.5">
-            <label htmlFor="code" className="text-sm font-medium">
+            <label htmlFor="code" className={labelClass}>
               Verification code
             </label>
             <Input
@@ -109,7 +123,7 @@ export function SignInForm() {
               value={twoFactorCode}
               onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
               autoFocus
-              className="h-14 text-center text-xl tracking-[0.5em] font-mono"
+              className="h-14 border-2 text-center text-xl font-mono tracking-[0.5em]"
             />
           </div>
 
@@ -117,14 +131,14 @@ export function SignInForm() {
             <Button
               type="button"
               variant="outline"
-              className="h-11 flex-1 font-medium"
+              className="h-11 flex-1 font-mono font-bold uppercase tracking-tight"
               onClick={() => setRequiresTwoFactor(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="h-11 flex-1 font-medium"
+              className="h-11 flex-1 font-mono font-bold uppercase tracking-tight"
               disabled={verifyTwoFactorMutation.isPending || twoFactorCode.length !== 6}
             >
               {verifyTwoFactorMutation.isPending ? (
@@ -139,19 +153,19 @@ export function SignInForm() {
           </div>
         </form>
       ) : (
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 font-mono">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium">Email</FormLabel>
+                <FormLabel className={labelClass}>Email</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
                     placeholder="name@company.com"
                     autoComplete="email"
-                    className="h-11"
+                    className="h-12 border-2 font-mono"
                     {...field}
                   />
                 </FormControl>
@@ -165,13 +179,13 @@ export function SignInForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium">Password</FormLabel>
+                <FormLabel className={labelClass}>Password</FormLabel>
                 <FormControl>
                   <Input
                     type="password"
                     placeholder="Enter password"
                     autoComplete="current-password"
-                    className="h-11"
+                    className="h-12 border-2 font-mono"
                     {...field}
                   />
                 </FormControl>
@@ -188,7 +202,7 @@ export function SignInForm() {
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="cursor-pointer text-sm font-normal leading-none">
+                <FormLabel className="cursor-pointer text-xs font-mono font-bold uppercase leading-none tracking-[0.08em]">
                   Keep me signed in for 30 days
                 </FormLabel>
               </FormItem>
@@ -197,7 +211,7 @@ export function SignInForm() {
 
           <Button
             type="submit"
-            className="h-11 w-full font-medium"
+            className="h-12 w-full font-mono font-bold uppercase tracking-tight"
             disabled={signInMutation.isPending}
           >
             {signInMutation.isPending ? (
