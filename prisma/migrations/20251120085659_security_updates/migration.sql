@@ -1,8 +1,8 @@
--- DropIndex
-DROP INDEX "Problem_state_visibility_difficultyId_createdAt_idx";
+-- Guarded drop to avoid failures on fresh databases where the index was never created
+DROP INDEX IF EXISTS "Problem_state_visibility_difficultyId_createdAt_idx";
 
 -- CreateIndex
-CREATE INDEX "Problem_state_visibility_difficultyId_createdAt_idx" ON "Problem"("state", "visibility", "difficultyId", "createdAt" DESC);
+CREATE INDEX IF NOT EXISTS "Problem_state_visibility_difficultyId_createdAt_idx" ON "Problem"("state", "visibility", "difficultyId", "createdAt" DESC);
 
 -- CreateIndex
 CREATE INDEX "ProblemTag_tagId_problemId_idx" ON "ProblemTag"("tagId", "problemId");

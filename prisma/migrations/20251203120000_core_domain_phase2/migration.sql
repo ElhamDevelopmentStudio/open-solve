@@ -581,7 +581,8 @@ CREATE INDEX "User_status_role_idx" ON "User"("status", "role");
 CREATE UNIQUE INDEX "Problem_currentVersionId_key" ON "Problem"("currentVersionId");
 
 -- CreateIndex
-CREATE INDEX "Problem_state_visibility_difficultyId_createdAt_idx" ON "Problem"("state", "visibility", "difficultyId", "createdAt");
+-- Ensure the Problem composite index exists without colliding when earlier migrations already created it
+CREATE INDEX IF NOT EXISTS "Problem_state_visibility_difficultyId_createdAt_idx" ON "Problem"("state", "visibility", "difficultyId", "createdAt" DESC);
 
 -- CreateIndex
 CREATE INDEX "Tag_category_isFeatured_idx" ON "Tag"("category", "isFeatured");
