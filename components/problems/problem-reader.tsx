@@ -2,13 +2,11 @@
 
 import "katex/dist/katex.min.css";
 
-import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
 import {
   ProblemAnalyticsProvider,
   useProblemAnalyticsContext,
 } from "@/components/problems/problem-analytics-provider";
-import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
-import dynamic from "next/dynamic";
+import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -22,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -31,9 +30,10 @@ import {
   Copy01Icon,
   Flag02Icon,
   Link01Icon,
-  Share01Icon,
   MessageMultiple02Icon,
+  Share01Icon,
 } from "hugeicons-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -49,12 +49,12 @@ const ProblemWorkspace = dynamic(
     loading: () => (
       <section
         id="editor"
-        className="rounded-3xl border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
+        className="border border-dashed border-primary/30 bg-card/80 p-6 text-sm text-muted-foreground"
       >
         <div className="animate-pulse space-y-4">
           <div className="h-5 w-48 rounded bg-muted" />
           <div className="h-4 w-full rounded bg-muted" />
-          <div className="h-[320px] rounded-xl border border-white/10 bg-background/60" />
+          <div className="h-[320px] border border-white/10 bg-background/60" />
         </div>
       </section>
     ),
@@ -225,7 +225,7 @@ function ProblemReaderContent({
         Skip to statement
       </a>
       <div ref={contentRef} id="problem-reader-content" className="space-y-10">
-        <div className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
+        <div className="border border-border/50 bg-card p-6 shadow-sm">
           <Breadcrumb>
             <BreadcrumbList className="text-sm text-muted-foreground motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
               <BreadcrumbItem>
@@ -263,7 +263,7 @@ function ProblemReaderContent({
           </Breadcrumb>
         </div>
         {contestMode ? (
-          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 shadow-inner shadow-primary/5">
+          <div className="border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 shadow-inner shadow-primary/5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase text-primary">Educational contest</p>
@@ -286,14 +286,14 @@ function ProblemReaderContent({
               </div>
             </div>
             {contestContext?.antiCheat.examMode.enabled ? (
-              <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/15 px-4 py-3 text-xs text-amber-700 dark:text-amber-200">
+              <div className="mt-4 border border-amber-400/40 bg-amber-500/15 px-4 py-3 text-xs text-amber-700 dark:text-amber-200">
                 Exam mode enabled — context menus and text selection are restricted for this
                 workspace.
               </div>
             ) : null}
           </div>
         ) : null}
-        <header className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
+        <header className="border border-border/50 bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
@@ -382,7 +382,7 @@ function ProblemReaderContent({
               </a>
             </Button>
           </div>
-          <div className="mt-6 grid gap-4 rounded-xl border border-border/50 bg-muted/30 p-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-4 border border-border/50 bg-muted/30 p-4 md:grid-cols-2">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Acceptance</p>
               <p className="mt-1 text-lg font-semibold">
@@ -437,11 +437,7 @@ function ProblemReaderContent({
 
             {problem.content.hints ? (
               <ProblemSection id="notes" title="Notes & Hints">
-                <Markdown
-                  content={problem.content.hints}
-                  problemId={problem.id}
-                  field="Notes"
-                />
+                <Markdown content={problem.content.hints} problemId={problem.id} field="Notes" />
               </ProblemSection>
             ) : null}
 
@@ -449,7 +445,7 @@ function ProblemReaderContent({
               <ProblemSection id="samples" title="Sample I/O" collapsible>
                 <div className="space-y-3">
                   {problem.content.sampleTestCases.map((test) => (
-                    <div key={test.ordinal} className="rounded-2xl border bg-muted/40 p-4">
+                    <div key={test.ordinal} className="border bg-muted/40 p-4">
                       <p className="text-sm font-semibold">Sample #{test.ordinal}</p>
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <CopyField
@@ -478,7 +474,7 @@ function ProblemReaderContent({
             <div className="sticky top-24 space-y-8">
               {sectionEntries.length > 0 ? (
                 <nav
-                  className="rounded-2xl border border-white/10 bg-card/80 p-4 shadow-lg shadow-black/30"
+                  className="border border-white/10 bg-card/80 p-4 shadow-md shadow-gray-200"
                   aria-label="Quick navigation"
                 >
                   <p className="text-xs font-semibold text-muted-foreground">Quick nav</p>
@@ -489,7 +485,7 @@ function ProblemReaderContent({
                           type="button"
                           onClick={() => handleAnchorClick(section.id)}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors",
+                            "flex w-full items-center justify-between px-3 py-2 text-left transition-colors",
                             activeSection === section.id
                               ? "bg-primary/10 text-primary dark:text-primary/80"
                               : "text-muted-foreground hover:bg-muted",
@@ -508,14 +504,14 @@ function ProblemReaderContent({
               ) : null}
 
               {problem.relatedProblems.length > 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-card/80 p-4 shadow-lg shadow-black/30">
+                <div className="border border-white/10 bg-card/80 p-4 shadow-md shadow-gray-200">
                   <p className="text-xs font-semibold text-muted-foreground">Related</p>
                   <ul className="mt-3 space-y-3 text-sm">
                     {problem.relatedProblems.map((related) => (
                       <li key={related.slug}>
                         <Link
                           href={`/problems/${related.slug}`}
-                          className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 transition-colors hover:bg-muted"
+                          className="flex items-center justify-between bg-muted/40 px-3 py-2 transition-colors hover:bg-muted"
                           onClick={() =>
                             trackAnalyticsEvent("navigation.path", {
                               from: `/problems/${problem.slug}`,
@@ -551,7 +547,7 @@ function ProblemReaderContent({
         <ProblemWorkspace problem={problem} contestContext={contestContext} />
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
-        <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>
+        <Button className="w-full shadow-md shadow-gray-200" size="lg" asChild>
           <a href="#editor" onClick={() => analytics.markSolveClick("mobile-sticky")}>
             Start solving
           </a>
@@ -624,7 +620,7 @@ function ProblemSection({
     return (
       <section id={id} className="scroll-mt-28">
         <Collapsible open={open} onOpenChange={handleOpenChange}>
-          <div className="rounded-3xl border border-white/10 bg-card/90 p-6 shadow-lg shadow-black/40">
+          <div className="border border-white/10 bg-card/90 p-6 shadow-lg shadow-gray-600/40">
             {heading}
             <CollapsibleContent className="mt-4 overflow-hidden data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
               {content}
@@ -637,7 +633,7 @@ function ProblemSection({
 
   return (
     <section id={id} className="scroll-mt-28">
-      <div className="rounded-3xl border border-white/10 bg-card/90 p-6 shadow-lg shadow-black/40">
+      <div className="border border-white/10 bg-card/90 p-6 shadow-lg shadow-gray-600/40">
         {heading}
         <div className="mt-4">{content}</div>
       </div>
@@ -670,7 +666,7 @@ function Markdown({
               );
             }
             return (
-              <pre className="group relative rounded-2xl bg-muted p-4">
+              <pre className="group relative bg-muted p-4">
                 <CopyButton
                   text={text}
                   className="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100"
@@ -706,7 +702,7 @@ function SampleCard({
   problemId: string;
 }) {
   return (
-    <div className="group rounded-2xl border border-white/10 bg-card/80 p-4 shadow-sm shadow-black/30">
+    <div className="group border border-white/10 bg-card/80 p-4 shadow-sm shadow-black/30">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">Example {index + 1}</p>
         {sample.explanation ? <Badge variant="outline">Explanation included</Badge> : null}
@@ -747,7 +743,7 @@ function CopyField({
 }) {
   if (isHidden) {
     return (
-      <div className="rounded-xl border border-white/10 bg-background/30 p-3 text-sm shadow-inner shadow-black/10">
+      <div className="border border-white/10 bg-background/30 p-3 text-sm shadow-inner shadow-black/10">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{label}</span>
           <span className="rounded-full bg-muted/40 px-2 py-0.5 text-[11px] uppercase tracking-wide">
@@ -762,7 +758,7 @@ function CopyField({
   }
 
   return (
-    <div className="group rounded-xl border border-white/10 bg-background/80 p-3 text-sm shadow-inner shadow-black/20">
+    <div className="group border border-white/10 bg-background/80 p-3 text-sm shadow-inner shadow-black/20">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{label}</span>
         <CopyButton

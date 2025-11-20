@@ -29,7 +29,7 @@ export function ProblemStatusBadge({ status }: { status: ProblemStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium",
+        "inline-flex items-center gap-2 border-2 border-border px-2 py-1 text-[10px] font-bold uppercase",
         STATUS_TONE[status],
       )}
     >

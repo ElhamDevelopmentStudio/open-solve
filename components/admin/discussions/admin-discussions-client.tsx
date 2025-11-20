@@ -19,6 +19,7 @@ import {
   SelectValue,
   Textarea,
 } from "@/components/ui";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { DiscussionState } from "@prisma/client";
 
@@ -35,6 +36,11 @@ export function AdminDiscussionsClient({
   const [query, setQuery] = useState("");
   const [stateFilter, setStateFilter] = useState<DiscussionState | "all">("all");
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [pendingAction, setPendingAction] = useState<
+    | { type: "thread"; action: "hide" | "unhide" | "lock" | "unlock" | "remove"; id: string }
+    | { type: "report"; action: "VALID" | "INVALID"; id: string; note?: string }
+    | null
+  >(null);
 
   const threadsQuery = trpc.admin.discussions.listThreads.useQuery(
     {
@@ -139,8 +145,10 @@ export function AdminDiscussionsClient({
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    (thread.state === "VISIBLE" ? hideThread : unhideThread).mutate({
-                      discussionId: thread.id,
+                    setPendingAction({
+                      type: "thread",
+                      action: thread.state === "VISIBLE" ? "hide" : "unhide",
+                      id: thread.id,
                     })
                   }
                 >
@@ -150,9 +158,10 @@ export function AdminDiscussionsClient({
                   size="sm"
                   variant="ghost"
                   onClick={() =>
-                    lockThread.mutate({
-                      discussionId: thread.id,
-                      locked: !thread.isLocked,
+                    setPendingAction({
+                      type: "thread",
+                      action: thread.isLocked ? "unlock" : "lock",
+                      id: thread.id,
                     })
                   }
                 >
@@ -161,7 +170,9 @@ export function AdminDiscussionsClient({
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => deleteThread.mutate({ discussionId: thread.id })}
+                  onClick={() =>
+                    setPendingAction({ type: "thread", action: "remove", id: thread.id })
+                  }
                 >
                   Remove
                 </Button>
@@ -201,9 +212,10 @@ export function AdminDiscussionsClient({
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    resolveReport.mutate({
-                      reportId: report.id,
-                      status: "VALID",
+                    setPendingAction({
+                      type: "report",
+                      action: "VALID",
+                      id: report.id,
                       note: notes[report.id],
                     })
                   }
@@ -214,9 +226,10 @@ export function AdminDiscussionsClient({
                   size="sm"
                   variant="ghost"
                   onClick={() =>
-                    resolveReport.mutate({
-                      reportId: report.id,
-                      status: "INVALID",
+                    setPendingAction({
+                      type: "report",
+                      action: "INVALID",
+                      id: report.id,
                       note: notes[report.id],
                     })
                   }
@@ -231,6 +244,72 @@ export function AdminDiscussionsClient({
           ) : null}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        variant={
+          pendingAction?.type === "thread" && pendingAction.action === "remove"
+            ? "destructive"
+            : "warning"
+        }
+        open={pendingAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingAction(null);
+        }}
+        title={
+          pendingAction?.type === "thread"
+            ? pendingAction.action === "remove"
+              ? "Remove thread?"
+              : pendingAction.action === "hide"
+                ? "Hide thread?"
+                : pendingAction.action === "unhide"
+                  ? "Unhide thread?"
+                  : pendingAction.action === "lock"
+                    ? "Lock thread?"
+                    : "Unlock thread?"
+            : pendingAction?.type === "report"
+              ? "Resolve report?"
+              : "Confirm action"
+        }
+        description={
+          pendingAction?.type === "thread"
+            ? "This action affects visibility and participation of the discussion."
+            : pendingAction?.type === "report"
+              ? "Mark the report as valid or dismiss it. This updates moderation history."
+              : ""
+        }
+        confirmLabel="Confirm"
+        loading={
+          pendingAction?.type === "thread"
+            ? hideThread.isPending ||
+              unhideThread.isPending ||
+              lockThread.isPending ||
+              deleteThread.isPending
+            : resolveReport.isPending
+        }
+        onConfirm={() => {
+          if (!pendingAction) return;
+          if (pendingAction.type === "thread") {
+            const { action, id } = pendingAction;
+            if (action === "hide") {
+              hideThread.mutate({ discussionId: id });
+            } else if (action === "unhide") {
+              unhideThread.mutate({ discussionId: id });
+            } else if (action === "lock") {
+              lockThread.mutate({ discussionId: id, locked: true });
+            } else if (action === "unlock") {
+              lockThread.mutate({ discussionId: id, locked: false });
+            } else if (action === "remove") {
+              deleteThread.mutate({ discussionId: id });
+            }
+          } else if (pendingAction.type === "report") {
+            resolveReport.mutate({
+              reportId: pendingAction.id,
+              status: pendingAction.action,
+              note: pendingAction.note,
+            });
+          }
+          setPendingAction(null);
+        }}
+      />
     </div>
   );
 }

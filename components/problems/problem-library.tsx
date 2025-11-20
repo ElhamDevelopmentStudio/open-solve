@@ -2,9 +2,9 @@
 
 import { ProblemFiltersPanel } from "@/components/problems/problem-filters-panel";
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Drawer,
   DrawerClose,
@@ -27,8 +27,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProblemFilters } from "@/hooks/use-problem-filters";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { trpc } from "@/lib/trpc/client";
 import type {
   ProblemFiltersInput,
@@ -41,16 +41,24 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { formatDistanceToNow } from "date-fns";
 import {
   ArrowRight01Icon,
-  Search01Icon,
-  FilterIcon,
-  SlidersHorizontalIcon,
-  Clock01Icon,
   Cancel01Icon,
+  Clock01Icon,
+  FilterIcon,
+  Search01Icon,
+  SlidersHorizontalIcon,
 } from "hugeicons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { forwardRef, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
   relevance: "Relevance",
@@ -82,12 +90,14 @@ type ProblemLibraryShellProps = {
   initialFilters: ProblemFiltersInput;
   viewerHasSession?: boolean;
   problemBasePath?: string;
+  tagSlug?: string;
 };
 
 export function ProblemLibraryShell({
   initialFilters,
   viewerHasSession = false,
   problemBasePath = "/problems",
+  tagSlug,
 }: ProblemLibraryShellProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -305,41 +315,29 @@ export function ProblemLibraryShell({
       <a href="#problem-library-results" className="skip-link sr-only focus:not-sr-only">
         Skip to results
       </a>
-      <div className="space-y-8">
-        <header className="space-y-6">
-          <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Problem Library
-            </p>
-            <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Browse Problems</h1>
-            <p className="max-w-2xl text-base text-muted-foreground">
-              Explore our curated collection of coding challenges across various topics and
-              difficulty levels
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[280px]">
-              <Search01Icon
-                className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
-                strokeWidth={2}
-              />
+      <div className="space-y-6">
+        <div className="border-2 border-border bg-card p-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-1 items-center gap-3">
+              {tagSlug ? (
+                <Badge variant="outline" className="text-[10px] uppercase">
+                  #{tagSlug}
+                </Badge>
+              ) : null}
+              <Search01Icon className="h-5 w-5 text-muted-foreground" strokeWidth={2} aria-hidden />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search problems by title or description..."
+                placeholder="Search problems by title or description…"
                 aria-label="Search problems"
-                className="h-12 rounded-xl pl-11 pr-24 text-base transition-all focus:shadow-lg focus:shadow-primary/5"
+                className="h-11 border-2 border-border bg-background px-3 font-mono text-sm"
               />
-              <span
-                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
-                aria-live="polite"
-              >
+              <span className="ml-3 border border-border bg-muted px-2 py-1 text-[11px] font-bold uppercase text-muted-foreground">
                 {results?.total ?? 0} results
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <Label htmlFor="sort" className="text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3">
+              <Label htmlFor="sort" className="text-xs font-bold uppercase text-muted-foreground">
                 Sort
               </Label>
               <Select
@@ -348,10 +346,13 @@ export function ProblemLibraryShell({
                   handleFilterChange({ sort: value as ProblemFiltersInput["sort"] })
                 }
               >
-                <SelectTrigger id="sort" className="w-[170px] rounded-xl focus-ring">
+                <SelectTrigger
+                  id="sort"
+                  className="w-[170px] border-2 border-border font-mono text-sm"
+                >
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-2 border-border font-mono">
                   {Object.entries(SORT_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
@@ -361,21 +362,22 @@ export function ProblemLibraryShell({
               </Select>
               <Drawer open={filtersOpen} onOpenChange={setFiltersOpen} direction="bottom">
                 <DrawerTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 rounded-xl lg:hidden">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-2 border-border font-mono text-xs lg:hidden"
+                  >
                     <FilterIcon className="h-4 w-4" strokeWidth={2} /> Filters
-                    {hasActiveFilters && (
-                      <Badge
-                        variant="secondary"
-                        className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold"
-                      >
+                    {hasActiveFilters ? (
+                      <Badge variant="secondary" className="ml-1 border px-1.5 text-[10px]">
                         {activeFilterCount}
                       </Badge>
-                    )}
+                    ) : null}
                   </Button>
                 </DrawerTrigger>
-                <DrawerContent className="h-[88vh] rounded-t-3xl border-t bg-background p-1 pb-4">
+                <DrawerContent className="h-[88vh] border-t-2 border-border bg-background p-1 pb-4">
                   <DrawerHeader className="pb-2">
-                    <DrawerTitle className="flex items-center justify-center gap-2 text-base">
+                    <DrawerTitle className="flex items-center justify-center gap-2 font-mono text-base">
                       <SlidersHorizontalIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     </DrawerTitle>
                   </DrawerHeader>
@@ -390,29 +392,34 @@ export function ProblemLibraryShell({
                     />
                   </div>
                   <DrawerFooter className="border-t bg-background px-5">
-                    <Button variant="ghost" onClick={handleClearAll} disabled={!hasActiveFilters}>
+                    <Button
+                      variant="ghost"
+                      onClick={handleClearAll}
+                      disabled={!hasActiveFilters}
+                      className="font-mono"
+                    >
                       Reset
                     </Button>
                     <DrawerClose asChild>
-                      <Button>Done</Button>
+                      <Button className="font-mono">Done</Button>
                     </DrawerClose>
                   </DrawerFooter>
                 </DrawerContent>
               </Drawer>
             </div>
           </div>
-        </header>
+        </div>
 
         {listQuery.isError ? (
-          <Alert variant="destructive">
-            <AlertTitle>Unable to load problems</AlertTitle>
-            <AlertDescription>
+          <Alert variant="destructive" className="rounded-none border-2 font-mono">
+            <AlertTitle className="font-mono font-bold">Unable to load problems</AlertTitle>
+            <AlertDescription className="font-mono">
               {listQuery.error?.message ?? "Something went wrong while loading the library."}
             </AlertDescription>
             <Button
               variant="outline"
               size="sm"
-              className="mt-3"
+              className="mt-3 rounded-none border-2 font-mono"
               onClick={() => listQuery.refetch()}
             >
               Retry
@@ -422,7 +429,7 @@ export function ProblemLibraryShell({
 
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside
-            className="hidden rounded-2xl border border-border/50 bg-card/80 p-4 shadow-sm backdrop-blur-sm lg:block"
+            className="hidden border-2 border-border bg-background p-4 lg:block"
             aria-label="Filter panel"
           >
             <ProblemFiltersPanel
@@ -435,9 +442,11 @@ export function ProblemLibraryShell({
           </aside>
           <section className="space-y-4" aria-live={isPending ? "polite" : "off"}>
             {statusFilterBlocked ? (
-              <Alert>
-                <AlertTitle>Sign in to use status filters</AlertTitle>
-                <AlertDescription>
+              <Alert className="rounded-none border-2 font-mono">
+                <AlertTitle className="font-mono font-bold">
+                  Sign in to use status filters
+                </AlertTitle>
+                <AlertDescription className="font-mono">
                   Progress filters rely on your submission history.{" "}
                   <Link
                     href="/sign-in"
@@ -485,7 +494,7 @@ export function ProblemLibraryShell({
             )}
 
             {results && results.pageCount > 1 ? (
-              <div className="flex items-center justify-between border-t pt-4 text-sm text-muted-foreground">
+              <div className="flex items-center justify-between border-t pt-4 font-mono text-sm text-muted-foreground">
                 <div>
                   Page {results.page} of {results.pageCount}
                 </div>
@@ -497,6 +506,7 @@ export function ProblemLibraryShell({
                       handleFilterChange({ page: Math.max(1, results.page - 1) }, false)
                     }
                     disabled={results.page === 1}
+                    className="rounded-none border-2 font-mono"
                   >
                     Previous
                   </Button>
@@ -509,6 +519,7 @@ export function ProblemLibraryShell({
                       )
                     }
                     disabled={results.page === results.pageCount}
+                    className="rounded-none border-2 font-mono"
                   >
                     Next
                   </Button>
@@ -571,9 +582,9 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
       onMouseEnter={triggerPrefetch}
       onFocus={triggerPrefetch}
       className={cn(
-        "group rounded-2xl border border-border/50 bg-card/90 p-5 shadow-sm backdrop-blur-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
+        "group border-2 border-border bg-background p-5 transition-all duration-200 focus-visible:border-primary focus-visible:outline-none",
         "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200",
-        "hover:-translate-y-1 hover:border-primary/30 hover:bg-card hover:shadow-lg hover:shadow-primary/5",
+        "hover:border-primary/50 hover:bg-accent",
         isFetching && "opacity-75",
       )}
       style={{ animationDelay: `${animationDelay}ms` }}
@@ -584,36 +595,36 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
             <Link
               href={`/problems/${problem.slug}`}
               id={titleId}
-              className="text-base font-semibold leading-tight transition-colors group-hover:text-primary"
+              className="font-mono text-base font-semibold leading-tight transition-colors group-hover:text-primary"
             >
               {problem.title}
             </Link>
             {problem.version ? (
-              <span className="text-xs text-muted-foreground">v{problem.version}</span>
+              <span className="font-mono text-xs text-muted-foreground">v{problem.version}</span>
             ) : null}
             <Badge
               variant="outline"
               className={cn(
-                "border text-xs",
+                "rounded-none border font-mono text-xs font-bold uppercase",
                 difficultyTone[problem.difficulty ?? ""] ?? "text-muted-foreground",
               )}
             >
               {problem.difficulty ?? "UNRATED"}
             </Badge>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground">
             {visibleTags.map((tag) => (
               <Badge
                 key={tag.slug}
                 variant="secondary"
-                className="rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors hover:bg-secondary/80"
+                className="rounded-none border px-2.5 py-0.5 font-mono text-[11px] font-medium transition-colors hover:bg-secondary/80"
               >
                 {tag.name}
               </Badge>
             ))}
             {showRestTags ? <span>+{problem.tags.length - visibleTags.length} more</span> : null}
             {problem.hasEditorial ? (
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary ring-1 ring-primary/20">
+              <span className="rounded-none border border-primary/20 bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-primary">
                 Editorial
               </span>
             ) : null}
@@ -622,19 +633,19 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
         <ProblemStatusBadge status={problem.status} />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center gap-4 font-mono text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <span>Acceptance</span>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex h-[2px] w-28 overflow-hidden rounded-full bg-muted">
+              <div className="flex h-[2px] w-28 overflow-hidden rounded-none bg-muted">
                 <div
                   className="bg-primary transition-[width] duration-200"
                   style={{ width: `${acceptance ?? 0}%` }}
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="rounded-none border-2 font-mono">
               {acceptance ? `${acceptance.toFixed(1)}%` : "Not enough data"}
             </TooltipContent>
           </Tooltip>
@@ -650,7 +661,7 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
         <div className="ml-auto flex items-center gap-1">
           <Link
             href={`/problems/${problem.slug}`}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+            className="inline-flex items-center gap-1.5 font-mono text-sm font-semibold text-primary transition-colors hover:text-primary/80"
             aria-label={`View ${problem.title}`}
           >
             View problem <ArrowRight01Icon className="h-4 w-4" strokeWidth={2.5} />
@@ -665,7 +676,7 @@ function ProblemListSkeleton() {
   return (
     <div className="space-y-3" aria-hidden="true">
       {Array.from({ length: 6 }).map((_, index) => (
-        <Skeleton key={index} className="h-32 rounded-2xl" />
+        <Skeleton key={index} className="h-32 rounded-none" />
       ))}
     </div>
   );
@@ -674,18 +685,23 @@ function ProblemListSkeleton() {
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
     <div
-      className="rounded-2xl border-2 border-dashed border-border bg-card/50 p-12 text-center backdrop-blur-sm"
+      className="border-2 border-dashed border-border bg-background p-12 text-center"
       role="status"
       aria-live="polite"
     >
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-none border-2 border-border bg-muted">
         <Search01Icon className="h-8 w-8 text-muted-foreground" strokeWidth={2} />
       </div>
-      <p className="text-lg font-semibold text-foreground">No problems found</p>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="font-mono text-lg font-semibold text-foreground">No problems found</p>
+      <p className="mt-2 font-mono text-sm text-muted-foreground">
         Try adjusting your search criteria or clearing some filters to see more results.
       </p>
-      <Button className="mt-6" onClick={onReset} variant="default" size="sm">
+      <Button
+        className="mt-6 rounded-none border-2 font-mono"
+        onClick={onReset}
+        variant="default"
+        size="sm"
+      >
         <Cancel01Icon className="mr-2 h-4 w-4" strokeWidth={2} />
         Reset all filters
       </Button>

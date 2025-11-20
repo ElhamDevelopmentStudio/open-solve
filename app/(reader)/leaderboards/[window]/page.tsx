@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { HydrationBoundary } from "@tanstack/react-query";
+
+import { GlobalLeaderboardClient } from "@/components/leaderboards/leaderboard-client";
 import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
-import { GlobalLeaderboardClient } from "@/components/leaderboards/leaderboard-client";
 import type { LeaderboardWindow } from "@/lib/leaderboard/service";
 
 const WINDOW_MAP: Record<string, LeaderboardWindow> = {

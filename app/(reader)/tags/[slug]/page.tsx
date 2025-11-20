@@ -45,5 +45,6 @@ export default async function TagProblemsPage({
       tags,
     },
     viewerHasSession,
+    tagSlug: slug,
   });
 }

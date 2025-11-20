@@ -1,3 +1,46 @@
+/**
+ * OPENSOLVE DESIGN SYSTEM
+ * 
+ * This file contains the complete color system, typography, spacing,
+ * and animation utilities for OpenSolve.
+ * 
+ * DESIGN PHILOSOPHY:
+ * - Brutalist, terminal-inspired aesthetics
+ * - NO rounded corners (always use rounded-none)
+ * - Monospace typography for ALL text (font-mono)
+ * - Subtle gradients with warmth
+ * - Semantic color tokens (never hard-coded colors)
+ * - Perfect light & dark mode support
+ * 
+ * COLOR SYSTEM:
+ * All colors use semantic tokens that automatically adapt between themes.
+ * NEVER use hard-coded colors like bg-blue-500 or text-gray-700.
+ * ALWAYS use semantic tokens like bg-primary, text-foreground, border-border.
+ * 
+ * TYPOGRAPHY:
+ * - Primary font: "Inter" (sans-serif)
+ * - Code/UI font: "JetBrains Mono" (monospace)
+ * - ALL UI elements use font-mono
+ * - Font weights: normal, medium, bold, black (no light/semibold)
+ * 
+ * SPACING:
+ * - Based on 8px scale: 4, 8, 12, 16, 24, 32, 48, 64, 96, 128
+ * - Sections: py-24 lg:py-32
+ * - Container padding: px-6 lg:px-12
+ * 
+ * BORDERS:
+ * - NO rounded corners: rounded-none everywhere
+ * - Emphasis borders: border-2
+ * - Subtle borders: border
+ * 
+ * ANIMATIONS:
+ * - NO external animation libraries
+ * - CSS-only transitions: duration-150, duration-200, duration-300
+ * - Utility classes available: animate-fade-in, animate-slide-up, etc.
+ * 
+ * For complete documentation, see AGENTS.md
+ */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -46,112 +89,171 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/**
+ * LIGHT MODE COLOR PALETTE
+ * 
+ * Base:
+ * - Background: Soft off-white with subtle blue tint (#f5f7fa)
+ * - Foreground: Deep charcoal (#1a1f2e)
+ * 
+ * Primary: Vibrant blue with warmth (#5b7ef6)
+ * Used for: CTAs, links, accents, focus states
+ * 
+ * Semantic States:
+ * - Success: Green (#10b981) - AC, completed, published
+ * - Warning: Amber (#f59e0b) - pending, review, retrying
+ * - Destructive: Red (#ef4444) - errors, failed, rejected
+ * - Info: Blue (#3b82f6) - informational states
+ * 
+ * Usage:
+ * - bg-background, text-foreground (base)
+ * - bg-primary, text-primary-foreground (CTAs)
+ * - text-muted-foreground (secondary text)
+ * - border-border (all borders)
+ */
 :root {
   --font-geist-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-geist-mono: "JetBrains Mono", "Menlo", ui-monospace, SFMono-Regular, monospace;
   --radius: 0.75rem;
 
-  --background: 220 26% 97%;
-  --foreground: 227 25% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 227 25% 10%;
-  --popover: 210 33% 98%;
-  --popover-foreground: 227 25% 10%;
+  /* Base colors */
+  --background: 220 26% 97%; /* #f5f7fa - Soft off-white */
+  --foreground: 227 25% 10%; /* #1a1f2e - Deep charcoal */
+  --card: 0 0% 100%; /* #ffffff - Pure white */
+  --card-foreground: 227 25% 10%; /* #1a1f2e - Deep charcoal */
+  --popover: 210 33% 98%; /* #f8fafc - Subtle blue-white */
+  --popover-foreground: 227 25% 10%; /* #1a1f2e - Deep charcoal */
 
-  --primary: 226 78% 58%;
-  --primary-foreground: 0 0% 100%;
+  /* Primary brand color */
+  --primary: 226 78% 58%; /* #5b7ef6 - Vibrant blue */
+  --primary-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --secondary: 221 24% 94%;
-  --secondary-foreground: 226 28% 20%;
+  /* Secondary colors */
+  --secondary: 221 24% 94%; /* #eff1f5 - Light gray-blue */
+  --secondary-foreground: 226 28% 20%; /* #28344d - Dark blue */
 
-  --muted: 215 28% 93%;
-  --muted-foreground: 224 18% 48%;
+  /* Muted colors (secondary text, disabled states) */
+  --muted: 215 28% 93%; /* #e8edf5 - Light muted */
+  --muted-foreground: 224 18% 48%; /* #64748b - Muted gray-blue */
 
-  --accent: 182 65% 88%;
-  --accent-foreground: 185 34% 20%;
+  /* Accent colors (highlights, hover states) */
+  --accent: 182 65% 88%; /* #d1f0f7 - Cyan accent */
+  --accent-foreground: 185 34% 20%; /* #234850 - Dark cyan */
 
-  --destructive: 358 76% 61%;
-  --destructive-foreground: 0 0% 100%;
+  /* State colors */
+  --destructive: 358 76% 61%; /* #ef4444 - Red (errors) */
+  --destructive-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --success: 156 63% 40%;
-  --success-foreground: 0 0% 100%;
+  --success: 156 63% 40%; /* #10b981 - Green (success) */
+  --success-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --warning: 31 92% 54%;
-  --warning-foreground: 0 0% 100%;
+  --warning: 31 92% 54%; /* #f59e0b - Amber (warnings) */
+  --warning-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --info: 199 84% 52%;
-  --info-foreground: 0 0% 100%;
+  --info: 199 84% 52%; /* #3b82f6 - Blue (info) */
+  --info-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --border: 214 28% 86%;
-  --input: 214 28% 86%;
-  --ring: 226 78% 58%;
+  /* Borders and inputs */
+  --border: 214 28% 86%; /* #d4dce8 - Light border */
+  --input: 214 28% 86%; /* #d4dce8 - Input border */
+  --ring: 226 78% 58%; /* #5b7ef6 - Focus ring (same as primary) */
 
-  --chart-1: 226 78% 58%;
-  --chart-2: 267 69% 60%;
-  --chart-3: 199 84% 52%;
-  --chart-4: 156 63% 40%;
-  --chart-5: 32 94% 52%;
+  /* Chart colors */
+  --chart-1: 226 78% 58%; /* Blue */
+  --chart-2: 267 69% 60%; /* Purple */
+  --chart-3: 199 84% 52%; /* Cyan */
+  --chart-4: 156 63% 40%; /* Green */
+  --chart-5: 32 94% 52%; /* Orange */
 
-  --sidebar: 216 32% 96%;
-  --sidebar-foreground: 222 28% 16%;
-  --sidebar-primary: 226 78% 58%;
+  /* Sidebar (app shell) */
+  --sidebar: 216 32% 96%; /* Light sidebar bg */
+  --sidebar-foreground: 222 28% 16%; /* Dark sidebar text */
+  --sidebar-primary: 226 78% 58%; /* Primary in sidebar */
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 222 24% 92%;
+  --sidebar-accent: 222 24% 92%; /* Sidebar hover */
   --sidebar-accent-foreground: 222 45% 18%;
-  --sidebar-border: 214 28% 86%;
-  --sidebar-ring: 226 78% 58%;
+  --sidebar-border: 214 28% 86%; /* Sidebar borders */
+  --sidebar-ring: 226 78% 58%; /* Sidebar focus ring */
 }
 
+/**
+ * DARK MODE COLOR PALETTE
+ * 
+ * Base:
+ * - Background: Rich dark blue-black (#0f1419)
+ * - Foreground: Soft white (#f5f7fa)
+ * 
+ * Primary: Bright blue, more vivid than light mode (#7c9eff)
+ * Used for: CTAs, links, accents, focus states
+ * 
+ * Design Notes:
+ * - Slightly more vibrant colors than light mode for visibility
+ * - Warmer tones to reduce eye strain
+ * - Sufficient contrast ratios for accessibility (WCAG AA)
+ * - Primary is lighter/brighter to stand out on dark background
+ * 
+ * Usage:
+ * Same semantic tokens as light mode - colors adapt automatically
+ */
 .dark {
-  --background: 232 32% 6%;
-  --foreground: 220 27% 96%;
-  --card: 234 30% 10%;
-  --card-foreground: 220 27% 96%;
-  --popover: 233 32% 9%;
-  --popover-foreground: 220 27% 96%;
+  /* Base colors */
+  --background: 232 32% 6%; /* #0f1419 - Rich dark blue-black */
+  --foreground: 220 27% 96%; /* #f5f7fa - Soft white */
+  --card: 234 30% 10%; /* #16202b - Dark card */
+  --card-foreground: 220 27% 96%; /* #f5f7fa - Soft white */
+  --popover: 233 32% 9%; /* #121825 - Dark popover */
+  --popover-foreground: 220 27% 96%; /* #f5f7fa - Soft white */
 
-  --primary: 226 100% 77%;
-  --primary-foreground: 234 32% 10%;
+  /* Primary brand color (brighter in dark mode) */
+  --primary: 226 100% 77%; /* #7c9eff - Bright blue */
+  --primary-foreground: 234 32% 10%; /* #16202b - Dark (for contrast) */
 
-  --secondary: 229 26% 16%;
-  --secondary-foreground: 220 27% 96%;
+  /* Secondary colors */
+  --secondary: 229 26% 16%; /* #20273a - Dark gray-blue */
+  --secondary-foreground: 220 27% 96%; /* #f5f7fa - Soft white */
 
-  --muted: 230 23% 18%;
-  --muted-foreground: 227 18% 72%;
+  /* Muted colors */
+  --muted: 230 23% 18%; /* #242d3d - Dark muted */
+  --muted-foreground: 227 18% 72%; /* #b8c4d9 - Light muted */
 
-  --accent: 189 42% 22%;
-  --accent-foreground: 180 45% 90%;
+  /* Accent colors */
+  --accent: 189 42% 22%; /* #1e3a45 - Dark cyan */
+  --accent-foreground: 180 45% 90%; /* #d9f0f5 - Light cyan */
 
-  --destructive: 358 72% 55%;
-  --destructive-foreground: 0 0% 100%;
+  /* State colors (adjusted for dark background) */
+  --destructive: 358 72% 55%; /* #f87171 - Lighter red */
+  --destructive-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --success: 150 47% 45%;
-  --success-foreground: 0 0% 100%;
+  --success: 150 47% 45%; /* #34d399 - Lighter green */
+  --success-foreground: 0 0% 100%; /* #ffffff - White */
 
-  --warning: 36 96% 63%;
-  --warning-foreground: 234 32% 10%;
+  --warning: 36 96% 63%; /* #fbbf24 - Lighter amber */
+  --warning-foreground: 234 32% 10%; /* #16202b - Dark (for contrast) */
 
-  --info: 202 100% 70%;
-  --info-foreground: 234 32% 10%;
+  --info: 202 100% 70%; /* #60a5fa - Lighter blue */
+  --info-foreground: 234 32% 10%; /* #16202b - Dark (for contrast) */
 
-  --border: 230 21% 22%;
-  --input: 230 21% 22%;
-  --ring: 226 100% 77%;
+  /* Borders and inputs */
+  --border: 230 21% 22%; /* #2d3748 - Dark border */
+  --input: 230 21% 22%; /* #2d3748 - Input border */
+  --ring: 226 100% 77%; /* #7c9eff - Focus ring (same as primary) */
 
-  --chart-1: 226 100% 77%;
-  --chart-2: 267 80% 72%;
-  --chart-3: 202 100% 70%;
-  --chart-4: 150 47% 45%;
-  --chart-5: 36 96% 63%;
+  /* Chart colors (brighter for visibility) */
+  --chart-1: 226 100% 77%; /* Bright blue */
+  --chart-2: 267 80% 72%; /* Bright purple */
+  --chart-3: 202 100% 70%; /* Bright cyan */
+  --chart-4: 150 47% 45%; /* Bright green */
+  --chart-5: 36 96% 63%; /* Bright orange */
 
-  --sidebar: 232 32% 9%;
-  --sidebar-foreground: 222 22% 88%;
-  --sidebar-primary: 226 100% 77%;
+  /* Sidebar (app shell) */
+  --sidebar: 232 32% 9%; /* Dark sidebar bg */
+  --sidebar-foreground: 222 22% 88%; /* Light sidebar text */
+  --sidebar-primary: 226 100% 77%; /* Primary in sidebar */
   --sidebar-primary-foreground: 232 32% 9%;
-  --sidebar-accent: 229 26% 16%;
+  --sidebar-accent: 229 26% 16%; /* Sidebar hover */
   --sidebar-accent-foreground: 220 27% 96%;
-  --sidebar-border: 229 26% 16%;
-  --sidebar-ring: 226 100% 77%;
+  --sidebar-border: 229 26% 16%; /* Sidebar borders */
+  --sidebar-ring: 226 100% 77%; /* Sidebar focus ring */
 }
 
 @layer base {
@@ -187,6 +289,26 @@
   }
 }
 
+/**
+ * UTILITY LAYER
+ * 
+ * Contains all animation keyframes and reusable utility classes.
+ * 
+ * Available Animations:
+ * - fade-in, fade-out
+ * - slide-up, slide-down, slide-left, slide-right
+ * - scale-in
+ * - shimmer (loading effect)
+ * - float (subtle motion)
+ * - pulse-ring (expanding ring)
+ * - glint (light sweep)
+ * - gradient (animated gradient background)
+ * 
+ * Usage:
+ * className="animate-fade-in"
+ * className="animate-slide-up"
+ * etc.
+ */
 @layer utilities {
   @keyframes fade-in {
     from {
@@ -303,6 +425,27 @@
     }
   }
 
+  @keyframes gradient {
+    0% {
+      background:
+        radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(147, 51, 234, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+    }
+    50% {
+      background:
+        radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 30% 70%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+    }
+    100% {
+      background:
+        radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(147, 51, 234, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+    }
+  }
+
   .animate-fade-in {
     animation: fade-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -354,6 +497,10 @@
   .animate-glint {
     background-size: 400% 100%;
     animation: glint 3s linear infinite;
+  }
+
+  .animate-gradient {
+    animation: gradient 15s ease infinite;
   }
 
   .glass-effect {

@@ -106,7 +106,7 @@ function Carousel({
     <CarouselContext.Provider
       value={{
         carouselRef,
-        api: api,
+        api,
         opts,
         orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
         scrollPrev,
@@ -117,7 +117,7 @@ function Carousel({
     >
       <div
         onKeyDownCapture={handleKeyDown}
-        className={cn("relative", className)}
+        className={cn("relative font-mono text-foreground", className)}
         role="region"
         aria-roledescription="carousel"
         data-slot="carousel"
@@ -135,7 +135,12 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div ref={carouselRef} className="overflow-hidden" data-slot="carousel-content">
       <div
-        className={cn("flex", orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col", className)}
+        className={cn(
+          "flex",
+          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+          "gap-0",
+          className,
+        )}
         {...props}
       />
     </div>
@@ -174,7 +179,7 @@ function CarouselPrevious({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
+        "absolute size-10 border-2 border-border bg-background shadow-sm rounded-none hover:border-primary/60 hover:bg-accent focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-[3px]",
         orientation === "horizontal"
           ? "top-1/2 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -204,7 +209,7 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
+        "absolute size-10 border-2 border-border bg-background shadow-sm rounded-none hover:border-primary/60 hover:bg-accent focus-visible:border-primary focus-visible:ring-primary/20 focus-visible:ring-[3px]",
         orientation === "horizontal"
           ? "top-1/2 -right-12 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",

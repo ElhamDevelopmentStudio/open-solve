@@ -1,11 +1,13 @@
 "use client";
 
+import { formatDistanceToNow } from "date-fns";
+import type { inferRouterOutputs } from "@trpc/server";
+
+import { Activity, Braces, Cog, RefreshCw, ShieldAlert, Users2 } from "@/components/icons";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { adminConfig } from "@/config/admin";
 import { trpc } from "@/lib/trpc/client";
 import type { AppRouter } from "@/lib/trpc/router";
-import type { inferRouterOutputs } from "@trpc/server";
-import { Activity, Cog, ShieldAlert, Users2, Braces, RefreshCw } from "@/components/icons";
-import { formatDistanceToNow } from "date-fns";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 type Overview = inferRouterOutputs<AppRouter>["admin"]["dashboard"]["overview"];
@@ -19,25 +21,25 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
 
   const stats = [
     {
-      label: "Total users",
+      label: adminConfig.overview.stats.users,
       value: data.users.total.toLocaleString(),
       helper: `+${data.users.newLast24h.toLocaleString()} in 24h`,
       icon: Users2,
     },
     {
-      label: "Submissions (24h)",
+      label: adminConfig.overview.stats.submissions,
       value: data.submissions.last24h.toLocaleString(),
       helper: `${Math.round(data.submissions.acceptanceRateLast24h * 100)}% accepted`,
       icon: Activity,
     },
     {
-      label: "Problems",
+      label: adminConfig.overview.stats.problems,
       value: data.problems.total.toLocaleString(),
       helper: `${data.problems.byState.PUBLISHED ?? 0} published`,
       icon: Braces,
     },
     {
-      label: "Feature flags",
+      label: adminConfig.overview.stats.features,
       value: data.featureFlags.total.toLocaleString(),
       helper: `${data.featureFlags.enabled} active`,
       icon: Cog,
@@ -45,12 +47,14 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 font-mono">
+      <div className="flex flex-col gap-4 border-2 border-border bg-background p-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Realtime telemetry</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">
+            {adminConfig.overview.sections.telemetry.title}
+          </p>
           <p className="text-sm text-muted-foreground">
-            Everything critical for users, problems, submissions, and infrastructure health.
+            {adminConfig.overview.sections.telemetry.description}
           </p>
         </div>
         <Button
@@ -58,18 +62,21 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
           size="sm"
           onClick={() => overviewQuery.refetch()}
           disabled={overviewQuery.isFetching}
-          className="gap-2"
+          className="h-10 gap-2 rounded-none border-2 border-border px-4 font-bold uppercase"
         >
           <RefreshCw className={cn("h-4 w-4", overviewQuery.isFetching && "animate-spin")} />
-          Refresh
+          {adminConfig.overview.sections.telemetry.refresh}
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-px bg-border/40 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="border-border/60 bg-card/80">
+            <Card
+              key={stat.label}
+              className="border-2 border-border bg-background p-0 shadow-none transition-colors hover:border-primary/50 hover:bg-accent"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -77,7 +84,7 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
                     <p className="mt-2 text-2xl font-semibold">{stat.value}</p>
                     <p className="text-xs text-muted-foreground">{stat.helper}</p>
                   </div>
-                  <span className="rounded-xl bg-primary/10 p-3 text-primary">
+                  <span className="border-2 border-border bg-primary/10 p-3 text-primary">
                     <Icon className="h-4 w-4" />
                   </span>
                 </div>
@@ -87,26 +94,42 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
         })}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="border-border/60 bg-card/80 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Judge queues</CardTitle>
+      <div className="grid gap-px bg-border/40 lg:grid-cols-3">
+        <Card className="border-2 border-border bg-background lg:col-span-2">
+          <CardHeader className="border-b-2 border-border">
+            <CardTitle className="text-lg font-black">
+              {adminConfig.overview.sections.queues.title}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <QueueBar label="Queued" value={data.submissions.queued} tone="primary" />
-            <QueueBar label="Running" value={data.submissions.running} tone="muted" />
-            <QueueBar label="Manual review" value={data.submissions.manualPending} tone="warning" />
+            <QueueBar
+              label={adminConfig.overview.sections.queues.queued}
+              value={data.submissions.queued}
+              tone="primary"
+            />
+            <QueueBar
+              label={adminConfig.overview.sections.queues.running}
+              value={data.submissions.running}
+              tone="muted"
+            />
+            <QueueBar
+              label={adminConfig.overview.sections.queues.manual}
+              value={data.submissions.manualPending}
+              tone="warning"
+            />
           </CardContent>
         </Card>
-        <Card className="border-border/60 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-base">System health</CardTitle>
+        <Card className="border-2 border-border bg-background">
+          <CardHeader className="border-b-2 border-border">
+            <CardTitle className="text-lg font-black">
+              {adminConfig.overview.sections.system.title}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {Object.entries(data.systemHealth).map(([service, status]) => (
               <div
                 key={service}
-                className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2"
+                className="flex items-center justify-between border-2 border-border px-3 py-2"
               >
                 <div>
                   <p className="text-sm font-medium capitalize">{service}</p>
@@ -117,13 +140,15 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
                 <Badge
                   variant={status.healthy ? "outline" : "destructive"}
                   className={cn(
-                    "text-[11px]",
+                    "rounded-none border-2 px-2 py-1 text-[11px] font-bold uppercase",
                     status.healthy
-                      ? "text-primary border-primary/40"
-                      : "text-destructive-foreground",
+                      ? "border-primary/40 text-primary"
+                      : "border-destructive/40 text-destructive-foreground",
                   )}
                 >
-                  {status.healthy ? "Healthy" : "Degraded"}
+                  {status.healthy
+                    ? adminConfig.overview.sections.system.healthy
+                    : adminConfig.overview.sections.system.degraded}
                 </Badge>
               </div>
             ))}
@@ -131,33 +156,38 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-border/60 bg-card/80">
+      <div className="grid gap-px bg-border/40 lg:grid-cols-2">
+        <Card className="border-2 border-border bg-background">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base">Open incidents</CardTitle>
+              <CardTitle className="text-lg font-black">
+                {adminConfig.overview.sections.incidents.title}
+              </CardTitle>
               <p className="text-xs text-muted-foreground">
                 {data.incidents.length > 0 ? "Active investigations" : "All clear"}
               </p>
             </div>
-            <Badge variant="secondary" className="text-[11px]">
+            <Badge variant="secondary" className="rounded-none border-2 border-border text-[11px]">
               {data.incidents.length}
             </Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             {data.incidents.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-                No open incidents.
+              <div className="border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                {adminConfig.overview.sections.incidents.empty}
               </div>
             ) : (
               data.incidents.map((incident) => (
-                <div key={incident.id} className="rounded-lg border border-border/40 p-4">
+                <div key={incident.id} className="border-2 border-border p-4">
                   <div className="flex items-center justify-between gap-2">
                     <div>
-                      <p className="font-medium">{incident.title}</p>
+                      <p className="font-bold uppercase">{incident.title}</p>
                       <p className="text-xs text-muted-foreground">{incident.summary}</p>
                     </div>
-                    <Badge variant="outline" className="text-[11px] uppercase">
+                    <Badge
+                      variant="outline"
+                      className="rounded-none border-2 border-border px-2 py-1 text-[10px] font-bold uppercase"
+                    >
                       {incident.severity}
                     </Badge>
                   </div>
@@ -170,15 +200,17 @@ export function AdminDashboardClient({ initialData }: { initialData: Overview })
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-base">Recent audit events</CardTitle>
+        <Card className="border-2 border-border bg-background">
+          <CardHeader className="border-b-2 border-border">
+            <CardTitle className="text-lg font-black">
+              {adminConfig.overview.sections.audit.title}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.auditLogs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2 text-sm"
+                className="flex items-center justify-between border-2 border-border px-3 py-2 text-sm"
               >
                 <div>
                   <p className="font-medium">{log.action}</p>
@@ -217,9 +249,9 @@ function QueueBar({
         <span>{label}</span>
         <span>{value.toLocaleString()}</span>
       </div>
-      <div className="mt-2 h-2 rounded-full bg-muted">
+      <div className="mt-2 h-2 bg-muted">
         <div
-          className={cn("h-full rounded-full transition-all", colors[tone])}
+          className={cn("h-full transition-all", colors[tone])}
           style={{ width: `${Math.min(100, value)}%` }}
         />
       </div>
