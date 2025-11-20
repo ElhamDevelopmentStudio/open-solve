@@ -1,31 +1,59 @@
 -- Add the missing contest enums and columns to keep schema and DB aligned
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ContestType') THEN
-        CREATE TYPE "ContestType" AS ENUM ('COMPETITIVE', 'EDUCATIONAL', 'PRIVATE', 'CUSTOM');
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'ContestType'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public."ContestType" AS ENUM ('COMPETITIVE', 'EDUCATIONAL', 'PRIVATE', 'CUSTOM');
     END IF;
-END$$;
+END
+$$;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ContestRegistrationStatus') THEN
-        CREATE TYPE "ContestRegistrationStatus" AS ENUM ('REGISTERED', 'INVITED', 'WAITLISTED', 'DECLINED', 'REMOVED');
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'ContestRegistrationStatus'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public."ContestRegistrationStatus" AS ENUM ('REGISTERED', 'INVITED', 'WAITLISTED', 'DECLINED', 'REMOVED');
     END IF;
-END$$;
+END
+$$;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ClarificationVisibility') THEN
-        CREATE TYPE "ClarificationVisibility" AS ENUM ('PRIVATE', 'PUBLIC');
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'ClarificationVisibility'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public."ClarificationVisibility" AS ENUM ('PRIVATE', 'PUBLIC');
     END IF;
-END$$;
+END
+$$;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ClarificationStatus') THEN
-        CREATE TYPE "ClarificationStatus" AS ENUM ('OPEN', 'ANSWERED', 'ANNOUNCED', 'CLOSED');
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'ClarificationStatus'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public."ClarificationStatus" AS ENUM ('OPEN', 'ANSWERED', 'ANNOUNCED', 'CLOSED');
     END IF;
-END$$;
+END
+$$;
 
 DO $$
 BEGIN
@@ -39,20 +67,89 @@ BEGIN
     END;
 END$$;
 
-ALTER TABLE "Contest" ADD COLUMN "type" "ContestType" NOT NULL DEFAULT 'COMPETITIVE';
-ALTER TABLE "Contest" ADD COLUMN "settings" JSONB NOT NULL DEFAULT '{}';
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'Contest' AND column_name = 'type'
+    ) THEN
+        ALTER TABLE "Contest" ADD COLUMN "type" public."ContestType" NOT NULL DEFAULT 'COMPETITIVE';
+    END IF;
 
-ALTER TABLE "ContestProblem" ADD COLUMN "settings" JSONB NOT NULL DEFAULT '{}';
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'Contest' AND column_name = 'settings'
+    ) THEN
+        ALTER TABLE "Contest" ADD COLUMN "settings" JSONB NOT NULL DEFAULT '{}';
+    END IF;
+END
+$$;
 
-ALTER TABLE "ContestRegistration" ADD COLUMN "status" "ContestRegistrationStatus" NOT NULL DEFAULT 'REGISTERED';
-ALTER TABLE "ContestRegistration" ADD COLUMN "isDisqualified" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "ContestRegistration" ADD COLUMN "disqualifiedAt" TIMESTAMP(3);
-ALTER TABLE "ContestRegistration" ADD COLUMN "dqReason" TEXT;
-ALTER TABLE "ContestRegistration" ADD COLUMN "deviceFingerprint" TEXT;
-ALTER TABLE "ContestRegistration" ADD COLUMN "ipHash" TEXT;
-ALTER TABLE "ContestRegistration" ADD COLUMN "inviteCode" TEXT;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestProblem' AND column_name = 'settings'
+    ) THEN
+        ALTER TABLE "ContestProblem" ADD COLUMN "settings" JSONB NOT NULL DEFAULT '{}';
+    END IF;
+END
+$$;
 
-CREATE TABLE "ContestSnapshot" (
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'status'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "status" public."ContestRegistrationStatus" NOT NULL DEFAULT 'REGISTERED';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'isDisqualified'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "isDisqualified" BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'disqualifiedAt'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "disqualifiedAt" TIMESTAMP(3);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'dqReason'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "dqReason" TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'deviceFingerprint'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "deviceFingerprint" TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'ipHash'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "ipHash" TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'ContestRegistration' AND column_name = 'inviteCode'
+    ) THEN
+        ALTER TABLE "ContestRegistration" ADD COLUMN "inviteCode" TEXT;
+    END IF;
+END
+$$;
+
+CREATE TABLE IF NOT EXISTS "ContestSnapshot" (
     "id" TEXT NOT NULL,
     "contestId" TEXT NOT NULL,
     "frozenAt" TIMESTAMP(3) NOT NULL,
@@ -63,9 +160,9 @@ CREATE TABLE "ContestSnapshot" (
     CONSTRAINT "ContestSnapshot_contestId_fkey" FOREIGN KEY ("contestId") REFERENCES "Contest"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ContestSnapshot_contestId_frozenAt_idx" ON "ContestSnapshot"("contestId", "frozenAt");
+CREATE INDEX IF NOT EXISTS "ContestSnapshot_contestId_frozenAt_idx" ON "ContestSnapshot"("contestId", "frozenAt");
 
-CREATE TABLE "ContestClarification" (
+CREATE TABLE IF NOT EXISTS "ContestClarification" (
     "id" TEXT NOT NULL,
     "contestId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -87,7 +184,7 @@ CREATE TABLE "ContestClarification" (
     CONSTRAINT "ContestClarification_answeredById_fkey" FOREIGN KEY ("answeredById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE INDEX "ContestClarification_contestId_status_idx" ON "ContestClarification"("contestId", "status");
-CREATE INDEX "ContestClarification_userId_createdAt_idx" ON "ContestClarification"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ContestClarification_contestId_status_idx" ON "ContestClarification"("contestId", "status");
+CREATE INDEX IF NOT EXISTS "ContestClarification_userId_createdAt_idx" ON "ContestClarification"("userId", "createdAt");
 
-ALTER TABLE "Submission" ADD COLUMN "isFrozen" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Submission" ADD COLUMN IF NOT EXISTS "isFrozen" BOOLEAN NOT NULL DEFAULT false;

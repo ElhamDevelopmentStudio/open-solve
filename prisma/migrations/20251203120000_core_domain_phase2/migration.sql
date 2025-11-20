@@ -597,6 +597,12 @@ CREATE INDEX "Submission_userId_problemId_createdAt_idx" ON "Submission"("userId
 CREATE INDEX "Submission_problemId_verdictCode_createdAt_idx" ON "Submission"("problemId", "verdictCode", "createdAt");
 
 -- CreateIndex
+CREATE INDEX IF NOT EXISTS "Submission_contestId_userId_idx" ON "Submission"("contestId", "userId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Submission_contestId_problemId_userId_idx" ON "Submission"("contestId", "problemId", "userId");
+
+-- CreateIndex
 CREATE INDEX "Submission_codeHash_idx" ON "Submission"("codeHash");
 
 -- CreateIndex
