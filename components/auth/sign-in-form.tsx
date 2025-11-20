@@ -1,15 +1,15 @@
 "use client";
 
 import {
-    Button,
-    Checkbox,
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-    Input,
+  Button,
+  Checkbox,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
 } from "@/components/ui";
 import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import { trpc } from "@/lib/trpc/client";
@@ -195,7 +195,11 @@ export function SignInForm() {
             )}
           />
 
-          <Button type="submit" className="h-11 w-full font-medium" disabled={signInMutation.isPending}>
+          <Button
+            type="submit"
+            className="h-11 w-full font-medium"
+            disabled={signInMutation.isPending}
+          >
             {signInMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -210,5 +214,3 @@ export function SignInForm() {
     </Form>
   );
 }
-
-

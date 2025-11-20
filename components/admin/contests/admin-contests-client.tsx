@@ -56,7 +56,10 @@ export function AdminContestsClient({ initialData }: { initialData: ContestList 
           <p className="text-xs uppercase text-muted-foreground">Contests</p>
           <CardTitle className="text-xl">Schedule & state control</CardTitle>
         </div>
-        <Select value={stateFilter} onValueChange={(value) => setStateFilter(value as "all" | ContestState)}>
+        <Select
+          value={stateFilter}
+          onValueChange={(value) => setStateFilter(value as "all" | ContestState)}
+        >
           <SelectTrigger className="h-9 w-full sm:w-40">
             <SelectValue placeholder="State" />
           </SelectTrigger>
@@ -84,7 +87,9 @@ export function AdminContestsClient({ initialData }: { initialData: ContestList 
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{contest.description}</p>
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span>Starts {formatDistanceToNow(new Date(contest.startsAt), { addSuffix: true })}</span>
+              <span>
+                Starts {formatDistanceToNow(new Date(contest.startsAt), { addSuffix: true })}
+              </span>
               <span>Ends {formatDistanceToNow(new Date(contest.endsAt), { addSuffix: true })}</span>
               <span>{contest._count.problems} problems</span>
               <span>{contest._count.registrations} registrations</span>
@@ -93,20 +98,29 @@ export function AdminContestsClient({ initialData }: { initialData: ContestList 
               <Button size="sm" onClick={() => startNow.mutate({ contestId: contest.id })}>
                 Start now
               </Button>
-              <Button size="sm" variant="outline" onClick={() => endNow.mutate({ contestId: contest.id })}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => endNow.mutate({ contestId: contest.id })}
+              >
                 End now
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setFreeze.mutate({ contestId: contest.id, freeze: !contest.freezeAt })}
+                onClick={() =>
+                  setFreeze.mutate({ contestId: contest.id, freeze: !contest.freezeAt })
+                }
               >
                 {contest.freezeAt ? "Unfreeze" : "Freeze"}
               </Button>
               <Select
                 value={contest.visibility}
                 onValueChange={(value) =>
-                  toggleVisibility.mutate({ contestId: contest.id, visibility: value as ContestVisibility })
+                  toggleVisibility.mutate({
+                    contestId: contest.id,
+                    visibility: value as ContestVisibility,
+                  })
                 }
               >
                 <SelectTrigger className="h-9 w-36">

@@ -18,7 +18,6 @@ import {
   Undo,
   Redo,
   ImageIcon,
-  Link2,
   Loader2,
 } from "@/components/icons";
 import { useState, useCallback, useEffect } from "react";
@@ -278,11 +277,7 @@ export function RichTextEditor({
               </div>
             </div>
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsImageDialogOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsImageDialogOpen(false)}>
                 Cancel
               </Button>
               <Button type="button" onClick={addImageByUrl} disabled={!imageUrl || isUploading}>

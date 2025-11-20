@@ -8,9 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function GlobalDiscussPage() {
   const caller = await createTRPCCaller();
-  const [metadata] = await Promise.all([
-    caller.problems.filterMetadata(),
-  ]);
+  const [metadata] = await Promise.all([caller.problems.filterMetadata()]);
   const hydration = await buildHydrationState([
     prefetchTrpcQuery(
       "discussions.listGlobal",
@@ -22,7 +20,9 @@ export default async function GlobalDiscussPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 py-10">
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Community</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Community
+        </p>
         <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Global Discussions</h1>
         <p className="max-w-2xl text-base text-muted-foreground">
           Share hints, ask for help, and talk platform meta with the OpenSolve community

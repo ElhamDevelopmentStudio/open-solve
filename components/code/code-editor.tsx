@@ -15,6 +15,7 @@ type CodeEditorProps = {
   value: string;
   language: "cpp17" | "python3" | "java17" | "node20";
   onChange: (value: string) => void;
+  onPaste?: (length: number) => void;
   readOnly?: boolean;
   minHeight?: number;
   ariaLabel?: string;
@@ -37,6 +38,7 @@ export function CodeEditor({
   value,
   onChange,
   language,
+  onPaste,
   readOnly = false,
   minHeight = 360,
   ariaLabel,
@@ -86,7 +88,14 @@ export function CodeEditor({
   const minimapContent = useMemo(() => value.split("\n").slice(0, 400).join("\n"), [value]);
 
   return (
-    <div className={cn("relative", className)}>
+    <div
+      className={cn("relative", className)}
+      onPaste={(event) => {
+        if (!onPaste) return;
+        const text = event.clipboardData?.getData("text/plain") ?? "";
+        onPaste(text.length);
+      }}
+    >
       {showMinimap ? (
         <div className="pointer-events-none absolute right-3 top-3 hidden h-[80%] w-16 overflow-hidden rounded-md border border-border/40 bg-background/80 p-1 text-[8px] leading-[1.15] text-muted-foreground/80 shadow-inner shadow-black/10 lg:block">
           <pre className="whitespace-pre-wrap opacity-80">{minimapContent}</pre>

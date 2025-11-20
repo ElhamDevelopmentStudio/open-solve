@@ -3,7 +3,11 @@
 import "katex/dist/katex.min.css";
 
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
-import { ProblemAnalyticsProvider, useProblemAnalyticsContext } from "@/components/problems/problem-analytics-provider";
+import {
+  ProblemAnalyticsProvider,
+  useProblemAnalyticsContext,
+} from "@/components/problems/problem-analytics-provider";
+import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/types";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,14 +25,14 @@ import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { 
+import {
   ArrowUpRight01Icon,
   Bookmark01Icon,
   Copy01Icon,
   Flag02Icon,
   Link01Icon,
   Share01Icon,
-  MessageMultiple02Icon
+  MessageMultiple02Icon,
 } from "hugeicons-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -68,17 +72,37 @@ const sectionsOrder = [
 const formatDifficulty = (value?: string | null) =>
   value ? value.charAt(0) + value.slice(1).toLowerCase() : "Unrated";
 
-export function ProblemReader({ problem }: { problem: ProblemDetailPayload }) {
+export function ProblemReader({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
   return (
     <ProblemAnalyticsProvider problemId={problem.id}>
-      <ProblemReaderContent problem={problem} />
+      <ProblemReaderContent problem={problem} contestContext={contestContext} />
     </ProblemAnalyticsProvider>
   );
 }
 
-function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
+function ProblemReaderContent({
+  problem,
+  contestContext,
+}: {
+  problem: ProblemDetailPayload;
+  contestContext?: ContestProblemAntiCheatContext;
+}) {
   const prefersReducedMotion = useReducedMotion();
   const analytics = useProblemAnalyticsContext();
+  const contestMode = Boolean(contestContext);
+  const readerAnalyticsContext = useMemo(
+    () => ({
+      problemId: problem.id,
+      contestId: contestContext?.contestId,
+    }),
+    [contestContext?.contestId, problem.id],
+  );
   const sectionEntries = useMemo(() => {
     return sectionsOrder
       .map((section) => {
@@ -125,8 +149,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
     };
   }, [analytics, sectionEntries]);
 
-
-
   useEffect(() => {
     if (typeof window === "undefined" || typeof performance === "undefined") return;
     const navEntries = performance.getEntriesByType("navigation") as
@@ -143,7 +165,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             metric: "ttfb",
             value: Number(ttfb.toFixed(2)),
           },
-          { problemId: problem.id },
+          readerAnalyticsContext,
         );
       }
       if (Number.isFinite(domReady)) {
@@ -153,7 +175,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             metric: "domReady",
             value: Number(domReady.toFixed(2)),
           },
-          { problemId: problem.id },
+          readerAnalyticsContext,
         );
       }
     }
@@ -169,7 +191,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             metric: "lcp",
             value: Number(entry.startTime.toFixed(2)),
           },
-          { problemId: problem.id },
+          readerAnalyticsContext,
         );
         observer?.disconnect();
       });
@@ -181,7 +203,7 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
     }
 
     return () => observer?.disconnect();
-  }, [problem.slug]);
+  }, [problem.slug, readerAnalyticsContext]);
 
   const handleAnchorClick = (id: string) => {
     const element = document.getElementById(id);
@@ -192,9 +214,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
   const acceptancePercent = problem.stats?.acceptanceRate
     ? Math.round(problem.stats.acceptanceRate * 100)
     : null;
-
-  const progressValue =
-    problem.status === "SOLVED" ? 100 : problem.status === "ATTEMPTED" ? 55 : 20;
 
   const lastSubmissionLabel = problem.lastSubmissionAt
     ? formatDistanceToNow(new Date(problem.lastSubmissionAt), { addSuffix: true })
@@ -214,6 +233,18 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
                   <Link href="/problems">Problems</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
+              {contestMode ? (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={`/contests/${contestContext!.contestSlug}`}>
+                        {contestContext!.contestName}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              ) : null}
               {problem.tags[0] ? (
                 <>
                   <BreadcrumbSeparator />
@@ -231,11 +262,47 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        {contestMode ? (
+          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 shadow-inner shadow-primary/5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase text-primary">Educational contest</p>
+                <h2 className="text-3xl font-semibold tracking-tight">
+                  {contestContext!.contestName}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Solving problem {contestContext!.problemLabel}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" asChild>
+                  <Link href={`/contests/${contestContext!.contestSlug}`}>Contest overview</Link>
+                </Button>
+                <Button asChild>
+                  <Link href={`/contests/${contestContext!.contestSlug}/scoreboard`}>
+                    Scoreboard
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            {contestContext?.antiCheat.examMode.enabled ? (
+              <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/15 px-4 py-3 text-xs text-amber-700 dark:text-amber-200">
+                Exam mode enabled — context menus and text selection are restricted for this
+                workspace.
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <header className="rounded-xl border border-border/50 bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="text-sm">
               {formatDifficulty(problem.difficulty)}
             </Badge>
+            {contestMode ? (
+              <Badge className="bg-primary/15 text-primary">
+                Contest {contestContext!.problemLabel}
+              </Badge>
+            ) : null}
             {problem.judgeMode !== "AUTO" ? (
               <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-200">
                 Manual Review
@@ -287,7 +354,10 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
                 <Flag02Icon className="h-4 w-4" strokeWidth={2} />
               </Button>
               <Button variant="outline" size="sm" className="gap-2" asChild>
-                <Link href={`/problems/${problem.slug}/discuss`} onClick={() => analytics.markDiscussOpen()}>
+                <Link
+                  href={`/problems/${problem.slug}/discuss`}
+                  onClick={() => analytics.markDiscussOpen()}
+                >
                   <MessageMultiple02Icon className="h-4 w-4" strokeWidth={2} /> Discuss
                 </Link>
               </Button>
@@ -296,20 +366,17 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
               </Button>
               {problem.editorialIsReleased ? (
                 <Button variant="ghost" size="sm" asChild>
-                <Link
-                  href={`/problems/${problem.slug}/editorial`}
-                  onClick={() => analytics.markEditorialOpen()}
-                >
-                  Editorial
-                </Link>
-              </Button>
-            ) : null}
+                  <Link
+                    href={`/problems/${problem.slug}/editorial`}
+                    onClick={() => analytics.markEditorialOpen()}
+                  >
+                    Editorial
+                  </Link>
+                </Button>
+              ) : null}
             </div>
             <Button className="flex items-center gap-2" asChild>
-              <a
-                href="#editor"
-                onClick={() => analytics.markSolveClick("header")}
-              >
+              <a href="#editor" onClick={() => analytics.markSolveClick("header")}>
                 Start solving
                 <ArrowUpRight01Icon className="h-4 w-4" strokeWidth={2.5} />
               </a>
@@ -337,7 +404,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
               <ProblemSection id="statement" title="Statement">
                 <Markdown
                   content={problem.content.statement}
-                  slug={problem.slug}
                   problemId={problem.id}
                   field="Statement"
                 />
@@ -348,7 +414,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
               <ProblemSection id="constraints" title="Constraints">
                 <Markdown
                   content={problem.content.constraints}
-                  slug={problem.slug}
                   problemId={problem.id}
                   field="Constraints"
                 />
@@ -363,7 +428,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
                       key={`${sample.input}-${index}`}
                       sample={sample}
                       index={index}
-                      slug={problem.slug}
                       problemId={problem.id}
                     />
                   ))}
@@ -375,7 +439,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
               <ProblemSection id="notes" title="Notes & Hints">
                 <Markdown
                   content={problem.content.hints}
-                  slug={problem.slug}
                   problemId={problem.id}
                   field="Notes"
                 />
@@ -392,7 +455,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
                         <CopyField
                           label="Input"
                           value={test.input}
-                          slug={problem.slug}
                           problemId={problem.id}
                           field={`Sample ${test.ordinal} Input`}
                           isHidden={test.kind === "HIDDEN"}
@@ -400,7 +462,6 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
                         <CopyField
                           label="Output"
                           value={test.output}
-                          slug={problem.slug}
                           problemId={problem.id}
                           field={`Sample ${test.ordinal} Output`}
                           isHidden={test.kind === "HIDDEN"}
@@ -487,14 +548,11 @@ function ProblemReaderContent({ problem }: { problem: ProblemDetailPayload }) {
             </div>
           </aside>
         </div>
-        <ProblemWorkspace problem={problem} />
+        <ProblemWorkspace problem={problem} contestContext={contestContext} />
       </div>
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <Button className="w-full shadow-lg shadow-primary/30" size="lg" asChild>
-          <a
-            href="#editor"
-            onClick={() => analytics.markSolveClick("mobile-sticky")}
-          >
+          <a href="#editor" onClick={() => analytics.markSolveClick("mobile-sticky")}>
             Start solving
           </a>
         </Button>
@@ -589,12 +647,10 @@ function ProblemSection({
 
 function Markdown({
   content,
-  slug,
   problemId,
   field,
 }: {
   content: string;
-  slug: string;
   problemId: string;
   field: string;
 }) {
@@ -643,12 +699,10 @@ function Markdown({
 function SampleCard({
   sample,
   index,
-  slug,
   problemId,
 }: {
   sample: ProblemDetailPayload["content"]["samples"][number];
   index: number;
-  slug: string;
   problemId: string;
 }) {
   return (
@@ -661,14 +715,12 @@ function SampleCard({
         <CopyField
           label="Input"
           value={sample.input}
-          slug={slug}
           problemId={problemId}
           field={`Example ${index + 1} Input`}
         />
         <CopyField
           label="Output"
           value={sample.output}
-          slug={slug}
           problemId={problemId}
           field={`Example ${index + 1} Output`}
         />
@@ -683,14 +735,12 @@ function SampleCard({
 function CopyField({
   label,
   value,
-  slug,
   problemId,
   field,
   isHidden,
 }: {
   label: string;
   value: string;
-  slug: string;
   problemId: string;
   field: string;
   isHidden?: boolean;

@@ -70,7 +70,9 @@ const columns: DataTableColumn<RecentSubmissionRow>[] = [
   {
     accessorKey: "verdictCode",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Verdict" />,
-    cell: ({ row }) => <VerdictBadge verdict={row.original.verdictCode} status={row.original.status} />,
+    cell: ({ row }) => (
+      <VerdictBadge verdict={row.original.verdictCode} status={row.original.status} />
+    ),
   },
   {
     accessorKey: "runtimeMs",
@@ -118,7 +120,12 @@ function VerdictBadge({ verdict, status }: { verdict: string | null; status: str
   if (verdict) {
     const className = VERDICT_COLORS[verdict] ?? "bg-muted text-foreground";
     return (
-      <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", className)}>
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+          className,
+        )}
+      >
         {verdict}
       </span>
     );

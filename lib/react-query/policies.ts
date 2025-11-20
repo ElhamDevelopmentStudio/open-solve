@@ -57,3 +57,26 @@ export const submissionDraftQueryOptions = {
 export const nonRetriableMutationOptions = {
   retry: false,
 } as const;
+
+export const contestOverviewQueryOptions = {
+  staleTime: 60_000,
+  gcTime: 10 * 60_000,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: true,
+} as const;
+
+export const contestDetailQueryOptions = {
+  staleTime: 15_000,
+  gcTime: 5 * 60_000,
+  refetchOnWindowFocus: true,
+  refetchOnReconnect: true,
+} as const;
+
+export const contestStandingsQueryOptions = {
+  staleTime: 0,
+  gcTime: 5 * 60_000,
+  refetchInterval: 15_000,
+  refetchIntervalInBackground: true,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: true,
+} as const;

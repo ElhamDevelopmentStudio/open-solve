@@ -6,6 +6,7 @@ export interface EmailTemplate {
 }
 
 export function getVerifyEmailTemplate(token: string, email: string): EmailTemplate {
+  void email;
   const verifyUrl = `${env.APP_URL}/auth/verify-email?token=${token}`;
 
   return {
@@ -61,6 +62,7 @@ export function getVerifyEmailTemplate(token: string, email: string): EmailTempl
 }
 
 export function getPasswordResetTemplate(token: string, email: string): EmailTemplate {
+  void email;
   const resetUrl = `${env.APP_URL}/auth/reset-password?token=${token}`;
 
   return {
@@ -116,6 +118,7 @@ export function getPasswordResetTemplate(token: string, email: string): EmailTem
 }
 
 export function getMagicLinkTemplate(token: string, email: string): EmailTemplate {
+  void email;
   const magicUrl = `${env.APP_URL}/auth/magic-link?token=${token}`;
 
   return {
@@ -171,6 +174,7 @@ export function getMagicLinkTemplate(token: string, email: string): EmailTemplat
 }
 
 export function getTwoFactorEnabledTemplate(email: string): EmailTemplate {
+  void email;
   return {
     subject: "Two-factor authentication enabled",
     html: `
@@ -252,12 +256,3 @@ export function getEmailChangedTemplate(newEmail: string, oldEmail: string): Ema
     `,
   };
 }
-
-
-
-
-
-
-
-
-

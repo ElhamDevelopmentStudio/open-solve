@@ -22,7 +22,8 @@ export default function StaffContestCreatePage() {
         <Shield className="h-4 w-4" />
         <AlertTitle>Quality & Security</AlertTitle>
         <AlertDescription>
-          Every step below enforces sanitization, anonymization, and observability requirements from Phase 13.
+          Every step below enforces sanitization, anonymization, and observability requirements from
+          Phase 13.
         </AlertDescription>
       </Alert>
       <div className="mt-6">

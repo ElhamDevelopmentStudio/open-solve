@@ -28,7 +28,7 @@ const submissionLimitDefaults: SubmissionLimitSetting = {
   contestMultiplier: 2,
 };
 
-const parseJsonSetting = <T,>(value: Prisma.JsonValue | null | undefined, fallback: T): T => {
+const parseJsonSetting = <T>(value: Prisma.JsonValue | null | undefined, fallback: T): T => {
   if (!value || typeof value !== "object") {
     return fallback;
   }
@@ -152,8 +152,7 @@ export const adminDashboardRouter = router({
       submissions: {
         last24h: submissionsLastDay,
         acceptedLast24h: acceptedLastDay,
-        acceptanceRateLast24h:
-          submissionsLastDay > 0 ? acceptedLastDay / submissionsLastDay : 0,
+        acceptanceRateLast24h: submissionsLastDay > 0 ? acceptedLastDay / submissionsLastDay : 0,
         queued: queuedCount,
         running: runningCount,
         manualPending: manualCount,

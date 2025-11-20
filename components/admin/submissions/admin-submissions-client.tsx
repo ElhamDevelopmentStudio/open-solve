@@ -97,7 +97,10 @@ export function AdminSubmissionsClient({ initialData }: { initialData: Submissio
               className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
             />
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as SubmissionStatus | "all")}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as SubmissionStatus | "all")}
+          >
             <SelectTrigger className="sm:w-40">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -184,17 +187,23 @@ export function AdminSubmissionsClient({ initialData }: { initialData: Submissio
             <Input
               placeholder="Problem slug"
               value={scope.problemSlug}
-              onChange={(event) => setScope((prev) => ({ ...prev, problemSlug: event.target.value }))}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, problemSlug: event.target.value }))
+              }
             />
             <Input
               placeholder="Contest slug"
               value={scope.contestSlug}
-              onChange={(event) => setScope((prev) => ({ ...prev, contestSlug: event.target.value }))}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, contestSlug: event.target.value }))
+              }
             />
             <Input
               placeholder="Language code (e.g. cpp17)"
               value={scope.languageCode}
-              onChange={(event) => setScope((prev) => ({ ...prev, languageCode: event.target.value }))}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, languageCode: event.target.value }))
+              }
             />
             <Input
               type="number"

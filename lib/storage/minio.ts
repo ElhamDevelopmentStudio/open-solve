@@ -13,15 +13,17 @@ export async function uploadAvatarToMinio({ userId, filename, contentType, buffe
     throw new Error("MinIO is not configured");
   }
 
-  // Lazy import to avoid bundling when unused
-  let S3Client: any, PutObjectCommand: any;
+  let S3ClientCtor: typeof import("@aws-sdk/client-s3").S3Client;
+  let PutObjectCommandCtor: typeof import("@aws-sdk/client-s3").PutObjectCommand;
   try {
-    ({ S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3"));
-  } catch (e) {
+    const s3Module = await import("@aws-sdk/client-s3");
+    S3ClientCtor = s3Module.S3Client;
+    PutObjectCommandCtor = s3Module.PutObjectCommand;
+  } catch {
     throw new Error("@aws-sdk/client-s3 is not installed. Please add it to dependencies.");
   }
 
-  const client = new S3Client({
+  const client = new S3ClientCtor({
     forcePathStyle: true,
     region: env.MINIO_REGION ?? "us-east-1",
     endpoint: `${env.MINIO_USE_SSL ? "https" : "http"}://${env.MINIO_ENDPOINT}`,
@@ -35,7 +37,7 @@ export async function uploadAvatarToMinio({ userId, filename, contentType, buffe
   const key = `avatars/${userId}/${Date.now()}-${safeName}`;
 
   await client.send(
-    new PutObjectCommand({
+    new PutObjectCommandCtor({
       Bucket: env.MINIO_BUCKET,
       Key: key,
       Body: buffer,
@@ -57,14 +59,17 @@ export async function downloadObjectFromMinio(key: string) {
     throw new Error("MinIO is not configured");
   }
 
-  let S3Client: any, GetObjectCommand: any;
+  let S3ClientCtor: typeof import("@aws-sdk/client-s3").S3Client;
+  let GetObjectCommandCtor: typeof import("@aws-sdk/client-s3").GetObjectCommand;
   try {
-    ({ S3Client, GetObjectCommand } = await import("@aws-sdk/client-s3"));
+    const s3Module = await import("@aws-sdk/client-s3");
+    S3ClientCtor = s3Module.S3Client;
+    GetObjectCommandCtor = s3Module.GetObjectCommand;
   } catch {
     throw new Error("@aws-sdk/client-s3 is not installed. Please add it to dependencies.");
   }
 
-  const client = new S3Client({
+  const client = new S3ClientCtor({
     forcePathStyle: true,
     region: env.MINIO_REGION ?? "us-east-1",
     endpoint: `${env.MINIO_USE_SSL ? "https" : "http"}://${env.MINIO_ENDPOINT}`,
@@ -75,24 +80,29 @@ export async function downloadObjectFromMinio(key: string) {
   });
 
   const response = await client.send(
-    new GetObjectCommand({
+    new GetObjectCommandCtor({
       Bucket: env.MINIO_BUCKET,
       Key: key,
     }),
   );
 
-  if (!response.Body) {
+  const body = response.Body;
+  if (!body) {
     return null;
   }
-  if ("transformToString" in response.Body && typeof response.Body.transformToString === "function") {
-    return await response.Body.transformToString("utf-8");
+  if ("transformToString" in body && typeof body.transformToString === "function") {
+    return await body.transformToString("utf-8");
   }
-
-  const chunks: Buffer[] = [];
-  await new Promise<void>((resolve, reject) => {
-    response.Body.once("error", reject);
-    response.Body.on("data", (chunk: Buffer) => chunks.push(chunk));
-    response.Body.once("end", resolve);
-  });
-  return Buffer.concat(chunks).toString("utf-8");
+  if ("on" in body && typeof (body as NodeJS.EventEmitter).on === "function") {
+    const streamBody = body as NodeJS.ReadableStream;
+    const chunks: Buffer[] = [];
+    await new Promise<void>((resolve, reject) => {
+      streamBody.once("error", reject);
+      streamBody.on("data", (chunk: Buffer) => chunks.push(chunk));
+      streamBody.once("end", resolve);
+    });
+    return Buffer.concat(chunks).toString("utf-8");
+  }
+  const arrayBuffer = await (body as Blob).arrayBuffer();
+  return Buffer.from(arrayBuffer).toString("utf-8");
 }

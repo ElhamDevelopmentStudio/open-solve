@@ -13,7 +13,11 @@ export default async function SharedSubmissionPage({
   try {
     submission = await caller.submissions.getShare({ publicId: resolved.publicId });
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;

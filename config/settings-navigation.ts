@@ -17,4 +17,3 @@ export const settingsNav: NavItem[] = [
     icon: "lock",
   },
 ];
-

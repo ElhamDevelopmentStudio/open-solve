@@ -4,6 +4,7 @@ import { DiscussionComposer } from "@/components/discussions/discussion-composer
 import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -30,15 +31,24 @@ const tabOptions = [
   { value: "meta", label: "Meta" },
 ];
 
-export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: GlobalDiscussionsClientProps) {
+export function GlobalDiscussionsClient({
+  tagOptions,
+  difficultyOptions,
+}: GlobalDiscussionsClientProps) {
   const [tab, setTab] = useQueryState(
     "tab",
     parseAsStringLiteral(["trending", "latest", "help", "meta"]).withDefault("trending"),
   );
   const [tagParam, setTagParam] = useQueryState("tags", { defaultValue: "" });
   const [difficultyParam, setDifficultyParam] = useQueryState("difficulty", { defaultValue: "" });
-  const selectedTags = useMemo(() => (tagParam ? tagParam.split(",").filter(Boolean) : []), [tagParam]);
-  const selectedDifficulty = useMemo(() => (difficultyParam ? difficultyParam.split(",").filter(Boolean) : []), [difficultyParam]);
+  const selectedTags = useMemo(
+    () => (tagParam ? tagParam.split(",").filter(Boolean) : []),
+    [tagParam],
+  );
+  const selectedDifficulty = useMemo(
+    () => (difficultyParam ? difficultyParam.split(",").filter(Boolean) : []),
+    [difficultyParam],
+  );
 
   const toggleTag = (slug: string) => {
     const next = selectedTags.includes(slug)
@@ -75,7 +85,9 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
       <section className="premium-card space-y-5 rounded-2xl p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Start a Topic</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Start a Topic
+            </p>
             <h2 className="text-2xl font-semibold">Community Discussions</h2>
           </div>
           <Button variant="ghost" size="sm" className="gap-2 rounded-xl" onClick={resetFilters}>
@@ -91,7 +103,10 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
       </section>
 
       <section className="space-y-5">
-        <Tabs value={tab} onValueChange={(value) => setTab(value as "trending" | "latest" | "help" | "meta")}>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as "trending" | "latest" | "help" | "meta")}
+        >
           <TabsList className="grid w-full grid-cols-4 rounded-xl">
             {tabOptions.map((option) => (
               <TabsTrigger key={option.value} value={option.value} className="rounded-lg">
@@ -152,12 +167,22 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
             </DropdownMenuContent>
           </DropdownMenu>
           {selectedTags.map((slug) => (
-            <Badge key={slug} variant="secondary" className="cursor-pointer rounded-full" onClick={() => toggleTag(slug)}>
+            <Badge
+              key={slug}
+              variant="secondary"
+              className="cursor-pointer rounded-full"
+              onClick={() => toggleTag(slug)}
+            >
               #{slug}
             </Badge>
           ))}
           {selectedDifficulty.map((value) => (
-            <Badge key={value} variant="outline" className="cursor-pointer rounded-full" onClick={() => toggleDifficulty(value)}>
+            <Badge
+              key={value}
+              variant="outline"
+              className="cursor-pointer rounded-full"
+              onClick={() => toggleDifficulty(value)}
+            >
               {value}
             </Badge>
           ))}
@@ -168,6 +193,16 @@ export function GlobalDiscussionsClient({ tagOptions, difficultyOptions }: Globa
         <div className="premium-card flex items-center justify-center rounded-2xl p-16 text-sm text-muted-foreground">
           <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading discussions…
         </div>
+      ) : listQuery.isError ? (
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load discussions</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            {listQuery.error?.message ?? "Please refresh and try again."}
+            <Button size="sm" onClick={() => listQuery.refetch()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       ) : threads.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 p-16 text-center">
           <p className="text-sm font-medium text-muted-foreground">No discussions yet</p>

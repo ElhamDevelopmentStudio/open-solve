@@ -180,7 +180,9 @@ export default function SecuritySettingsPage() {
           </div>
           <div>
             <h2 className="text-lg font-semibold">Change Password</h2>
-            <p className="text-sm text-muted-foreground">Update your password to keep your account secure</p>
+            <p className="text-sm text-muted-foreground">
+              Update your password to keep your account secure
+            </p>
           </div>
         </div>
 
@@ -282,7 +284,12 @@ export default function SecuritySettingsPage() {
                 <FormItem>
                   <FormLabel className="text-sm font-semibold">New Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="your@email.com" className="rounded-xl" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      className="rounded-xl"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -296,7 +303,12 @@ export default function SecuritySettingsPage() {
                 <FormItem>
                   <FormLabel className="text-sm font-semibold">Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Your password" className="rounded-xl" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Your password"
+                      className="rounded-xl"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -312,11 +324,7 @@ export default function SecuritySettingsPage() {
                   </>
                 ) : null}
               </div>
-              <Button
-                type="submit"
-                disabled={changeEmailMutation.isPending}
-                className="rounded-xl"
-              >
+              <Button type="submit" disabled={changeEmailMutation.isPending} className="rounded-xl">
                 {changeEmailMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -338,7 +346,9 @@ export default function SecuritySettingsPage() {
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">Two-Factor Authentication</h2>
-            <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+            <p className="text-sm text-muted-foreground">
+              Add an extra layer of security to your account
+            </p>
           </div>
           <Badge
             variant={session.user.twoFactorEnabled ? "default" : "secondary"}
@@ -545,12 +555,3 @@ export default function SecuritySettingsPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

@@ -110,7 +110,9 @@ const sanitizeSocial = (value?: string | null): string | null => {
   return trimmed;
 };
 
-const buildHeatmap = (dates: Date[]): { calendar: ProfileHeatmapCell[]; best: number; current: number } => {
+const buildHeatmap = (
+  dates: Date[],
+): { calendar: ProfileHeatmapCell[]; best: number; current: number } => {
   const now = new Date();
   const counts = new Map<number, number>();
   for (const timestamp of dates) {
@@ -173,7 +175,10 @@ const mapSocials = (user: {
   website: user.socialWebsite,
 });
 
-export async function getProfileDetail(handle: string, viewer?: { id?: string | null; role?: UserRole | null }): Promise<ProfileDetail | null> {
+export async function getProfileDetail(
+  handle: string,
+  viewer?: { id?: string | null; role?: UserRole | null },
+): Promise<ProfileDetail | null> {
   const user = await prisma.user.findUnique({
     where: { handle },
     select: {
@@ -218,7 +223,18 @@ export async function getProfileDetail(handle: string, viewer?: { id?: string | 
 
   const calendarWindowStart = subDays(new Date(), CALENDAR_WINDOW_DAYS);
 
-  const [attemptedProblems, solvedProblems, languagesAgg, acceptedTimestamps, recentSolves, firstAccepted, lastAccepted, badgeAwards, manualReviewCount, last24hAccepted] = await Promise.all([
+  const [
+    attemptedProblems,
+    solvedProblems,
+    languagesAgg,
+    acceptedTimestamps,
+    recentSolves,
+    firstAccepted,
+    lastAccepted,
+    badgeAwards,
+    manualReviewCount,
+    last24hAccepted,
+  ] = await Promise.all([
     prisma.submission.findMany({
       where: { userId: user.id, deletedAt: null },
       select: { problemId: true },
@@ -336,7 +352,9 @@ export async function getProfileDetail(handle: string, viewer?: { id?: string | 
         select: { code: true, displayName: true },
       })
     : [];
-  const languageNameMap = new Map(languageRecords.map((language) => [language.code, language.displayName]));
+  const languageNameMap = new Map(
+    languageRecords.map((language) => [language.code, language.displayName]),
+  );
   const languages = languagesAgg
     .map((language) => ({
       code: language.languageCode,
@@ -399,15 +417,16 @@ export async function getProfileDetail(handle: string, viewer?: { id?: string | 
     : undefined;
 
   const socials = mapSocials(user);
-  const privacySettings: ProfileSettingsInput | undefined = isOwner || isStaff
-    ? {
-        shareAcceptedCode: user.shareAcceptedCode,
-        showOnLeaderboard: user.showOnLeaderboard,
-        showCountry: user.showCountry,
-        showSocials: user.showSocials,
-        socials,
-      }
-    : undefined;
+  const privacySettings: ProfileSettingsInput | undefined =
+    isOwner || isStaff
+      ? {
+          shareAcceptedCode: user.shareAcceptedCode,
+          showOnLeaderboard: user.showOnLeaderboard,
+          showCountry: user.showCountry,
+          showSocials: user.showSocials,
+          socials,
+        }
+      : undefined;
 
   return {
     id: user.id,

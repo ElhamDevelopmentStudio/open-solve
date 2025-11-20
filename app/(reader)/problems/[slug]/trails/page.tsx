@@ -5,20 +5,25 @@ import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server
 import { TrailsBoard } from "@/components/trails/trails-board";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 type Params = { slug: string };
 
 export default async function ProblemTrailsPage({ params }: { params: Params | Promise<Params> }) {
   const { slug } = await params;
   const caller = await createTRPCCaller();
-  const problem = await caller.problems.detail({ slug }).catch(() => null);
+  const problem = await getCachedProblemDetail(slug).catch(() => null);
   if (!problem) {
     notFound();
   }
   const hydration = await buildHydrationState([
-    prefetchTrpcQuery("trails.getForProblem", () => caller.trails.getForProblem({ problemId: problem.id }), {
-      input: { problemId: problem.id },
-    }),
+    prefetchTrpcQuery(
+      "trails.getForProblem",
+      () => caller.trails.getForProblem({ problemId: problem.id }),
+      {
+        input: { problemId: problem.id },
+      },
+    ),
   ]);
   return (
     <div className="space-y-8 py-10">

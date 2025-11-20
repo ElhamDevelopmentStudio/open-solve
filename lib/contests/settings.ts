@@ -49,12 +49,46 @@ export const defaultContestSettings: ContestSettings = {
     hideFailedCaseDetails: true,
   },
   antiCheat: {
+    enabled: false,
     lockDiscussions: true,
     lockProfiles: true,
     lockTrails: true,
     enforceIp: true,
     similarityReview: true,
     throttlePerMinute: 3,
+    examMode: {
+      enabled: false,
+      disableSelection: true,
+      disableContextMenu: true,
+      stickyReminder: true,
+    },
+    focus: {
+      softWarningTabs: 3,
+      flagTabs: 6,
+      autoDQTabs: 12,
+      softWarningOutMs: 60_000,
+      flagOutMs: 180_000,
+    },
+    multiDevice: {
+      singleDeviceOnly: true,
+      allowSecondaryFlagged: false,
+      requireLock: false,
+    },
+    paste: {
+      largePasteThreshold: 120,
+      perProblemLimit: 3,
+      perContestLimit: 12,
+    },
+    heuristics: {
+      enableTiming: true,
+      enableSimilarity: true,
+      enableClusters: true,
+      enableSuspiciousTimeline: true,
+    },
+    warnings: {
+      reminderCopy: "Anti-cheat guard active.",
+      showParticipantBanner: true,
+    },
   },
   problemSet: {
     randomizeOrder: false,
@@ -81,9 +115,8 @@ export const defaultContestSettings: ContestSettings = {
   },
 };
 
-type DeepPartial<T> = T extends Record<string, unknown>
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : T | undefined;
+type DeepPartial<T> =
+  T extends Record<string, unknown> ? { [K in keyof T]?: DeepPartial<T[K]> } : T | undefined;
 
 function deepMerge<T extends Record<string, unknown>>(base: T, override: DeepPartial<T>): T {
   const output: Record<string, unknown> = { ...base };
@@ -104,7 +137,10 @@ function deepMerge<T extends Record<string, unknown>>(base: T, override: DeepPar
       typeof baseValue === "object" &&
       !Array.isArray(baseValue)
     ) {
-      output[key] = deepMerge(baseValue as Record<string, unknown>, value as Record<string, unknown>);
+      output[key] = deepMerge(
+        baseValue as Record<string, unknown>,
+        value as Record<string, unknown>,
+      );
       continue;
     }
     output[key] = value as unknown;
@@ -122,5 +158,8 @@ export function resolveContestSettings(settings?: unknown): ContestSettings {
   if (!parsed.success) {
     return defaultContestSettings;
   }
-  return deepMerge(defaultContestSettings, parsed.data as DeepPartial<ContestSettings>) as ContestSettings;
+  return deepMerge(
+    defaultContestSettings,
+    parsed.data as DeepPartial<ContestSettings>,
+  ) as ContestSettings;
 }

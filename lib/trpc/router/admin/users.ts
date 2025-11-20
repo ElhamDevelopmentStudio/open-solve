@@ -54,16 +54,10 @@ export const adminUsersRouter = router({
   list: adminProcedure.input(listUsersInput).query(async ({ input }) => {
     const limit = input.limit;
     const where = buildUserWhere(input);
-  const orderBy: Prisma.UserOrderByWithRelationInput[] =
-    input.sort === "activity"
-      ? [
-          { lastLoginAt: "desc" as Prisma.SortOrder },
-          { createdAt: "desc" as Prisma.SortOrder },
-        ]
-      : [
-          { createdAt: "desc" as Prisma.SortOrder },
-          { id: "desc" as Prisma.SortOrder },
-        ];
+    const orderBy: Prisma.UserOrderByWithRelationInput[] =
+      input.sort === "activity"
+        ? [{ lastLoginAt: "desc" as Prisma.SortOrder }, { createdAt: "desc" as Prisma.SortOrder }]
+        : [{ createdAt: "desc" as Prisma.SortOrder }, { id: "desc" as Prisma.SortOrder }];
 
     const users = await prisma.user.findMany({
       where,

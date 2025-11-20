@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-const socialLinkSchema = z
-  .string()
-  .max(200)
-  .trim()
-  .optional()
-  .nullable();
+const socialLinkSchema = z.string().max(200).trim().optional().nullable();
 
 export const socialLinksSchema = z.object({
   github: socialLinkSchema,

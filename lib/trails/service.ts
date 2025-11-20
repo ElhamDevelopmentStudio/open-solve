@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { sanitizePlainInput } from "@/lib/security/markdown";
 import type { TrailGraphPayload, TrailViewer, TrailReportInput } from "@/lib/trails/types";
-import type { Prisma, TrailInsightCategory, UserRole, UserStatus } from "@prisma/client";
+import type { Prisma, TrailInsightCategory, UserStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
 const authorSelect = {
@@ -45,8 +45,11 @@ export async function getTrailGraph(params: {
     },
     orderBy: [{ score: "desc" }, { createdAt: "asc" }],
   });
-  const filteredInsights = insights.filter((insight) =>
-    viewerIsStaff || insight.author.status !== "SHADOW_BANNED" || insight.authorId === params.viewer?.id,
+  const filteredInsights = insights.filter(
+    (insight) =>
+      viewerIsStaff ||
+      insight.author.status !== "SHADOW_BANNED" ||
+      insight.authorId === params.viewer?.id,
   );
   const edges = await prisma.trailEdge.findMany({
     where: { problemId: problem.id },
@@ -84,7 +87,10 @@ export async function addTrailInsight(params: {
   connectFrom?: string[];
   authorStatus: UserStatus;
 }) {
-  const problem = await prisma.problem.findUnique({ where: { id: params.problemId }, select: { id: true } });
+  const problem = await prisma.problem.findUnique({
+    where: { id: params.problemId },
+    select: { id: true },
+  });
   if (!problem) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
   }
@@ -131,7 +137,11 @@ export async function addTrailInsight(params: {
   });
 }
 
-export async function voteTrailInsight(params: { insightId: string; userId: string; direction: "UP" | "DOWN" }) {
+export async function voteTrailInsight(params: {
+  insightId: string;
+  userId: string;
+  direction: "UP" | "DOWN";
+}) {
   const value = params.direction === "UP" ? 1 : -1;
   const existing = await prisma.trailInsightVote.findUnique({
     where: {
@@ -148,8 +158,13 @@ export async function voteTrailInsight(params: { insightId: string; userId: stri
       ? existing.value === value
         ? prisma.trailInsightVote.delete({ where: { insightId_userId: compound } })
         : prisma.trailInsightVote.update({ where: { insightId_userId: compound }, data: { value } })
-      : prisma.trailInsightVote.create({ data: { insightId: params.insightId, userId: params.userId, value } }),
-    prisma.trailInsight.update({ where: { id: params.insightId }, data: { score: { increment: delta } } }),
+      : prisma.trailInsightVote.create({
+          data: { insightId: params.insightId, userId: params.userId, value },
+        }),
+    prisma.trailInsight.update({
+      where: { id: params.insightId },
+      data: { score: { increment: delta } },
+    }),
   ]);
 }
 
@@ -185,14 +200,24 @@ export async function resolveTrailReport(params: {
   });
 }
 
-export async function mergeTrailInsights(params: { sourceId: string; targetId: string; moderatorId: string }) {
+export async function mergeTrailInsights(params: {
+  sourceId: string;
+  targetId: string;
+  moderatorId: string;
+}) {
   if (params.sourceId === params.targetId) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Source and target must differ" });
   }
   await prisma.$transaction(async (tx) => {
     const [source, target] = await Promise.all([
-      tx.trailInsight.findUnique({ where: { id: params.sourceId }, select: { id: true, problemId: true } }),
-      tx.trailInsight.findUnique({ where: { id: params.targetId }, select: { id: true, problemId: true } }),
+      tx.trailInsight.findUnique({
+        where: { id: params.sourceId },
+        select: { id: true, problemId: true },
+      }),
+      tx.trailInsight.findUnique({
+        where: { id: params.targetId },
+        select: { id: true, problemId: true },
+      }),
     ]);
     if (!source || !target || source.problemId !== target.problemId) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "Insights must belong to same problem" });
@@ -245,7 +270,12 @@ export async function mergeTrailInsights(params: { sourceId: string; targetId: s
         });
       }),
     );
-    await tx.trailInsight.update({ where: { id: source.id }, data: { isHidden: true, deletedAt: new Date() } });
-    await tx.trailEdge.deleteMany({ where: { OR: [{ fromInsightId: source.id }, { toInsightId: source.id }] } });
+    await tx.trailInsight.update({
+      where: { id: source.id },
+      data: { isHidden: true, deletedAt: new Date() },
+    });
+    await tx.trailEdge.deleteMany({
+      where: { OR: [{ fromInsightId: source.id }, { toInsightId: source.id }] },
+    });
   });
 }

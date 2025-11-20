@@ -15,10 +15,16 @@ export default async function ContestDetailPage({ params }: { params: Params | P
   let state;
   try {
     state = await buildHydrationState([
-      prefetchTrpcQuery("contests.detail", () => caller.contests.detail({ slug }), { input: { slug } }),
+      prefetchTrpcQuery("contests.detail", () => caller.contests.detail({ slug }), {
+        input: { slug },
+      }),
     ]);
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "NOT_FOUND"
+    ) {
       notFound();
     }
     throw error;
@@ -30,5 +36,3 @@ export default async function ContestDetailPage({ params }: { params: Params | P
     </HydrationBoundary>
   );
 }
-
-

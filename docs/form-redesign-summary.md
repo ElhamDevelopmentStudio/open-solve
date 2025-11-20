@@ -3,6 +3,7 @@
 ## Summary of Changes
 
 ### ✅ Fixed Issues
+
 1. **Next.js 15 params** - Fixed async params in proposals page
 2. **Primary blue color** - Color scheme is correctly defined in globals.css
 3. **Dashboard sidebar** - Simplified, cleaner design without excessive decorations
@@ -13,6 +14,7 @@
 ### 🎨 New Components Created
 
 #### 1. Rich Text Editor (`/components/editor/rich-text-editor.tsx`)
+
 - **TipTap-based** rich text editor
 - **Toolbar** with formatting options (bold, italic, headings, lists, quotes, code)
 - **Image support** with upload capability
@@ -22,6 +24,7 @@
 - **Clean, modern UI** matching the design system
 
 #### 2. Image Upload Utility (`/lib/storage/minio-upload.ts`)
+
 - Client-side upload helper
 - Uploads to `/api/upload/image` endpoint
 - Returns MinIO URL
@@ -31,6 +34,7 @@
 The old tabbed interface needs to be replaced with a **multi-step wizard** approach:
 
 #### Proposed Structure:
+
 1. **Step 1: Basic Info** - Title, slug, difficulty, tags, visibility
 2. **Step 2: Problem Statement** - Rich text editor with image upload
 3. **Step 3: Constraints & Hints** - Additional problem details
@@ -40,6 +44,7 @@ The old tabbed interface needs to be replaced with a **multi-step wizard** appro
 7. **Step 7: Review & Publish** - Final review and workflow actions
 
 #### Benefits:
+
 - **Better UX** - Clear progression, less overwhelming
 - **Autosave** - Each step saves independently
 - **Validation** - Step-by-step validation feedback
@@ -49,18 +54,21 @@ The old tabbed interface needs to be replaced with a **multi-step wizard** appro
 ## Remaining Work
 
 ### High Priority
+
 1. Complete the multi-step wizard for problem editor
 2. Add autosave functionality
 3. Implement image upload API endpoint
 4. Add validation feedback for each step
 
 ### Medium Priority
+
 1. Add keyboard shortcuts for editor
 2. Implement draft autosave
 3. Add markdown preview mode
 4. Improve error handling
 
 ### Optional Enhancements
+
 1. Add collaborative editing
 2. Version history
 3. Import/export problems
@@ -77,6 +85,7 @@ The old tabbed interface needs to be replaced with a **multi-step wizard** appro
 ## Migration Path
 
 The new editor component can coexist with the old one during transition:
+
 1. Deploy new rich-text-editor component
 2. Test thoroughly in staging
 3. Implement multi-step wizard
@@ -87,10 +96,12 @@ The new editor component can coexist with the old one during transition:
 ## Color Scheme Status
 
 The blue color scheme IS properly applied in `app/globals.css`:
+
 - Light mode: `oklch(0.55 0.22 250)` - Professional blue
 - Dark mode: `oklch(0.7 0.2 250)` - Brighter for contrast
 
 If colors appear wrong, it might be:
+
 - Browser cache (hard refresh needed)
 - Theme provider not initialized
 - CSS not loaded properly

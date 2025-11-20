@@ -21,19 +21,17 @@ import {
   SUBMISSION_LIST_SORTS,
   SUBMISSION_VERDICTS,
 } from "@/lib/submissions/constants";
-import { Prisma, SubmissionStatus, TestCaseKind } from "@prisma/client";
+import { ContestState, Prisma, SubmissionStatus, TestCaseKind } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import {
-  dispatchSubmissionToJudge,
-  publishManualReviewMessage,
-} from "@/lib/judge/dispatcher";
+import { dispatchSubmissionToJudge, publishManualReviewMessage } from "@/lib/judge/dispatcher";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { recordSubmissionEvent } from "@/lib/observability/metrics";
 
 const codeInputSchema = z.object({
   problemId: z.string().cuid(),
+  contestId: z.string().cuid().optional(),
   languageCode: z.string().min(2).max(32),
   sourceCode: z.string().min(8).max(40_000),
   stdin: z.string().max(5_000).optional(),
@@ -108,12 +106,18 @@ export const submissionsRouter = router({
   }),
 
   create: protectedProcedure.input(codeInputSchema).mutation(async ({ ctx, input }) => {
+    const contestContext = await resolveContestSubmissionContext({
+      contestId: input.contestId,
+      userId: ctx.user.id,
+      problemId: input.problemId,
+    });
     const submissionId = await enqueueSubmission({
       userId: ctx.user.id,
       problemId: input.problemId,
       languageCode: input.languageCode,
       sourceCode: input.sourceCode,
       stdin: input.stdin,
+      contestContext: contestContext ?? undefined,
     });
     return { submissionId };
   }),
@@ -204,6 +208,7 @@ export const submissionsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
     }
     const { slug: _slug, ...rest } = input;
+    void _slug;
     const response = await buildSubmissionList({
       userId: ctx.user.id,
       input: { ...rest, problemId: problem.id },
@@ -276,7 +281,10 @@ export const submissionsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
     }
     if (submission.userId !== ctx.user.id) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Cannot modify another user’s submission" });
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Cannot modify another user’s submission",
+      });
     }
     await prisma.submission.update({
       where: { id: submission.id },
@@ -289,23 +297,25 @@ export const submissionsRouter = router({
     return { ok: true };
   }),
 
-  hideFromProfile: protectedProcedure.input(hideVisibilitySchema).mutation(async ({ ctx, input }) => {
-    const submission = await prisma.submission.findFirst({
-      where: { id: input.submissionId, deletedAt: null },
-      select: { id: true, userId: true },
-    });
-    if (!submission) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
-    }
-    if (submission.userId !== ctx.user.id && !isStaffRole(ctx.user.role)) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
-    }
-    await prisma.submission.update({
-      where: { id: submission.id },
-      data: { hiddenFromProfile: input.hidden },
-    });
-    return { ok: true };
-  }),
+  hideFromProfile: protectedProcedure
+    .input(hideVisibilitySchema)
+    .mutation(async ({ ctx, input }) => {
+      const submission = await prisma.submission.findFirst({
+        where: { id: input.submissionId, deletedAt: null },
+        select: { id: true, userId: true },
+      });
+      if (!submission) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+      }
+      if (submission.userId !== ctx.user.id && !isStaffRole(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+      }
+      await prisma.submission.update({
+        where: { id: submission.id },
+        data: { hiddenFromProfile: input.hidden },
+      });
+      return { ok: true };
+    }),
 
   saveDraft: protectedProcedure.input(draftSaveSchema).mutation(async ({ ctx, input }) => {
     await getRunnableProblem(input.problemId);
@@ -424,6 +434,7 @@ async function enqueueSubmission(params: {
   languageCode: string;
   sourceCode: string;
   stdin?: string;
+  contestContext?: { contestId: string };
 }) {
   const [problem, language] = await Promise.all([
     getRunnableProblem(params.problemId),
@@ -438,6 +449,7 @@ async function enqueueSubmission(params: {
       userId: params.userId,
       problemId: problem.id,
       problemVersionId: problem.currentVersionId,
+      contestId: params.contestContext?.contestId ?? null,
       languageCode: language.code,
       status: manualOnly ? SubmissionStatus.MANUAL_PENDING : SubmissionStatus.QUEUED,
       verdictCode: manualOnly ? "MANUAL_PENDING" : null,
@@ -475,18 +487,73 @@ async function enqueueSubmission(params: {
       reason: "MANUAL_ONLY",
     });
   } else {
-    await dispatchSubmissionToJudge({
-      submissionId: submission.id,
-      problemId: submission.problemId,
-      problemVersionId: submission.problemVersionId!,
-      languageCode: submission.languageCode,
-      requiresManualReview,
-      manualOnly: false,
-      userId: submission.userId,
-    });
+    try {
+      await dispatchSubmissionToJudge({
+        submissionId: submission.id,
+        problemId: submission.problemId,
+        problemVersionId: submission.problemVersionId!,
+        languageCode: submission.languageCode,
+        requiresManualReview,
+        manualOnly: false,
+        userId: submission.userId,
+      });
+    } catch {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Judge queue is unavailable. Please retry in a moment.",
+      });
+    }
   }
 
   return submission.id;
+}
+
+async function resolveContestSubmissionContext({
+  contestId,
+  userId,
+  problemId,
+}: {
+  contestId?: string;
+  userId: string;
+  problemId: string;
+}) {
+  if (!contestId) {
+    return null;
+  }
+  const contest = await prisma.contest.findFirst({
+    where: {
+      id: contestId,
+      deletedAt: null,
+      problems: { some: { problemId } },
+    },
+    select: {
+      id: true,
+      startsAt: true,
+      endsAt: true,
+      state: true,
+    },
+  });
+  if (!contest) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Contest not found" });
+  }
+  const now = new Date();
+  if (contest.state === ContestState.UPCOMING || now < contest.startsAt || now > contest.endsAt) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Contest window is closed" });
+  }
+  const registration = await prisma.contestRegistration.findFirst({
+    where: { contestId, userId, deletedAt: null },
+    select: { id: true, isDisqualified: true },
+  });
+  if (!registration) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Register before submitting to this contest",
+    });
+  }
+  if (registration.isDisqualified) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You are disqualified from this contest" });
+  }
+  return { contestId };
 }
 
 type SubmissionListQueryInput = z.infer<typeof submissionListInput>;
@@ -629,15 +696,9 @@ function buildOrderBy(sort: (typeof SUBMISSION_LIST_SORTS)[number]) {
     ];
   }
   if (sort === "first_ac") {
-    return [
-      { createdAt: "asc" as Prisma.SortOrder },
-      { id: "asc" as Prisma.SortOrder },
-    ];
+    return [{ createdAt: "asc" as Prisma.SortOrder }, { id: "asc" as Prisma.SortOrder }];
   }
-  return [
-    { createdAt: "desc" as Prisma.SortOrder },
-    { id: "desc" as Prisma.SortOrder },
-  ];
+  return [{ createdAt: "desc" as Prisma.SortOrder }, { id: "desc" as Prisma.SortOrder }];
 }
 
 async function getEarliestAcceptedMap(userId: string, problemIds: string[]) {
@@ -804,10 +865,7 @@ async function buildFilterMetadata(userId: string): Promise<SubmissionFilterMeta
 
   return {
     languages: languageGroups.map((group) => {
-      const count =
-        typeof group._count === "object" && group._count
-          ? group._count._all ?? 0
-          : 0;
+      const count = typeof group._count === "object" && group._count ? (group._count._all ?? 0) : 0;
       return {
         code: group.languageCode,
         displayName: languageMap.get(group.languageCode) ?? group.languageCode,
@@ -826,9 +884,7 @@ async function buildFilterMetadata(userId: string): Promise<SubmissionFilterMeta
   };
 }
 
-function ensureContestShareAllowed(
-  contest: { startsAt: Date; endsAt: Date } | null,
-) {
+function ensureContestShareAllowed(contest: { startsAt: Date; endsAt: Date } | null) {
   if (!contest) {
     return;
   }

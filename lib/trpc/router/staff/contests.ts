@@ -1,7 +1,7 @@
 import { adminProcedure, router } from "@/lib/trpc/trpc";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { contestBuilderSchema, contestProblemSettingsSchema } from "@/lib/contests/schema";
+import { contestBuilderSchema } from "@/lib/contests/schema";
 import {
   createContestFromBuilder,
   listContestClarifications,

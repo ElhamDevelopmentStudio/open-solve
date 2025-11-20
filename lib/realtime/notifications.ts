@@ -1,7 +1,10 @@
 import { env } from "@/lib/env";
 import { getSubmissionDetailForBroadcast } from "@/lib/submissions/detail";
 import { getSubmissionRealtimeHub, hasSubmissionRealtimeHub } from "@/lib/realtime/submission-hub";
-import { getLeaderboardRealtimeHub, hasLeaderboardRealtimeHub } from "@/lib/realtime/leaderboard-hub";
+import {
+  getLeaderboardRealtimeHub,
+  hasLeaderboardRealtimeHub,
+} from "@/lib/realtime/leaderboard-hub";
 import { logger } from "@/lib/logger";
 import { syncRealtimeLeaderboards } from "@/lib/leaderboard/live";
 import type { LeaderboardWindow } from "@/lib/leaderboard/service";

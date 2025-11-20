@@ -5,7 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,8 +26,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSubmissionFilters } from "@/hooks/use-submission-filters";
 import { SUBMISSION_STATUSES } from "@/lib/problems/constants";
 import { submissionListQueryOptions } from "@/lib/react-query/policies";
-import { SUBMISSION_CONTEST_FILTERS, SUBMISSION_LIST_SORTS, SUBMISSION_VERDICTS } from "@/lib/submissions/constants";
-import { buildSubmissionListInputFromParams, type SubmissionListInputDTO } from "@/lib/submissions/filter-utils";
+import {
+  SUBMISSION_CONTEST_FILTERS,
+  SUBMISSION_LIST_SORTS,
+  SUBMISSION_VERDICTS,
+} from "@/lib/submissions/constants";
+import {
+  buildSubmissionListInputFromParams,
+  type SubmissionListInputDTO,
+} from "@/lib/submissions/filter-utils";
 import type { SubmissionSearchParams } from "@/lib/submissions/search-params";
 import type {
   SubmissionFilterMetadata,
@@ -41,7 +55,7 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
-  Star
+  Star,
 } from "@/components/icons";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -55,6 +69,7 @@ type SubmissionsClientProps = {
   filterMetadata: SubmissionFilterMetadata;
   lockedProblemSlug?: string;
   lockedProblemTitle?: string;
+  problemBasePath?: string;
 };
 
 export function SubmissionsClient({
@@ -63,25 +78,29 @@ export function SubmissionsClient({
   filterMetadata,
   lockedProblemSlug,
   lockedProblemTitle,
+  problemBasePath = "/workspace/problems",
 }: SubmissionsClientProps) {
   const [filterState, setFilterState] = useSubmissionFilters();
   useEffect(() => {
     if (lockedProblemSlug && filterState.problem !== lockedProblemSlug) {
-      setFilterState((prev) => ({ ...prev, problem: lockedProblemSlug }));
+      void setFilterState({ problem: lockedProblemSlug });
     }
   }, [lockedProblemSlug, filterState.problem, setFilterState]);
   const filterSnapshot = useMemo(
     () =>
-      (lockedProblemSlug
+      lockedProblemSlug
         ? ({ ...filterState, problem: lockedProblemSlug } as SubmissionSearchParams)
-        : (filterState as SubmissionSearchParams)),
+        : (filterState as SubmissionSearchParams),
     [filterState, lockedProblemSlug],
   );
-  const listInput = useMemo(() => buildSubmissionListInputFromParams(filterSnapshot), [filterSnapshot]);
-  const initialHashRef = useRef(stableHash(initialInput));
+  const listInput = useMemo(
+    () => buildSubmissionListInputFromParams(filterSnapshot),
+    [filterSnapshot],
+  );
+  const [initialHash] = useState(() => stableHash(initialInput));
   const currentHash = stableHash(listInput);
   const initialQueryData: InfiniteData<SubmissionListResponse, string | undefined> | undefined =
-    initialHashRef.current === currentHash
+    initialHash === currentHash
       ? {
           pages: [initialData],
           pageParams: [undefined],
@@ -106,14 +125,6 @@ export function SubmissionsClient({
   const hasNextPage = Boolean(listQuery.hasNextPage);
   const fetchMoreRef = useRef<HTMLDivElement | null>(null);
 
-  if (listQuery.isError) {
-    return (
-      <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive dark:text-destructive-foreground">
-        Failed to load submissions: {listQuery.error.message}
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (!fetchMoreRef.current) return;
     if (!hasNextPage) return;
@@ -130,6 +141,14 @@ export function SubmissionsClient({
     observer.observe(node);
     return () => observer.disconnect();
   }, [hasNextPage, listQuery]);
+
+  if (listQuery.isError) {
+    return (
+      <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive dark:text-destructive-foreground">
+        Failed to load submissions: {listQuery.error.message}
+      </div>
+    );
+  }
 
   const resetFilters = () => {
     setFilterState({
@@ -158,7 +177,7 @@ export function SubmissionsClient({
               Reset filters
             </Button>
             <Button variant="secondary" size="sm" asChild>
-              <Link href="/problems">
+              <Link href={problemBasePath}>
                 <ArrowUpRight className="mr-2 h-4 w-4" />
                 Browse problems
               </Link>
@@ -180,7 +199,7 @@ export function SubmissionsClient({
 
       <div className="rounded-2xl border border-border bg-card/70">
         {entries.length === 0 ? (
-          <EmptyState />
+          <EmptyState problemBasePath={problemBasePath} />
         ) : (
           <div className="divide-y divide-border/70">
             {entries.map((entry) => (
@@ -237,21 +256,23 @@ function SubmissionFilters({
   const selectedProblem =
     filterMetadata.problems.find((p) => p.slug === filterState.problem) ?? null;
 
-  const handleArrayToggle = (key: keyof SubmissionSearchParams, value: string, checked: boolean) => {
+  const handleArrayToggle = (
+    key: keyof SubmissionSearchParams,
+    value: string,
+    checked: boolean,
+  ) => {
     const current = (filterState[key] as string[]) ?? [];
     const next = checked ? [...current, value] : current.filter((item) => item !== value);
-    setFilterState((prev) => ({
-      ...prev,
+    void setFilterState({
       [key]: next,
-    }));
+    } as Partial<SubmissionSearchParams>);
   };
 
   const handleDateRange = (range: { from?: Date; to?: Date } | undefined) => {
-    setFilterState((prev) => ({
-      ...prev,
+    void setFilterState({
       from: range?.from ? format(range.from, "yyyy-MM-dd") : "",
       to: range?.to ? format(range.to, "yyyy-MM-dd") : "",
-    }));
+    });
   };
 
   const selectedFrom = filterState.from ? new Date(filterState.from) : undefined;
@@ -287,7 +308,7 @@ function SubmissionFilters({
                   <CommandItem
                     value="__all__"
                     onSelect={() => {
-                      setFilterState((prev) => ({ ...prev, problem: "" }));
+                      void setFilterState({ problem: "" });
                       setProblemSearch("");
                     }}
                   >
@@ -299,7 +320,7 @@ function SubmissionFilters({
                         key={problem.id}
                         value={problem.slug}
                         onSelect={() => {
-                          setFilterState((prev) => ({ ...prev, problem: problem.slug }));
+                          void setFilterState({ problem: problem.slug });
                         }}
                       >
                         {problem.title}
@@ -422,10 +443,18 @@ function SubmissionFilters({
         value={filterState.contest}
         options={SUBMISSION_CONTEST_FILTERS.map((value) => ({
           label:
-            value === "all" ? "All attempts" : value === "contest" ? "Contest only" : "Practice only",
+            value === "all"
+              ? "All attempts"
+              : value === "contest"
+                ? "Contest only"
+                : "Practice only",
           value,
         }))}
-        onValueChange={(value) => setFilterState((prev) => ({ ...prev, contest: value }))}
+        onValueChange={(value) =>
+          setFilterState({
+            contest: value as typeof filterState.contest,
+          })
+        }
       />
 
       <SelectControl
@@ -442,7 +471,11 @@ function SubmissionFilters({
                   : "First AC",
           value,
         }))}
-        onValueChange={(value) => setFilterState((prev) => ({ ...prev, sort: value }))}
+        onValueChange={(value) =>
+          setFilterState({
+            sort: value as typeof filterState.sort,
+          })
+        }
       />
     </div>
   );
@@ -457,7 +490,7 @@ function SelectControl({
   label: string;
   value: string;
   options: Array<{ label: string; value: string }>;
-  onValueChange: (value: any) => void;
+  onValueChange: (value: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -540,16 +573,16 @@ function SubmissionStats({ summary }: { summary: SubmissionListSummary | null })
   );
 }
 
-function EmptyState() {
+function EmptyState({ problemBasePath }: { problemBasePath: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-16 text-center">
       <p className="text-lg font-semibold text-foreground">No submissions yet</p>
       <p className="max-w-sm text-sm text-muted-foreground">
-        Choose a problem to start solving. Your attempts, verdicts, and resubmits will appear here so
-        you can trace your progress over time.
+        Choose a problem to start solving. Your attempts, verdicts, and resubmits will appear here
+        so you can trace your progress over time.
       </p>
       <Button asChild>
-        <Link href="/problems">
+        <Link href={problemBasePath}>
           <ArrowUpRight className="mr-2 h-4 w-4" />
           Browse problems
         </Link>

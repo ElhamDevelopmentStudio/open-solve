@@ -104,29 +104,27 @@ export const adminProblemsRouter = router({
       return problem;
     }),
 
-  get: adminProcedure
-    .input(z.object({ problemId: z.string().cuid() }))
-    .query(async ({ input }) => {
-      const problem = await prisma.problem.findUnique({
-        where: { id: input.problemId },
-        include: {
-          currentVersion: {
-            select: {
-              versionNumber: true,
-              title: true,
-              statement: true,
-              constraints: true,
-            },
+  get: adminProcedure.input(z.object({ problemId: z.string().cuid() })).query(async ({ input }) => {
+    const problem = await prisma.problem.findUnique({
+      where: { id: input.problemId },
+      include: {
+        currentVersion: {
+          select: {
+            versionNumber: true,
+            title: true,
+            statement: true,
+            constraints: true,
           },
-          tags: {
-            select: { tag: { select: { name: true } } },
-          },
-          stats: true,
         },
-      });
-      if (!problem) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
-      }
-      return problem;
-    }),
+        tags: {
+          select: { tag: { select: { name: true } } },
+        },
+        stats: true,
+      },
+    });
+    if (!problem) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+    }
+    return problem;
+  }),
 });

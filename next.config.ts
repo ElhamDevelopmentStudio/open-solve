@@ -41,11 +41,9 @@ if (isProd) {
   });
 }
 
-const devAllowedOrigins =
-  process.env.NEXT_DEV_ALLOWED_ORIGINS?.split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean) ??
-  ["localhost", "127.0.0.1", "192.168.0.115", "172.30.10.193"];
+const devAllowedOrigins = process.env.NEXT_DEV_ALLOWED_ORIGINS?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean) ?? ["localhost", "127.0.0.1", "192.168.0.115", "172.30.10.193"];
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

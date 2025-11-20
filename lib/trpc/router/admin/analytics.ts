@@ -1,4 +1,7 @@
-import { computeAnalyticsOverview, computeProblemAnalyticsSnapshots } from "@/lib/analytics/queries";
+import {
+  computeAnalyticsOverview,
+  computeProblemAnalyticsSnapshots,
+} from "@/lib/analytics/queries";
 import { adminProcedure, router } from "@/lib/trpc/trpc";
 
 export const adminAnalyticsRouter = router({

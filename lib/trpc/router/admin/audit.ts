@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { adminProcedure, router } from "@/lib/trpc/trpc";
-import { IncidentSeverity, IncidentStatus } from "@prisma/client";
+import { IncidentSeverity, IncidentStatus, AuthAuditAction } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createAuditLog } from "@/lib/auth/audit";
-import { TRPCError } from "@trpc/server";
 
 const timelineItemSchema = z.object({
   at: z.coerce.date(),
@@ -26,23 +25,27 @@ export const adminAuditRouter = router({
       z
         .object({
           userId: z.string().cuid().optional(),
-          action: z.string().optional(),
+          action: z.nativeEnum(AuthAuditAction).optional(),
           limit: z.number().int().min(10).max(100).default(40),
         })
         .optional(),
     )
     .query(async ({ input }) => {
-      const logs = await prisma.authAuditLog.findMany({
+      const logs = (await prisma.authAuditLog.findMany({
         where: {
           userId: input?.userId,
-          action: input?.action as any,
+          ...(input?.action ? { action: input.action } : {}),
         },
         orderBy: { createdAt: "desc" },
         take: input?.limit ?? 40,
         include: {
           user: { select: { id: true, handle: true, email: true } },
         },
-      });
+      })) satisfies Array<
+        Prisma.AuthAuditLogGetPayload<{
+          include: { user: { select: { id: true; handle: true; email: true } } };
+        }>
+      >;
       return logs;
     }),
 

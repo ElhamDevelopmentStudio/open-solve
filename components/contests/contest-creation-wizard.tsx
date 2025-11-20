@@ -47,15 +47,8 @@ import {
   TabsTrigger,
   Textarea,
 } from "@/components/ui";
-import {
-  DataTable,
-  DataTableColumnHeader,
-  type DataTableColumn,
-} from "@/components/ui/data-table";
-import {
-  contestBuilderSchema,
-  contestProblemSettingsSchema,
-} from "@/lib/contests/schema";
+import { DataTable, DataTableColumnHeader, type DataTableColumn } from "@/components/ui/data-table";
+import { contestBuilderSchema, contestProblemSettingsSchema } from "@/lib/contests/schema";
 import { defaultContestSettings } from "@/lib/contests/settings";
 import { trpc } from "@/lib/trpc/client";
 import type { AppRouter } from "@/lib/trpc/router";
@@ -166,7 +159,11 @@ function resolveFriendlyErrorMessage(errors: FieldErrors<BuilderFormValues>) {
   }
   const [firstKey, firstError] = Object.entries(errors)[0] ?? [];
   if (firstError) {
-    return extractErrorMessage(firstError) ?? FRIENDLY_ERROR_MESSAGES[firstKey as keyof BuilderFormValues] ?? null;
+    return (
+      extractErrorMessage(firstError) ??
+      FRIENDLY_ERROR_MESSAGES[firstKey as keyof BuilderFormValues] ??
+      null
+    );
   }
   return null;
 }
@@ -320,12 +317,9 @@ export function ContestCreationWizard({
     setSelectedProblems((prev) => prev.filter((problem) => problem.problemId !== problemId));
   };
 
-  const updateSettings = useCallback(
-    (updater: (current: typeof settings) => typeof settings) => {
-      setSettings((current) => updater(current));
-    },
-    [],
-  );
+  const updateSettings = useCallback((updater: (current: typeof settings) => typeof settings) => {
+    setSettings((current) => updater(current));
+  }, []);
 
   const validateCurrentStep = useCallback(async () => {
     const fields = STEP_VALIDATION_FIELDS[stepIndex];
@@ -352,6 +346,25 @@ export function ContestCreationWizard({
     (values) => {
       if (selectedProblems.length === 0) {
         toast.warning("Add at least one problem before launching.");
+        setStepIndex(2);
+        return;
+      }
+      const normalizedLabels = selectedProblems.map((problem) =>
+        problem.label.trim().toUpperCase(),
+      );
+      const duplicateLabel = normalizedLabels.find(
+        (label, index) => normalizedLabels.indexOf(label) !== index,
+      );
+      if (duplicateLabel) {
+        toast.warning("Problem labels must be unique.");
+        setStepIndex(2);
+        return;
+      }
+      const invalidPoints = selectedProblems.find(
+        (problem) => !problem.points || problem.points <= 0,
+      );
+      if (invalidPoints) {
+        toast.warning("Assign points to every problem before launching.");
         setStepIndex(2);
         return;
       }
@@ -507,14 +520,21 @@ function BuilderHero({
     <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card/80 to-primary/10 p-6 shadow-[0_20px_90px_rgba(15,23,42,0.15)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Contest Fabricator</p>
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight">Quality gate for new contests</h2>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Contest Fabricator
+          </p>
+          <h2 className="mt-1 text-3xl font-semibold tracking-tight">
+            Quality gate for new contests
+          </h2>
           <p className="text-sm text-muted-foreground">
             Ship contests with observability, safeguards, and anonymization baked in.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+          <Badge
+            variant="secondary"
+            className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+          >
             Phase 13 ready
           </Badge>
           <Button variant="ghost" className="rounded-full" type="button" onClick={onReset}>
@@ -524,7 +544,10 @@ function BuilderHero({
       </div>
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-border/60">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${stepProgress}%` }} />
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${stepProgress}%` }}
+          />
         </div>
         <p className="text-xs font-medium text-muted-foreground">Step {stepLabel}</p>
       </div>
@@ -532,7 +555,13 @@ function BuilderHero({
   );
 }
 
-function StepRail({ stepIndex, onNavigate }: { stepIndex: number; onNavigate: (index: number) => void }) {
+function StepRail({
+  stepIndex,
+  onNavigate,
+}: {
+  stepIndex: number;
+  onNavigate: (index: number) => void;
+}) {
   return (
     <Card className="border-border/60 bg-card/80">
       <CardHeader className="pb-3">
@@ -541,7 +570,8 @@ function StepRail({ stepIndex, onNavigate }: { stepIndex: number; onNavigate: (i
       </CardHeader>
       <CardContent className="space-y-2">
         {WIZARD_STEPS.map((step, index) => {
-          const status = index < stepIndex ? "complete" : index === stepIndex ? "active" : "upcoming";
+          const status =
+            index < stepIndex ? "complete" : index === stepIndex ? "active" : "upcoming";
           const Icon = step.icon;
           return (
             <button
@@ -595,11 +625,17 @@ function WizardActionBar({
   return (
     <div className="flex flex-col gap-3 border-t border-border/60 bg-muted/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-xs text-muted-foreground">
-        <span className="font-medium text-foreground">{WIZARD_STEPS[stepIndex].label}</span> • Step {stepIndex + 1} of {" "}
-        {WIZARD_STEPS.length}
+        <span className="font-medium text-foreground">{WIZARD_STEPS[stepIndex].label}</span> • Step{" "}
+        {stepIndex + 1} of {WIZARD_STEPS.length}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="ghost" className="rounded-full" disabled={stepIndex === 0} onClick={onBack}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="rounded-full"
+          disabled={stepIndex === 0}
+          onClick={onBack}
+        >
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         {!isLastStep ? (
@@ -749,7 +785,9 @@ function BasicsStep({ form }: { form: ReturnType<typeof useForm<BuilderFormValue
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold">Rated contest</p>
-            <p className="text-xs text-muted-foreground">Enable rating delta tracking and AC celebration.</p>
+            <p className="text-xs text-muted-foreground">
+              Enable rating delta tracking and AC celebration.
+            </p>
           </div>
           <FormField
             control={form.control}
@@ -775,7 +813,9 @@ function ScheduleStep({
 }: {
   form: ReturnType<typeof useForm<BuilderFormValues>>;
   settings: typeof defaultContestSettings;
-  updateSettings: (updater: (current: typeof defaultContestSettings) => typeof defaultContestSettings) => void;
+  updateSettings: (
+    updater: (current: typeof defaultContestSettings) => typeof defaultContestSettings,
+  ) => void;
 }) {
   return (
     <div className="space-y-6">
@@ -838,7 +878,10 @@ function ScheduleStep({
                 onValueChange={(value) =>
                   updateSettings((current) => ({
                     ...current,
-                    registration: { ...current.registration, mode: value as typeof current.registration.mode },
+                    registration: {
+                      ...current.registration,
+                      mode: value as typeof current.registration.mode,
+                    },
                   }))
                 }
               >
@@ -906,7 +949,10 @@ function ScheduleStep({
                 onChange={(event) =>
                   updateSettings((current) => ({
                     ...current,
-                    schedule: { ...current.schedule, graceMinutes: Number(event.target.value) || 0 },
+                    schedule: {
+                      ...current.schedule,
+                      graceMinutes: Number(event.target.value) || 0,
+                    },
                   }))
                 }
               />
@@ -989,12 +1035,15 @@ function ProblemsStep({
       [problemId]: !current[problemId],
     }));
 
-  const rows = useMemo(() =>
-    catalog.map((problem) => ({
-      ...problem,
-      searchText: `${problem.currentVersion?.title ?? problem.slug} ${problem.slug}`,
-      tagsList: problem.tags?.map((tag) => tag.tag.name).join(", ") ?? "—",
-    })), [catalog]);
+  const rows = useMemo(
+    () =>
+      catalog.map((problem) => ({
+        ...problem,
+        searchText: `${problem.currentVersion?.title ?? problem.slug} ${problem.slug}`,
+        tagsList: problem.tags?.map((tag) => tag.tag.name).join(", ") ?? "—",
+      })),
+    [catalog],
+  );
 
   type CatalogRow = (typeof rows)[number];
 
@@ -1005,7 +1054,9 @@ function ProblemsStep({
         header: ({ column }) => <DataTableColumnHeader column={column} title="Problem" />,
         cell: ({ row }) => (
           <div>
-            <p className="text-sm font-semibold">{row.original.currentVersion?.title ?? row.original.slug}</p>
+            <p className="text-sm font-semibold">
+              {row.original.currentVersion?.title ?? row.original.slug}
+            </p>
             <p className="text-xs text-muted-foreground">/{row.original.slug}</p>
           </div>
         ),
@@ -1087,7 +1138,13 @@ function ProblemsStep({
               No published problems match the search. Adjust filters or publish some problems first.
             </div>
           ) : (
-            <DataTable columns={columns} data={rows} enableColumnVisibility={false} enablePagination={false} enableSorting={false} />
+            <DataTable
+              columns={columns}
+              data={rows}
+              enableColumnVisibility={false}
+              enablePagination={false}
+              enableSorting={false}
+            />
           )}
         </CardContent>
       </Card>
@@ -1105,7 +1162,10 @@ function ProblemsStep({
             </div>
           ) : (
             selected.map((problem, index) => (
-              <div key={problem.problemId} className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm">
+              <div
+                key={problem.problemId}
+                className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm"
+              >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="text-sm font-semibold">
@@ -1120,7 +1180,9 @@ function ProblemsStep({
                         className="w-20"
                         value={problem.label}
                         onChange={(event) =>
-                          onUpdate(problem.problemId, { label: event.target.value.toUpperCase().slice(0, 3) })
+                          onUpdate(problem.problemId, {
+                            label: event.target.value.toUpperCase().slice(0, 3),
+                          })
                         }
                       />
                     </div>
@@ -1135,7 +1197,12 @@ function ProblemsStep({
                         }
                       />
                     </div>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => toggleAdvanced(problem.problemId)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleAdvanced(problem.problemId)}
+                    >
                       {expanded[problem.problemId] ? "Hide settings" : "Advanced"}
                     </Button>
                     <Button
@@ -1160,7 +1227,9 @@ function ProblemsStep({
                             onUpdate(problem.problemId, {
                               settings: {
                                 ...problem.settings,
-                                attemptsLimit: event.target.value ? Number(event.target.value) : null,
+                                attemptsLimit: event.target.value
+                                  ? Number(event.target.value)
+                                  : null,
                               },
                             })
                           }
@@ -1222,7 +1291,9 @@ function ProblemsStep({
                           })
                         }
                       />
-                      <p className="text-xs text-muted-foreground">Leave blank to inherit contest defaults.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Leave blank to inherit contest defaults.
+                      </p>
                     </div>
                     <div className="grid gap-1">
                       <Label className="text-xs uppercase">Notes</Label>
@@ -1255,7 +1326,9 @@ function ProblemsStep({
 
 type PoliciesProps = {
   settings: typeof defaultContestSettings;
-  updateSettings: (updater: (current: typeof defaultContestSettings) => typeof defaultContestSettings) => void;
+  updateSettings: (
+    updater: (current: typeof defaultContestSettings) => typeof defaultContestSettings,
+  ) => void;
 };
 
 function PoliciesStep({ settings, updateSettings }: PoliciesProps) {
@@ -1264,7 +1337,9 @@ function PoliciesStep({ settings, updateSettings }: PoliciesProps) {
       <Card className="border-border/60 bg-card/80">
         <CardHeader>
           <CardTitle className="text-base">Scoring rules</CardTitle>
-          <CardDescription>Every mode still respects the Quality & Security guardrails.</CardDescription>
+          <CardDescription>
+            Every mode still respects the Quality & Security guardrails.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs
@@ -1345,7 +1420,10 @@ function PoliciesStep({ settings, updateSettings }: PoliciesProps) {
                   onChange={(event) =>
                     updateSettings((current) => ({
                       ...current,
-                      scoring: { ...current.scoring, customAttemptPenalty: Number(event.target.value) },
+                      scoring: {
+                        ...current.scoring,
+                        customAttemptPenalty: Number(event.target.value),
+                      },
                     }))
                   }
                 />
@@ -1380,7 +1458,10 @@ function PoliciesStep({ settings, updateSettings }: PoliciesProps) {
                 onValueChange={(value) =>
                   updateSettings((current) => ({
                     ...current,
-                    scoreboard: { ...current.scoreboard, visibility: value as typeof current.scoreboard.visibility },
+                    scoreboard: {
+                      ...current.scoreboard,
+                      visibility: value as typeof current.scoreboard.visibility,
+                    },
                   }))
                 }
               >
@@ -1485,7 +1566,10 @@ function PoliciesStep({ settings, updateSettings }: PoliciesProps) {
                 onChange={(event) =>
                   updateSettings((current) => ({
                     ...current,
-                    antiCheat: { ...current.antiCheat, throttlePerMinute: Number(event.target.value) || 3 },
+                    antiCheat: {
+                      ...current.antiCheat,
+                      throttlePerMinute: Number(event.target.value) || 3,
+                    },
                   }))
                 }
               />
@@ -1515,7 +1599,8 @@ function ReviewStep({
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <SummaryItem label="Window">
-            {format(new Date(formValues.startsAt), "PPPpp")} → {format(new Date(formValues.endsAt), "PPPpp")}
+            {format(new Date(formValues.startsAt), "PPPpp")} →{" "}
+            {format(new Date(formValues.endsAt), "PPPpp")}
           </SummaryItem>
           <SummaryItem label="Mode">
             {formValues.type} · {formValues.visibility}
@@ -1575,7 +1660,10 @@ function SummaryRail({
         </CardHeader>
         <CardContent className="space-y-3">
           {readiness.map((item) => (
-            <div key={item.label} className="flex items-start gap-3 rounded-2xl border border-border/50 p-3">
+            <div
+              key={item.label}
+              className="flex items-start gap-3 rounded-2xl border border-border/50 p-3"
+            >
               {item.state === "ready" ? (
                 <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
                   <Check className="h-4 w-4" />
@@ -1617,7 +1705,8 @@ function SummaryRail({
           <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
             <p className="text-xs uppercase text-muted-foreground">Window</p>
             <p className="text-sm font-medium">
-              {format(new Date(formValues.startsAt), "MMM d, HH:mm")} → {format(new Date(formValues.endsAt), "MMM d, HH:mm")}
+              {format(new Date(formValues.startsAt), "MMM d, HH:mm")} →{" "}
+              {format(new Date(formValues.endsAt), "MMM d, HH:mm")}
             </p>
             <p className="text-xs text-muted-foreground">
               {selectedProblems.length} problems · {totalPoints} pts
@@ -1629,7 +1718,8 @@ function SummaryRail({
               Discussions locked: {settings.antiCheat.lockDiscussions ? "yes" : "no"}
             </p>
             <p className="text-xs text-muted-foreground">
-              Similarity review {settings.antiCheat.similarityReview ? "enabled" : "disabled"} · throttle {settings.antiCheat.throttlePerMinute}/min
+              Similarity review {settings.antiCheat.similarityReview ? "enabled" : "disabled"} ·
+              throttle {settings.antiCheat.throttlePerMinute}/min
             </p>
           </div>
         </CardContent>
@@ -1666,12 +1756,16 @@ function buildReadinessChecklist({
     },
     {
       label: "Problem set locked",
-      detail: `${selectedProblems.length} selected` + (selectedProblems.length === 0 ? " — minimum one" : ""),
+      detail:
+        `${selectedProblems.length} selected` +
+        (selectedProblems.length === 0 ? " — minimum one" : ""),
       state: selectedProblems.length > 0 ? "ready" : "warning",
     },
     {
       label: "Anti-cheat",
-      detail: settings.antiCheat.lockDiscussions ? "Discussions locked" : "Enable lock for Phase 13",
+      detail: settings.antiCheat.lockDiscussions
+        ? "Discussions locked"
+        : "Enable lock for Phase 13",
       state: settings.antiCheat.lockDiscussions ? "ready" : "todo",
     },
     {

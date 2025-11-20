@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -40,15 +40,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CodeEditor } from "@/components/code/code-editor";
 import { RichTextEditor } from "@/components/editor/rich-text-editor";
-import { Loader2, Plus, Save, Send, ShieldCheck, ShieldAlert, UserPlus, Trash2, RotateCcw, Info, Eye, FileText } from "@/components/icons";
+import {
+  Loader2,
+  Plus,
+  Save,
+  Send,
+  ShieldCheck,
+  ShieldAlert,
+  UserPlus,
+  Trash2,
+  RotateCcw,
+  Info,
+  Eye,
+  FileText,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
-import type { Tag } from "@prisma/client";
+import type { ProblemVisibility, Tag } from "@prisma/client";
 import { uploadImageToMinio } from "@/lib/storage/minio-upload";
 import TurndownService from "turndown";
 import { marked } from "marked";
 import { TagInput, type Tag as EmblorTag } from "emblor";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateTags } from "@/lib/react-query/invalidation";
 
 type TestCaseRow = {
   id?: string;
@@ -109,67 +124,73 @@ const JUDGE_MODE_OPTIONS: Array<{
 
 export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
+  const invalidateProblemCaches = () => {
+    void invalidateProblemCaches();
+    void utils.staff.problems.list.invalidate();
+    invalidateTags(queryClient, ["problems", "problemDetail", "tags", "staffProblems"]);
+  };
   const { data, isLoading } = trpc.staff.problems.get.useQuery({ id: problemId });
   const { data: metadata } = trpc.problems.filterMetadata.useQuery();
   const { data: languageCatalog } = trpc.staff.problems.languagesCatalog.useQuery();
 
   const saveContent = trpc.staff.problems.saveContent.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Content saved");
     },
   });
   const saveMetadata = trpc.staff.problems.saveMetadata.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Metadata saved");
     },
   });
   const saveTests = trpc.staff.problems.updateTests.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Tests updated");
     },
   });
   const submitForReview = trpc.staff.problems.submitForReview.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Sent to review");
     },
   });
   const requestChanges = trpc.staff.problems.requestChanges.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Returned to draft");
     },
   });
   const approve = trpc.staff.problems.approve.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Approved");
     },
   });
   const publish = trpc.staff.problems.publish.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Published");
     },
   });
   const updateLanguagesMutation = trpc.staff.problems.updateLanguages.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Languages saved");
     },
   });
   const addCurator = trpc.staff.problems.addCurator.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Curator added");
     },
   });
   const removeCurator = trpc.staff.problems.removeCurator.useMutation({
     onSuccess: () => {
-      utils.staff.problems.get.invalidate({ id: problemId });
+      invalidateProblemCaches();
       toast.success("Curator removed");
     },
   });
@@ -184,7 +205,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   });
   const [metadataState, setMetadataState] = useState<{
     slug: string;
-    visibility: "PUBLIC" | "UNLISTED" | "INTERNAL";
+    visibility: ProblemVisibility;
     difficultyCode: string;
     judgeMode: JudgeMode;
   }>({
@@ -204,7 +225,8 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const [newCuratorHandle, setNewCuratorHandle] = useState("");
 
   useEffect(() => {
-    if (data) {
+    if (!data) return;
+    startTransition(() => {
       setContentState({
         title: data.version.title,
         statement: data.version.statement,
@@ -279,7 +301,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
               },
             ];
       setTestCases([...sampleRows, ...hiddenRows]);
-    }
+    });
   }, [data]);
 
   useEffect(() => {
@@ -297,7 +319,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
         codeStub: assignment?.codeStub ?? getDefaultCodeStub(language.code),
       };
     });
-    setLanguageState(nextState);
+    startTransition(() => setLanguageState(nextState));
   }, [data, languageCatalog]);
 
   const lintIssues = useMemo(() => {
@@ -399,7 +421,10 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const summarizeTestValue = (value: string) => {
     if (!value) return "Empty";
     if (value.startsWith("inline://")) return value;
-    const plain = value.replace(/[`*_>#]/g, "").replace(/\s+/g, " ").trim();
+    const plain = value
+      .replace(/[`*_>#]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!plain) return "Empty";
     return plain.length > 80 ? `${plain.slice(0, 80)}…` : plain;
   };
@@ -436,7 +461,9 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   };
 
   const serializeTestCase = (test: TestCaseRow) => {
-    const { id: _id, kind: _kind, ...payload } = test;
+    const { id: unusedId, kind: unusedKind, ...payload } = test;
+    void unusedId;
+    void unusedKind;
     return payload;
   };
 
@@ -827,9 +854,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="font-medium">{language.displayName}</p>
-                          <p className="text-xs uppercase text-muted-foreground">
-                            {language.code}
-                          </p>
+                          <p className="text-xs uppercase text-muted-foreground">{language.code}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Label htmlFor={`language-${language.code}`} className="text-xs">
@@ -1017,7 +1042,8 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Need inspiration? Start typing to search across {tagSuggestions.length} curated tags.
+                  Need inspiration? Start typing to search across {tagSuggestions.length} curated
+                  tags.
                 </p>
               </div>
               <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
@@ -1188,9 +1214,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 </Button>
                 <Button
                   variant="default"
-                  onClick={() =>
-                    publish.mutate({ problemId, visibility: metadataState.visibility as any })
-                  }
+                  onClick={() => publish.mutate({ problemId, visibility: metadataState.visibility })}
                   disabled={publish.isPending}
                 >
                   Publish
@@ -1259,7 +1283,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
 
   useEffect(() => {
     if (open) {
-      setDraft(testCase ?? { ...defaultTestCasePayload });
+      startTransition(() => setDraft(testCase ?? { ...defaultTestCasePayload }));
     }
   }, [open, testCase]);
 
@@ -1283,7 +1307,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
     setDraft((prev) => ({
       ...prev,
       kind: nextKind,
-      strength: nextKind === "sample" ? 0 : prev.strength ?? 100,
+      strength: nextKind === "sample" ? 0 : (prev.strength ?? 100),
     }));
   };
 
@@ -1292,7 +1316,9 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>{draft.id ? `Edit test #${draft.ordinal}` : "Add test case"}</DialogTitle>
-          <DialogDescription>Detailed view of the input, output, and guardrails for this case.</DialogDescription>
+          <DialogDescription>
+            Detailed view of the input, output, and guardrails for this case.
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[65vh] pr-6">
           <div className="space-y-6 py-2">
@@ -1333,10 +1359,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
               </div>
             </div>
             <div className="space-y-2">
-              <FieldLabel
-                label="Input"
-                tooltip="Provide the exact stdin fed to the judge."
-              />
+              <FieldLabel label="Input" tooltip="Provide the exact stdin fed to the judge." />
               <Textarea
                 value={draft.input}
                 onChange={(event) =>
@@ -1425,12 +1448,19 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
         </ScrollArea>
         <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {draft.id ? (
-            <Button type="button" variant="ghost" className="text-destructive" onClick={() => onDelete(draft.id)}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-destructive"
+              onClick={() => onDelete(draft.id)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete case
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground">New cases default to hidden until published.</p>
+            <p className="text-sm text-muted-foreground">
+              New cases default to hidden until published.
+            </p>
           )}
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

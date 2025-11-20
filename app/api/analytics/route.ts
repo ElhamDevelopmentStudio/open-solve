@@ -44,10 +44,7 @@ export async function POST(request: Request) {
 
   const bodyArray = Array.isArray(rawBody) ? rawBody : [rawBody];
   if (bodyArray.length === 0 || bodyArray.length > MAX_EVENTS_PER_REQUEST) {
-    return NextResponse.json(
-      { ok: false, error: "invalid_event_batch" },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, error: "invalid_event_batch" }, { status: 400 });
   }
 
   let parsedEvents: z.infer<typeof eventSchema>[];

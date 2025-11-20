@@ -26,28 +26,24 @@ export const adminContestsRouter = router({
     });
     return contests;
   }),
-  startNow: adminProcedure
-    .input(z.object({ contestId: z.string().cuid() }))
-    .mutation(({ input }) =>
-      prisma.contest.update({
-        where: { id: input.contestId },
-        data: {
-          state: "RUNNING",
-          startsAt: new Date(),
-        },
-      }),
-    ),
-  endNow: adminProcedure
-    .input(z.object({ contestId: z.string().cuid() }))
-    .mutation(({ input }) =>
-      prisma.contest.update({
-        where: { id: input.contestId },
-        data: {
-          state: "FINISHED",
-          endsAt: new Date(),
-        },
-      }),
-    ),
+  startNow: adminProcedure.input(z.object({ contestId: z.string().cuid() })).mutation(({ input }) =>
+    prisma.contest.update({
+      where: { id: input.contestId },
+      data: {
+        state: "RUNNING",
+        startsAt: new Date(),
+      },
+    }),
+  ),
+  endNow: adminProcedure.input(z.object({ contestId: z.string().cuid() })).mutation(({ input }) =>
+    prisma.contest.update({
+      where: { id: input.contestId },
+      data: {
+        state: "FINISHED",
+        endsAt: new Date(),
+      },
+    }),
+  ),
   setFreeze: adminProcedure
     .input(
       z.object({

@@ -16,11 +16,7 @@ export const JUDGE_QUEUES = {
   retry30m: "judge.retry.30m.q",
 } as const;
 
-export const RETRY_SEQUENCE: Array<keyof typeof JUDGE_QUEUES> = [
-  "retry1m",
-  "retry5m",
-  "retry30m",
-];
+export const RETRY_SEQUENCE: Array<keyof typeof JUDGE_QUEUES> = ["retry1m", "retry5m", "retry30m"];
 
 export type SandboxProfileConfig = {
   image: string;
@@ -37,5 +33,4 @@ export const SANDBOX_PROFILES: Record<string, SandboxProfileConfig> = {
   default: { image: "node:20-slim", memoryMb: 512, cpuShares: 1 },
 };
 
-export const JUDGE_WORKSPACE_ROOT =
-  env.JUDGE_SANDBOX_WORKDIR ?? "/tmp/opensolve-judge/workspaces";
+export const JUDGE_WORKSPACE_ROOT = env.JUDGE_SANDBOX_WORKDIR ?? "/tmp/opensolve-judge/workspaces";

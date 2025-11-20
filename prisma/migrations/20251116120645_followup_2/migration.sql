@@ -1,2 +1,1 @@
--- AddForeignKey
-ALTER TABLE "AnalyticsEvent" ADD CONSTRAINT "AnalyticsEvent_contestId_fkey" FOREIGN KEY ("contestId") REFERENCES "Contest"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- Migration intentionally left blank. Contest foreign keys now live in later migrations once the Contest table exists.

@@ -56,9 +56,7 @@ const hasRole = (role: UserRole) =>
 
     const userIsAdmin = ctx.user.role === "ADMIN";
     const userHasRole = ctx.user.role === role;
-    const impersonatingAdmin = role === "ADMIN" && Boolean(ctx.session.impersonatorId);
-
-    if (!userHasRole && !userIsAdmin && !impersonatingAdmin) {
+    if (!userHasRole && !userIsAdmin) {
       throw new TRPCError({ code: "FORBIDDEN" });
     }
 
@@ -74,6 +72,7 @@ const hasRole = (role: UserRole) =>
 export const protectedProcedure = baseProcedure.use(isAuthed);
 export const adminProcedure = baseProcedure.use(hasRole("ADMIN"));
 export const curatorProcedure = baseProcedure.use(hasRole("PROBLEM_CURATOR"));
+export const moderatorProcedure = baseProcedure.use(hasRole("MODERATOR"));
 const staffRoles: UserRole[] = ["PROBLEM_CURATOR", "MODERATOR", "ADMIN"];
 const isStaff = t.middleware(({ ctx, next }) => {
   if (!ctx.user || !ctx.session) {

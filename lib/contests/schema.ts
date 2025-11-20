@@ -65,7 +65,10 @@ export const contestSettingsSchema = z.object({
     customBasePoints: z.number().int().min(0).max(2000).default(500),
     customAttemptPenalty: z.number().int().min(0).max(200).default(25),
     customTimeDecay: z.number().int().min(0).max(50).default(2),
-    tieBreakers: z.array(z.enum(CONTEST_TIE_BREAKERS)).min(1).default(["solved", "points", "penalty", "lastSolve"]),
+    tieBreakers: z
+      .array(z.enum(CONTEST_TIE_BREAKERS))
+      .min(1)
+      .default(["solved", "points", "penalty", "lastSolve"]),
   }),
   scoreboard: z.object({
     visibility: z.enum(CONTEST_SCOREBOARD_VISIBILITY).default("full"),
@@ -82,12 +85,58 @@ export const contestSettingsSchema = z.object({
     hideFailedCaseDetails: z.boolean().default(true),
   }),
   antiCheat: z.object({
+    enabled: z.boolean().default(false),
     lockDiscussions: z.boolean().default(true),
     lockProfiles: z.boolean().default(true),
     lockTrails: z.boolean().default(true),
     enforceIp: z.boolean().default(true),
     similarityReview: z.boolean().default(true),
     throttlePerMinute: z.number().int().min(1).max(30).default(3),
+    examMode: z
+      .object({
+        enabled: z.boolean().default(false),
+        disableSelection: z.boolean().default(true),
+        disableContextMenu: z.boolean().default(true),
+        stickyReminder: z.boolean().default(true),
+      })
+      .default({}),
+    focus: z
+      .object({
+        softWarningTabs: z.number().int().min(1).max(50).default(3),
+        flagTabs: z.number().int().min(1).max(100).default(6),
+        autoDQTabs: z.number().int().min(1).max(200).nullable().default(12),
+        softWarningOutMs: z.number().int().min(1_000).max(600_000).default(60_000),
+        flagOutMs: z.number().int().min(1_000).max(1_200_000).default(180_000),
+      })
+      .default({}),
+    multiDevice: z
+      .object({
+        singleDeviceOnly: z.boolean().default(true),
+        allowSecondaryFlagged: z.boolean().default(false),
+        requireLock: z.boolean().default(false),
+      })
+      .default({}),
+    paste: z
+      .object({
+        largePasteThreshold: z.number().int().min(32).max(5000).default(120),
+        perProblemLimit: z.number().int().min(1).max(20).default(3),
+        perContestLimit: z.number().int().min(1).max(200).default(12),
+      })
+      .default({}),
+    heuristics: z
+      .object({
+        enableTiming: z.boolean().default(true),
+        enableSimilarity: z.boolean().default(true),
+        enableClusters: z.boolean().default(true),
+        enableSuspiciousTimeline: z.boolean().default(true),
+      })
+      .default({}),
+    warnings: z
+      .object({
+        reminderCopy: z.string().max(240).default("Anti-cheat guard active."),
+        showParticipantBanner: z.boolean().default(true),
+      })
+      .default({}),
   }),
   problemSet: z.object({
     randomizeOrder: z.boolean().default(false),

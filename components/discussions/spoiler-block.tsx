@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "@/components/icons";
+import { EyeOff } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type SpoilerBlockProps = {

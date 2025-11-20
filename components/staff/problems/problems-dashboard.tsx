@@ -19,7 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 export function StaffProblemsDashboard() {
   const router = useRouter();
   const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.staff.problems.list.useQuery({ state: undefined });
+  const { data, isLoading } = trpc.staff.problems.list.useQuery(undefined);
   const createProblem = trpc.staff.problems.create.useMutation({
     onSuccess: (problem) => {
       utils.staff.problems.list.invalidate();

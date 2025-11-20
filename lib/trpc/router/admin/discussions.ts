@@ -18,9 +18,7 @@ export const adminDiscussionsRouter = router({
   listThreads: adminProcedure.input(listThreadsInput).query(async ({ input }) => {
     const where: Prisma.DiscussionWhereInput = {
       parentId: null,
-      ...(input?.state && input.state.length > 0
-        ? { state: { in: input.state } }
-        : {}),
+      ...(input?.state && input.state.length > 0 ? { state: { in: input.state } } : {}),
       ...(input?.query
         ? {
             OR: [
@@ -64,7 +62,7 @@ export const adminDiscussionsRouter = router({
     });
     return items;
   }),
-  hideThread: adminProcedure.input(threadIdInput).mutation(async ({ input, ctx }) => {
+  hideThread: adminProcedure.input(threadIdInput).mutation(async ({ input }) => {
     await prisma.discussion.update({
       where: { id: input.discussionId },
       data: { state: "HIDDEN" },

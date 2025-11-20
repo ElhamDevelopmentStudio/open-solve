@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { staffProcedure, router } from "@/lib/trpc/trpc";
+import { moderatorProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus } from "@prisma/client";
 import { z } from "zod";
 import { dispatchSubmissionToJudge } from "@/lib/judge/dispatcher";
@@ -8,7 +8,7 @@ import type { JudgeSummary } from "@/lib/submissions/types";
 import { notifySubmissionUpdate } from "@/lib/realtime/notifications";
 
 export const staffJudgeRouter = router({
-  manualQueue: staffProcedure
+  manualQueue: moderatorProcedure
     .input(
       z
         .object({
@@ -47,11 +47,12 @@ export const staffJudgeRouter = router({
           },
           language: submission.language,
           autoSummary: (metadata.autoSummary as JudgeSummary) ?? null,
-          sourceCode: typeof metadata.sourceCode === "string" ? (metadata.sourceCode as string) : "",
+          sourceCode:
+            typeof metadata.sourceCode === "string" ? (metadata.sourceCode as string) : "",
         };
       });
     }),
-  manualSetVerdict: staffProcedure
+  manualSetVerdict: moderatorProcedure
     .input(
       z.object({
         submissionId: z.string().cuid(),
@@ -102,14 +103,14 @@ export const staffJudgeRouter = router({
       await notifySubmissionUpdate(submission.id);
       return { ok: true };
     }),
-  rejudge: staffProcedure
+  rejudge: moderatorProcedure
     .input(
       z.object({
         submissionId: z.string().cuid(),
         reason: z.string().max(200).optional(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const submission = await prisma.submission.findUnique({
         where: { id: input.submissionId },
         select: {

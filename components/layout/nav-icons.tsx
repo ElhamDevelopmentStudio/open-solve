@@ -3,11 +3,13 @@ import {
   Award02Icon,
   ClipboardIcon,
   CodeSquareIcon,
+  DocumentCodeIcon,
   GridIcon,
   LegalHammerIcon,
   LockPasswordIcon,
   Megaphone01Icon,
   Message01Icon,
+  PathIcon,
   Shield01Icon,
   SparklesIcon,
   Target01Icon,
@@ -36,6 +38,8 @@ const iconMap: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   shield: Shield01Icon,
   lock: LockPasswordIcon,
   proposals: Megaphone01Icon,
+  trails: PathIcon,
+  editorial: DocumentCodeIcon,
   default: Target01Icon,
 };
 

@@ -9,7 +9,7 @@ import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import {
@@ -18,7 +18,6 @@ import {
   ArrowRight,
   Copy,
   Link2,
-  Play,
   RefreshCcw,
   Share2,
 } from "@/components/icons";
@@ -30,7 +29,10 @@ type SubmissionDetailClientProps = {
   initialSubmission: SubmissionDetailPayload;
 };
 
-export function SubmissionDetailClient({ submissionId, initialSubmission }: SubmissionDetailClientProps) {
+export function SubmissionDetailClient({
+  submissionId,
+  initialSubmission,
+}: SubmissionDetailClientProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const detailQuery = trpc.submissions.get.useQuery(
@@ -169,7 +171,11 @@ function SubmissionHeader({ submission }: { submission: SubmissionDetailPayload 
     <div className="rounded-2xl border border-border bg-card/70 p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
-          <SubmissionStatusBadge verdict={submission.verdictCode} status={submission.status} size="md" />
+          <SubmissionStatusBadge
+            verdict={submission.verdictCode}
+            status={submission.status}
+            size="md"
+          />
           <h1 className="text-2xl font-semibold text-foreground">{submission.problem.title}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{submission.language.displayName ?? submission.language.code}</span>
@@ -190,7 +196,11 @@ function SubmissionHeader({ submission }: { submission: SubmissionDetailPayload 
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(submission.id)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigator.clipboard.writeText(submission.id)}
+          >
             <Copy className="mr-2 h-4 w-4" />
             Copy ID
           </Button>
@@ -241,7 +251,9 @@ function SharePanel({ submission }: { submission: SubmissionDetailPayload }) {
       <div className="mb-2 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">Share link</p>
-          <p className="text-xs text-muted-foreground">Anyone with the link can view this attempt.</p>
+          <p className="text-xs text-muted-foreground">
+            Anyone with the link can view this attempt.
+          </p>
         </div>
         <Button
           variant="ghost"
@@ -310,7 +322,9 @@ function CasesSection({ submission }: { submission: SubmissionDetailPayload }) {
           Detailed feedback will unlock after the contest ends.
         </div>
         {submission.restrictionReason ? (
-          <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">{submission.restrictionReason}</p>
+          <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
+            {submission.restrictionReason}
+          </p>
         ) : null}
       </Card>
     );
@@ -344,24 +358,28 @@ function CasesSection({ submission }: { submission: SubmissionDetailPayload }) {
               <tr key={`${test.ordinal}-${test.verdictCode}`}>
                 <td className="py-3 text-muted-foreground">{test.ordinal}</td>
                 <td>
-                  <SubmissionStatusBadge verdict={test.verdictCode} status={test.status} size="sm" />
+                  <SubmissionStatusBadge
+                    verdict={test.verdictCode}
+                    status={test.status}
+                    size="sm"
+                  />
                 </td>
                 <td>{test.runtimeMs} ms</td>
                 <td>{test.memoryKb} kb</td>
                 <td className="text-xs text-muted-foreground">
                   {test.expectedOutput ? (
                     <div>
-                      <span className="font-semibold text-foreground">Exp:</span> {test.expectedOutput}
+                      <span className="font-semibold text-foreground">Exp:</span>{" "}
+                      {test.expectedOutput}
                     </div>
                   ) : null}
                   {test.actualOutput ? (
                     <div>
-                      <span className="font-semibold text-foreground">Out:</span> {test.actualOutput}
+                      <span className="font-semibold text-foreground">Out:</span>{" "}
+                      {test.actualOutput}
                     </div>
                   ) : null}
-                  {test.stderr ? (
-                    <div className="text-rose-500">stderr: {test.stderr}</div>
-                  ) : null}
+                  {test.stderr ? <div className="text-rose-500">stderr: {test.stderr}</div> : null}
                 </td>
               </tr>
             ))}

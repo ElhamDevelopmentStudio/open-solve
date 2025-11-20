@@ -5,6 +5,7 @@ import { simulateJudgeRun } from "@/lib/submissions/simulator";
 import type { JudgeSimulationTestCase, JudgeSummary } from "@/lib/submissions/types";
 import { resolveTestcaseIO, resolveSubmissionSource } from "@/lib/judge/testcases";
 import { publishManualMessage } from "@/lib/judge/queue";
+import { notifySubmissionUpdate } from "@/lib/realtime/notifications";
 
 export const runInlineJudge = async (submissionId: string) => {
   const submission = await prisma.submission.findUnique({
@@ -51,6 +52,7 @@ export const runInlineJudge = async (submissionId: string) => {
       startedAt: new Date(),
     },
   });
+  await notifySubmissionUpdate(submission.id).catch(() => {});
 
   const testCases: JudgeSimulationTestCase[] = [];
   for (const test of submission.problemVersion.testCases) {
@@ -101,7 +103,9 @@ export const runInlineJudge = async (submissionId: string) => {
     where: { id: submission.id },
     data: {
       status,
-      verdictCode: submission.requiresManualReview ? "MANUAL_PENDING" : simulation.summary.verdictCode,
+      verdictCode: submission.requiresManualReview
+        ? "MANUAL_PENDING"
+        : simulation.summary.verdictCode,
       finishedAt: simulation.summary.finishedAt,
       timeUsedMs: simulation.summary.runtimeMs,
       memoryUsedKb: simulation.summary.memoryKb,
@@ -120,6 +124,7 @@ export const runInlineJudge = async (submissionId: string) => {
       stderrRef: caseResult.stderr,
     })),
   });
+  await notifySubmissionUpdate(submission.id).catch(() => {});
 
   if (submission.requiresManualReview) {
     await publishManualMessage({

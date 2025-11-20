@@ -10,6 +10,7 @@ import { adminImpersonationRouter } from "@/lib/trpc/router/admin/impersonation"
 import { adminDiscussionsRouter } from "@/lib/trpc/router/admin/discussions";
 import { adminContestsRouter } from "@/lib/trpc/router/admin/contests";
 import { adminAnalyticsRouter } from "@/lib/trpc/router/admin/analytics";
+import { adminAntiCheatRouter } from "@/lib/trpc/router/admin/anti-cheat";
 
 export const adminRouter = router({
   dashboard: adminDashboardRouter,
@@ -23,4 +24,5 @@ export const adminRouter = router({
   discussions: adminDiscussionsRouter,
   contests: adminContestsRouter,
   analytics: adminAnalyticsRouter,
+  antiCheat: adminAntiCheatRouter,
 });

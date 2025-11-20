@@ -18,7 +18,7 @@ import {
 } from "@/components/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 export type NavItem = {
   title: string;
@@ -94,24 +94,33 @@ const SidebarContent = ({
   const [direction, setDirection] = useState<"left" | "right">("right");
 
   useEffect(() => {
-    if (JSON.stringify(items) !== JSON.stringify(prevItems)) {
-      const prevPaths = prevItems.map((item) => item.href);
-      const newPaths = items.map((item) => item.href);
-      const isNewSection = !prevPaths.some((path) => newPaths.includes(path));
-      
-      setDirection(isNewSection ? "right" : "left");
-      setPrevItems(items);
+    const prevPaths = prevItems.map((item) => item.href);
+    const nextPaths = items.map((item) => item.href);
+    const changed =
+      prevPaths.length !== nextPaths.length ||
+      prevPaths.some((path, index) => path !== nextPaths[index]);
+    if (!changed) {
+      return;
     }
+    const isNewSection = !prevPaths.some((path) => nextPaths.includes(path));
+    const nextDirection: "left" | "right" = isNewSection ? "right" : "left";
+    startTransition(() => {
+      setDirection(nextDirection);
+      setPrevItems(items);
+    });
   }, [items, prevItems]);
 
   return (
     <nav className="flex h-full flex-col bg-sidebar/50 backdrop-blur-sm">
       <div className="flex-1 space-y-1 overflow-y-auto p-3">
-        <div className={cn("space-y-1", direction === "right" ? "animate-slide-right" : "animate-slide-left")}>
+        <div
+          className={cn(
+            "space-y-1",
+            direction === "right" ? "animate-slide-right" : "animate-slide-left",
+          )}
+        >
           {items.map((item) => {
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname?.startsWith(item.href);
+            const isActive = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
 
             return (
               <Link
@@ -122,23 +131,23 @@ const SidebarContent = ({
                   "group relative flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium smooth-transition focus-ring",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                 )}
               >
                 <div className="flex items-center gap-3">
-                  {item.icon ? (
-                    (() => {
-                      const Icon = getIcon(item.icon);
-                      return Icon ? (
-                        <Icon
-                          className={cn(
-                            "h-4 w-4 transition-colors",
-                            isActive ? "text-sidebar-primary" : "text-sidebar-foreground/60"
-                          )}
-                        />
-                      ) : null;
-                    })()
-                  ) : null}
+                  {item.icon
+                    ? (() => {
+                        const Icon = getIcon(item.icon);
+                        return Icon ? (
+                          <Icon
+                            className={cn(
+                              "h-4 w-4 transition-colors",
+                              isActive ? "text-sidebar-primary" : "text-sidebar-foreground/60",
+                            )}
+                          />
+                        ) : null;
+                      })()
+                    : null}
                   <span>{item.title}</span>
                 </div>
                 {item.badge ? (
@@ -160,9 +169,7 @@ const SidebarContent = ({
       </div>
 
       {footer ? (
-        <div className="border-t border-sidebar-border bg-sidebar/30 p-3">
-          {footer}
-        </div>
+        <div className="border-t border-sidebar-border bg-sidebar/30 p-3">{footer}</div>
       ) : null}
     </nav>
   );
@@ -170,14 +177,9 @@ const SidebarContent = ({
 
 export const MobileSidebarTrigger = () => {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-9 w-9 p-0 lg:hidden"
-    >
+    <Button variant="ghost" size="sm" className="h-9 w-9 p-0 lg:hidden">
       <Menu className="h-5 w-5" />
       <span className="sr-only">Toggle navigation menu</span>
     </Button>
   );
 };
-

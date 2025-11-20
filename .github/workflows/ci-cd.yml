@@ -1,0 +1,237 @@
+name: CI-CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, Typecheck & Tests
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      DEPLOYMENT_ENVIRONMENT: "staging"
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/opensolve?schema=public"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/opensolve?schema=public"
+      LOG_LEVEL: "info"
+      RATE_LIMIT_WINDOW_SECONDS: "60"
+      RATE_LIMIT_MAX_REQUESTS: "250"
+      SENSITIVE_DATA_KEY: ${{ secrets.SENSITIVE_DATA_KEY }}
+      REALTIME_WORKER_TOKEN: "ci-realtime-token"
+      METRICS_ACCESS_TOKEN: "ci-metrics-token"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: opensolve
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd="pg_isready -d opensolve -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npx prisma migrate deploy
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  e2e:
+    name: Playwright Smoke
+    needs: quality
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      DEPLOYMENT_ENVIRONMENT: "staging"
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/opensolve?schema=public"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/opensolve?schema=public"
+      LOG_LEVEL: "info"
+      RATE_LIMIT_WINDOW_SECONDS: "60"
+      RATE_LIMIT_MAX_REQUESTS: "250"
+      SENSITIVE_DATA_KEY: ${{ secrets.SENSITIVE_DATA_KEY }}
+      REALTIME_WORKER_TOKEN: "ci-realtime-token"
+      METRICS_ACCESS_TOKEN: "ci-metrics-token"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: opensolve
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd="pg_isready -d opensolve -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npx prisma migrate deploy
+      - run: npx playwright install --with-deps
+      - run: npm run build
+      - name: Start server
+        run: |
+          npm run start > /tmp/next.log 2>&1 &
+          echo $! > /tmp/next.pid
+      - name: Wait for server
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000 > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server did not become ready" >&2
+          exit 1
+      - name: Run Playwright
+        env:
+          E2E_BASE_URL: http://localhost:3000
+        run: npx playwright test
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/next.pid ]; then
+            kill $(cat /tmp/next.pid) || true
+          fi
+          if [ -f /tmp/next.log ]; then
+            echo "---- server log ----"
+            tail -n 200 /tmp/next.log || true
+          fi
+
+  docker-images:
+    name: Build & Push Images
+    needs: e2e
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Derive image names
+        run: |
+          OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_WEB=${REGISTRY}/${OWNER}/opensolve-web" >> $GITHUB_ENV
+          echo "IMAGE_WORKER=${REGISTRY}/${OWNER}/opensolve-judge-worker" >> $GITHUB_ENV
+      - name: Build & push web image
+        run: |
+          docker buildx build --push --platform linux/amd64 \
+            -f Dockerfile \
+            -t ${IMAGE_WEB}:${GITHUB_SHA} .
+      - name: Build & push worker image
+        run: |
+          docker buildx build --push --platform linux/amd64 \
+            -f Dockerfile \
+            --target judge-worker \
+            -t ${IMAGE_WORKER}:${GITHUB_SHA} .
+
+  deploy-staging:
+    name: Stage Release
+    needs: docker-images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.opensolve.example
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Derive image names
+        run: |
+          OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_WEB=ghcr.io/${OWNER}/opensolve-web" >> $GITHUB_ENV
+          echo "IMAGE_WORKER=ghcr.io/${OWNER}/opensolve-judge-worker" >> $GITHUB_ENV
+      - name: Tag images for staging
+        run: |
+          docker buildx imagetools create ${IMAGE_WEB}:${GITHUB_SHA} --tag ${IMAGE_WEB}:staging
+          docker buildx imagetools create ${IMAGE_WORKER}:${GITHUB_SHA} --tag ${IMAGE_WORKER}:staging
+      - name: Publish deployment bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-deployment
+          path: |
+            ops/docker/docker-compose.staging.yml
+            ops/env/staging.env
+            ops/infra/staging-deployment.md
+
+  deploy-production:
+    name: Promote to Production
+    needs: deploy-staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://opensolve.example
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Derive image names
+        run: |
+          OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_WEB=ghcr.io/${OWNER}/opensolve-web" >> $GITHUB_ENV
+          echo "IMAGE_WORKER=ghcr.io/${OWNER}/opensolve-judge-worker" >> $GITHUB_ENV
+      - name: Tag images for production
+        run: |
+          docker buildx imagetools create ${IMAGE_WEB}:${GITHUB_SHA} --tag ${IMAGE_WEB}:latest
+          docker buildx imagetools create ${IMAGE_WORKER}:${GITHUB_SHA} --tag ${IMAGE_WORKER}:latest
+      - name: Publish production bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-deployment
+          path: |
+            ops/docker/docker-compose.prod.yml
+            ops/env/prod.env
+            ops/infra/prod-deployment.md
+            fly.toml

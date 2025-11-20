@@ -4,6 +4,7 @@ import { ProblemFiltersPanel } from "@/components/problems/problem-filters-panel
 import { ProblemStatusBadge } from "@/components/problems/problem-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Drawer,
   DrawerClose,
@@ -38,19 +39,18 @@ import { cn } from "@/lib/utils";
 import { stableHash } from "@/lib/utils/stable-hash";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { formatDistanceToNow } from "date-fns";
-import { 
+import {
   ArrowRight01Icon,
   Search01Icon,
   FilterIcon,
   SlidersHorizontalIcon,
   Clock01Icon,
-  BookmarkCheck01Icon as BookmarkIcon,
-  Cancel01Icon
+  Cancel01Icon,
 } from "hugeicons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
   relevance: "Relevance",
@@ -78,8 +78,19 @@ const DEFAULT_FILTERS: ProblemFiltersInput = {
 
 const VIRTUALIZATION_THRESHOLD = 50;
 
-export function ProblemLibraryShell({ initialFilters }: { initialFilters: ProblemFiltersInput }) {
+type ProblemLibraryShellProps = {
+  initialFilters: ProblemFiltersInput;
+  viewerHasSession?: boolean;
+  problemBasePath?: string;
+};
+
+export function ProblemLibraryShell({
+  initialFilters,
+  viewerHasSession = false,
+  problemBasePath = "/problems",
+}: ProblemLibraryShellProps) {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [filters, setFilters] = useProblemFilters();
   const mergedFilters = useMemo<ProblemFiltersInput>(
     () => ({ ...DEFAULT_FILTERS, ...initialFilters, ...filters }),
@@ -88,25 +99,26 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
   const [searchValue, setSearchValue] = useState(mergedFilters.q ?? "");
 
   useEffect(() => {
-    setSearchValue(mergedFilters.q ?? "");
+    startTransition(() => setSearchValue(mergedFilters.q ?? ""));
   }, [mergedFilters.q]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       if (searchValue === mergedFilters.q) return;
-      setFilters({ q: searchValue, page: 1 });
+      startTransition(() => {
+        void setFilters({ q: searchValue, page: 1 });
+      });
     }, 250);
     return () => clearTimeout(handle);
   }, [searchValue, mergedFilters.q, setFilters]);
 
-  const {
-    data: listData,
-    isFetching,
-    isPending,
-  } = trpc.problems.list.useQuery(mergedFilters, {
+  const listQuery = trpc.problems.list.useQuery(mergedFilters, {
     placeholderData: (previousData) => previousData,
-    staleTime: publicContentQueryOptions.staleTime,
+    staleTime: viewerHasSession ? 0 : publicContentQueryOptions.staleTime,
   });
+  const listData = listQuery.data;
+  const isFetching = listQuery.isFetching;
+  const isPending = listQuery.isPending;
   const { data: metadata } = trpc.problems.filterMetadata.useQuery(undefined, {
     staleTime: publicContentQueryOptions.staleTime,
   });
@@ -117,15 +129,17 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     let count = 0;
     if (mergedFilters.q) count += 1;
     count += mergedFilters.difficulty.length;
-    count += mergedFilters.status.length;
+    if (viewerHasSession) {
+      count += mergedFilters.status.length;
+    }
     count += mergedFilters.tags.length;
     if (mergedFilters.onlyWithEditorial) count += 1;
     return count;
-  }, [mergedFilters]);
+  }, [mergedFilters, viewerHasSession]);
   const hasActiveFilters = activeFilterCount > 0;
 
   const results: ProblemListResponse | null = listData ?? null;
-  const items = results?.items ?? [];
+  const items = useMemo(() => results?.items ?? [], [results]);
   const filtersHash = useMemo(() => stableHash(mergedFilters), [mergedFilters]);
   const previousFiltersHash = useRef(filtersHash);
   const zeroResultHashes = useRef(new Set<string>());
@@ -136,11 +150,11 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
     overscan: 8,
   });
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const prefetchedProblems = useRef(new Set<string>());
 
   useEffect(() => {
     cardRefs.current = cardRefs.current.slice(0, items.length);
   }, [items.length]);
-
   const registerCardRef = useCallback((index: number, node: HTMLDivElement | null) => {
     cardRefs.current[index] = node;
   }, []);
@@ -165,10 +179,28 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   const openProblem = useCallback(
     (slug: string) => {
-      router.push(`/problems/${slug}`);
+      router.push(`${problemBasePath}/${slug}`);
     },
-    [router],
+    [problemBasePath, router],
   );
+  const prefetchProblemDetail = useCallback(
+    (slug: string | undefined) => {
+      if (!slug || prefetchedProblems.current.has(slug)) {
+        return;
+      }
+      if (prefetchedProblems.current.size > 200) {
+        prefetchedProblems.current.clear();
+      }
+      prefetchedProblems.current.add(slug);
+      utils.problems.detail.prefetch({ slug }, { staleTime: publicContentQueryOptions.staleTime });
+      router.prefetch(`${problemBasePath}/${slug}`);
+    },
+    [problemBasePath, router, utils],
+  );
+
+  useEffect(() => {
+    items.slice(0, 5).forEach((problem) => prefetchProblemDetail(problem.slug));
+  }, [items, prefetchProblemDetail]);
 
   const renderCard = useCallback(
     (problem: ProblemListItem, index: number, animationOrder = index) => (
@@ -181,9 +213,10 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
         animationOrder={animationOrder}
         onFocusRequest={focusCard}
         onOpen={openProblem}
+        onPrefetch={prefetchProblemDetail}
       />
     ),
-    [focusCard, isFetching, openProblem, registerCardRef],
+    [focusCard, isFetching, openProblem, prefetchProblemDetail, registerCardRef],
   );
 
   const handleFilterChange = (patch: Partial<ProblemFiltersInput>, resetPage = true) => {
@@ -195,10 +228,11 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
 
   const handleClearAll = () => {
     setFilters(DEFAULT_FILTERS);
-    router.push("/problems");
   };
 
-  const listIsEmpty = !isPending && items.length === 0;
+  const statusFilterBlocked = !viewerHasSession && mergedFilters.status.length > 0;
+  const listIsEmpty =
+    !isPending && items.length === 0 && !listQuery.isError && !statusFilterBlocked;
 
   useEffect(() => {
     if (!mergedFilters.q) return;
@@ -274,16 +308,22 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
       <div className="space-y-8">
         <header className="space-y-6">
           <div className="space-y-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Problem Library</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Problem Library
+            </p>
             <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Browse Problems</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Explore our curated collection of coding challenges across various topics and difficulty levels
+              Explore our curated collection of coding challenges across various topics and
+              difficulty levels
             </p>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[280px]">
-              <Search01Icon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Search01Icon
+                className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                strokeWidth={2}
+              />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
@@ -324,7 +364,10 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                   <Button variant="outline" size="sm" className="gap-2 rounded-xl lg:hidden">
                     <FilterIcon className="h-4 w-4" strokeWidth={2} /> Filters
                     {hasActiveFilters && (
-                      <Badge variant="secondary" className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 rounded-full px-1.5 text-[10px] font-semibold"
+                      >
                         {activeFilterCount}
                       </Badge>
                     )}
@@ -343,6 +386,7 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
                       onChange={handleFilterChange}
                       onReset={handleClearAll}
                       isMobile
+                      showStatusFilters={viewerHasSession}
                     />
                   </div>
                   <DrawerFooter className="border-t bg-background px-5">
@@ -359,6 +403,23 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
           </div>
         </header>
 
+        {listQuery.isError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Unable to load problems</AlertTitle>
+            <AlertDescription>
+              {listQuery.error?.message ?? "Something went wrong while loading the library."}
+            </AlertDescription>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => listQuery.refetch()}
+            >
+              Retry
+            </Button>
+          </Alert>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside
             className="hidden rounded-2xl border border-border/50 bg-card/80 p-4 shadow-sm backdrop-blur-sm lg:block"
@@ -369,9 +430,25 @@ export function ProblemLibraryShell({ initialFilters }: { initialFilters: Proble
               metadata={metadata}
               onChange={handleFilterChange}
               onReset={handleClearAll}
+              showStatusFilters={viewerHasSession}
             />
           </aside>
           <section className="space-y-4" aria-live={isPending ? "polite" : "off"}>
+            {statusFilterBlocked ? (
+              <Alert>
+                <AlertTitle>Sign in to use status filters</AlertTitle>
+                <AlertDescription>
+                  Progress filters rely on your submission history.{" "}
+                  <Link
+                    href="/sign-in"
+                    className="font-medium text-primary underline underline-offset-4"
+                  >
+                    Sign in
+                  </Link>{" "}
+                  to filter by solved or attempted problems.
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {isPending && !results ? (
               <ProblemListSkeleton />
             ) : (
@@ -452,10 +529,11 @@ type ProblemCardProps = {
   animationOrder?: number;
   onFocusRequest: (index: number) => void;
   onOpen: (slug: string) => void;
+  onPrefetch?: (slug: string) => void;
 };
 
 const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function ProblemCard(
-  { problem, isFetching, index, animationOrder = 0, onFocusRequest, onOpen },
+  { problem, isFetching, index, animationOrder = 0, onFocusRequest, onOpen, onPrefetch },
   ref,
 ) {
   const acceptance =
@@ -481,6 +559,8 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
   };
   const animationDelay = Math.min(animationOrder, 5) * 20;
 
+  const triggerPrefetch = () => onPrefetch?.(problem.slug);
+
   return (
     <div
       ref={ref}
@@ -488,6 +568,8 @@ const ProblemCard = forwardRef<HTMLDivElement, ProblemCardProps>(function Proble
       tabIndex={0}
       aria-labelledby={titleId}
       onKeyDown={handleKeyDown}
+      onMouseEnter={triggerPrefetch}
+      onFocus={triggerPrefetch}
       className={cn(
         "group rounded-2xl border border-border/50 bg-card/90 p-5 shadow-sm backdrop-blur-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
         "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200",

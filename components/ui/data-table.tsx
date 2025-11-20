@@ -7,6 +7,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type Column,
   type ColumnDef,
   type ColumnFiltersState,
   type SortingState,
@@ -69,6 +70,7 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   emptyMessage?: string;
   onRowClick?: (row: TData) => void;
+  onRowHover?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -83,12 +85,14 @@ export function DataTable<TData, TValue>({
   className,
   emptyMessage = "No results found.",
   onRowClick,
+  onRowHover,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table manages memoization internally.
   const table = useReactTable({
     data,
     columns,
@@ -119,7 +123,9 @@ export function DataTable<TData, TValue>({
     }
   };
 
-  const searchValue = searchKey ? (table.getColumn(searchKey)?.getFilterValue() as string) ?? "" : "";
+  const searchValue = searchKey
+    ? ((table.getColumn(searchKey)?.getFilterValue() as string) ?? "")
+    : "";
 
   return (
     <div className={cn("w-full space-y-4", className)}>
@@ -150,7 +156,8 @@ export function DataTable<TData, TValue>({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="ml-auto h-9">
-                {columnVisibility && Object.values(columnVisibility).filter((v) => !v).length > 0 ? (
+                {columnVisibility &&
+                Object.values(columnVisibility).filter((v) => !v).length > 0 ? (
                   <Cancel01Icon className="mr-2 h-4 w-4" />
                 ) : (
                   <EyeIcon className="mr-2 h-4 w-4" />
@@ -204,6 +211,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
+                  onMouseEnter={() => onRowHover?.(row.original)}
                   className={cn(onRowClick && "cursor-pointer")}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -316,7 +324,7 @@ export function DataTableColumnHeader<TData, TValue>({
   title,
   className,
 }: {
-  column: any;
+  column: Column<TData, TValue>;
   title: string;
   className?: string;
 }) {

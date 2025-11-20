@@ -5,7 +5,10 @@ import {
   PROBLEM_SORT_OPTIONS,
   PROBLEM_STATUS_FILTERS,
 } from "@/lib/problems/constants";
-import { parseProblemSamples, type ProblemSample as ParsedProblemSample } from "@/lib/problems/samples";
+import {
+  parseProblemSamples,
+  type ProblemSample as ParsedProblemSample,
+} from "@/lib/problems/samples";
 import { prisma } from "@/lib/prisma";
 import { publicProcedure, router } from "@/lib/trpc/trpc";
 import { Prisma, SubmissionStatus, TestCaseKind, ProblemJudgeMode } from "@prisma/client";
@@ -79,7 +82,7 @@ export type ProblemDetailPayload = {
   hasEditorial: boolean;
   version: {
     number: number;
-  }; 
+  };
   content: {
     statement: string;
     constraints: string;
@@ -114,6 +117,14 @@ export type ProblemFilterMetadata = {
 export type ProblemSample = ParsedProblemSample;
 
 const DIFFICULTY_DEFAULTS: ProblemFiltersInput["difficulty"] = ["EASY", "MEDIUM", "HARD"];
+const canonicalDifficultySet = new Set<string>(DIFFICULTY_DEFAULTS);
+
+function normalizeDifficultyCode(code: string) {
+  const normalized = code.toUpperCase();
+  return canonicalDifficultySet.has(normalized)
+    ? (normalized as ProblemFiltersInput["difficulty"][number])
+    : null;
+}
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATION_LIMIT;
 
@@ -633,10 +644,11 @@ export const problemsRouter = router({
       }),
     ]);
 
-    const difficulties =
-      difficultyRows.length > 0
-        ? (difficultyRows.map((row) => row.code) as ProblemFiltersInput["difficulty"])
-        : DIFFICULTY_DEFAULTS;
+    const normalizedCodes = difficultyRows
+      .map((row) => normalizeDifficultyCode(row.code ?? ""))
+      .filter((code): code is NonNullable<typeof code> => Boolean(code));
+
+    const difficulties = normalizedCodes.length > 0 ? normalizedCodes : DIFFICULTY_DEFAULTS;
 
     const tags = tagRows.map((tag) => ({
       slug: tag.slug,

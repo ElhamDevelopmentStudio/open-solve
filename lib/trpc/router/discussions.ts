@@ -19,7 +19,9 @@ const tabEnum = z.enum(["trending", "latest", "help", "meta"]);
 const voteEnum = z.enum(["UP", "DOWN"]);
 const reportEnum = z.enum(["SPAM", "ABUSE", "SPOILER_ABUSE", "OFF_TOPIC"]);
 
-const viewerFromCtx = (user?: { id: string; role: string; status: string } | null): DiscussionViewer | undefined =>
+const viewerFromCtx = (
+  user?: { id: string; role: string; status: string } | null,
+): DiscussionViewer | undefined =>
   user
     ? {
         id: user.id,
@@ -133,8 +135,27 @@ export const discussionsRouter = router({
     ),
   vote: protectedProcedure
     .input(z.object({ discussionId: z.string().cuid(), direction: voteEnum }))
-    .mutation(({ input, ctx }) => voteOnPost({ discussionId: input.discussionId, userId: ctx.user.id, direction: input.direction })),
+    .mutation(({ input, ctx }) =>
+      voteOnPost({
+        discussionId: input.discussionId,
+        userId: ctx.user.id,
+        direction: input.direction,
+      }),
+    ),
   report: protectedProcedure
-    .input(z.object({ discussionId: z.string().cuid(), reason: reportEnum, note: z.string().max(500).optional() }))
-    .mutation(({ input, ctx }) => reportDiscussion({ discussionId: input.discussionId, reporterId: ctx.user.id, reason: input.reason, note: input.note })),
+    .input(
+      z.object({
+        discussionId: z.string().cuid(),
+        reason: reportEnum,
+        note: z.string().max(500).optional(),
+      }),
+    )
+    .mutation(({ input, ctx }) =>
+      reportDiscussion({
+        discussionId: input.discussionId,
+        reporterId: ctx.user.id,
+        reason: input.reason,
+        note: input.note,
+      }),
+    ),
 });

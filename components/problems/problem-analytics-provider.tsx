@@ -123,7 +123,7 @@ export function ProblemAnalyticsProvider({
     window.addEventListener("pagehide", handleExit);
 
     return () => {
-      flushViewExit(problemId, stateRef.current);
+      handleExit();
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("visibilitychange", handleVisibility);
@@ -141,11 +141,7 @@ export function ProblemAnalyticsProvider({
       getTimeSinceEnterMs: () => Math.round(now() - stateRef.current.enteredAt),
       markSolveClick: (source) => {
         stateRef.current.hasSolveClicked = true;
-        trackAnalyticsEvent(
-          "problem.solve_clicked",
-          { source },
-          { problemId },
-        );
+        trackAnalyticsEvent("problem.solve_clicked", { source }, { problemId });
       },
       markHintOpen: () => {
         stateRef.current.hasHintOpened = true;
@@ -277,7 +273,9 @@ function flushViewExit(problemId: string, state: ProblemAnalyticsState) {
   }
 }
 
-function resolveBounceReason(state: ProblemAnalyticsState): "noScroll" | "noSolve" | "noInteraction" | null {
+function resolveBounceReason(
+  state: ProblemAnalyticsState,
+): "noScroll" | "noSolve" | "noInteraction" | null {
   if (state.maxScrollPercent < 25) {
     return "noScroll";
   }

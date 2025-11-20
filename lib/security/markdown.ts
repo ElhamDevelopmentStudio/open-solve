@@ -28,7 +28,5 @@ export function containsSpoiler(input: string) {
 }
 
 export function sanitizePlainInput(value: string, maxLength = 500) {
-  return sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} })
-    .trim()
-    .slice(0, maxLength);
+  return sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} }).trim().slice(0, maxLength);
 }

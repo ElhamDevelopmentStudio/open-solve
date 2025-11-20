@@ -4,23 +4,35 @@ import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server
 import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { ProblemDiscussionPanel } from "@/components/discussions/problem-discussion-panel";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 import type { Metadata } from "next";
 
 type DiscussPageParams = { slug: string };
 
-export async function generateMetadata({ params }: { params: Promise<DiscussPageParams> | DiscussPageParams }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<DiscussPageParams> | DiscussPageParams;
+}): Promise<Metadata> {
   const { slug } = await params;
   return {
     title: `${slug} • Discussions`,
   };
 }
 
-export default async function ProblemDiscussPage({ params }: { params: Promise<DiscussPageParams> | DiscussPageParams }) {
+export default async function ProblemDiscussPage({
+  params,
+}: {
+  params: Promise<DiscussPageParams> | DiscussPageParams;
+}) {
   const { slug } = await params;
   const caller = await createTRPCCaller();
-  const problem = await caller.problems
-    .detail({ slug })
-    .catch(() => null);
+  let problem = null;
+  try {
+    problem = await getCachedProblemDetail(slug);
+  } catch {
+    problem = null;
+  }
   if (!problem) {
     notFound();
   }
@@ -36,7 +48,9 @@ export default async function ProblemDiscussPage({ params }: { params: Promise<D
       <header className="space-y-2">
         <p className="text-xs uppercase text-muted-foreground">Problem</p>
         <h1 className="text-2xl font-semibold">{problem.title}</h1>
-        <p className="text-sm text-muted-foreground">Discuss hints, tricky cases, and approaches with the community.</p>
+        <p className="text-sm text-muted-foreground">
+          Discuss hints, tricky cases, and approaches with the community.
+        </p>
       </header>
       <HydrationBoundary state={hydration}>
         <ProblemDiscussionPanel

@@ -10,7 +10,12 @@ import type {
   DiscussionThread,
   DiscussionReply,
 } from "@/lib/discussions/types";
-import type { DiscussionCategory, DiscussionState, DiscussionReportReason, Prisma } from "@prisma/client";
+import type {
+  DiscussionCategory,
+  DiscussionState,
+  DiscussionReportReason,
+  Prisma,
+} from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
 const THREAD_PAGE_SIZE = 20;
@@ -25,37 +30,39 @@ const authorSelect = {
   status: true,
 } satisfies Prisma.UserSelect;
 
-const threadInclude = (viewer?: DiscussionViewer) => ({
-  author: { select: authorSelect },
-  problem: {
-    select: {
-      slug: true,
-      currentVersion: { select: { title: true } },
-      difficulty: { select: { code: true } },
+const threadInclude = (viewer?: DiscussionViewer) =>
+  ({
+    author: { select: authorSelect },
+    problem: {
+      select: {
+        slug: true,
+        currentVersion: { select: { title: true } },
+        difficulty: { select: { code: true } },
+      },
     },
-  },
-  tags: {
-    include: {
-      tag: { select: { slug: true, name: true } },
+    tags: {
+      include: {
+        tag: { select: { slug: true, name: true } },
+      },
     },
-  },
-  votes: viewer
-    ? {
-        where: { userId: viewer.id },
-        select: { value: true },
-      }
-    : false,
-}) satisfies Prisma.DiscussionInclude;
+    votes: viewer
+      ? {
+          where: { userId: viewer.id },
+          select: { value: true },
+        }
+      : false,
+  }) satisfies Prisma.DiscussionInclude;
 
-const replyInclude = (viewer?: DiscussionViewer) => ({
-  author: { select: authorSelect },
-  votes: viewer
-    ? {
-        where: { userId: viewer.id },
-        select: { value: true },
-      }
-    : false,
-}) satisfies Prisma.DiscussionInclude;
+const replyInclude = (viewer?: DiscussionViewer) =>
+  ({
+    author: { select: authorSelect },
+    votes: viewer
+      ? {
+          where: { userId: viewer.id },
+          select: { value: true },
+        }
+      : false,
+  }) satisfies Prisma.DiscussionInclude;
 
 const baseVisibleFilter = (viewer?: DiscussionViewer): Prisma.DiscussionWhereInput => {
   if (viewer && isStaffRole(viewer.role)) {
@@ -70,8 +77,12 @@ const baseVisibleFilter = (viewer?: DiscussionViewer): Prisma.DiscussionWhereInp
   return { state: "VISIBLE" };
 };
 
-const mapThread = (thread: Prisma.DiscussionGetPayload<{ include: ReturnType<typeof threadInclude> }>, viewer?: DiscussionViewer) => {
-  const viewerVote: -1 | 0 | 1 = thread.votes?.[0]?.value === 1 ? 1 : thread.votes?.[0]?.value === -1 ? -1 : 0;
+const mapThread = (
+  thread: Prisma.DiscussionGetPayload<{ include: ReturnType<typeof threadInclude> }>,
+  viewer?: DiscussionViewer,
+) => {
+  const viewerVote: -1 | 0 | 1 =
+    thread.votes?.[0]?.value === 1 ? 1 : thread.votes?.[0]?.value === -1 ? -1 : 0;
   return {
     id: thread.id,
     title: thread.title,
@@ -104,8 +115,12 @@ const mapThread = (thread: Prisma.DiscussionGetPayload<{ include: ReturnType<typ
   } satisfies DiscussionThread;
 };
 
-const mapReply = (reply: Prisma.DiscussionGetPayload<{ include: ReturnType<typeof replyInclude> }>, viewer?: DiscussionViewer) => {
-  const viewerVote: -1 | 0 | 1 = reply.votes?.[0]?.value === 1 ? 1 : reply.votes?.[0]?.value === -1 ? -1 : 0;
+const mapReply = (
+  reply: Prisma.DiscussionGetPayload<{ include: ReturnType<typeof replyInclude> }>,
+  viewer?: DiscussionViewer,
+) => {
+  const viewerVote: -1 | 0 | 1 =
+    reply.votes?.[0]?.value === 1 ? 1 : reply.votes?.[0]?.value === -1 ? -1 : 0;
   return {
     id: reply.id,
     parentId: reply.parentId!,
@@ -126,28 +141,13 @@ const mapReply = (reply: Prisma.DiscussionGetPayload<{ include: ReturnType<typeo
 };
 
 const threadSortToOrder: Record<DiscussionSort, Prisma.DiscussionOrderByWithRelationInput[]> = {
-  top: [
-    { isPinned: "desc" },
-    { score: "desc" },
-    { createdAt: "desc" },
-  ],
-  recent: [
-    { isPinned: "desc" },
-    { lastActivityAt: "desc" },
-    { createdAt: "desc" },
-  ],
-  unanswered: [
-    { isPinned: "desc" },
-    { replyCount: "asc" },
-    { createdAt: "desc" },
-  ],
+  top: [{ isPinned: "desc" }, { score: "desc" }, { createdAt: "desc" }],
+  recent: [{ isPinned: "desc" }, { lastActivityAt: "desc" }, { createdAt: "desc" }],
+  unanswered: [{ isPinned: "desc" }, { replyCount: "asc" }, { createdAt: "desc" }],
 };
 
 const feedOrder: Record<DiscussionFeedTab, Prisma.DiscussionOrderByWithRelationInput[]> = {
-  trending: [
-    { score: "desc" },
-    { lastActivityAt: "desc" },
-  ],
+  trending: [{ score: "desc" }, { lastActivityAt: "desc" }],
   latest: [{ createdAt: "desc" }],
   help: [{ createdAt: "desc" }],
   meta: [{ createdAt: "desc" }],
@@ -312,7 +312,10 @@ export async function createThread(params: {
       include: threadInclude(params.viewerStatus),
     });
     if (params.tags && params.tags.length > 0) {
-      const tags = await tx.tag.findMany({ where: { slug: { in: params.tags } }, select: { id: true, slug: true } });
+      const tags = await tx.tag.findMany({
+        where: { slug: { in: params.tags } },
+        select: { id: true, slug: true },
+      });
       if (tags.length === 0) {
         return thread;
       }
@@ -321,7 +324,10 @@ export async function createThread(params: {
         skipDuplicates: true,
       });
     }
-    return tx.discussion.findUniqueOrThrow({ where: { id: thread.id }, include: threadInclude(params.viewerStatus) });
+    return tx.discussion.findUniqueOrThrow({
+      where: { id: thread.id },
+      include: threadInclude(params.viewerStatus),
+    });
   });
   return mapThread(created, params.viewerStatus);
 }
@@ -406,7 +412,9 @@ export async function voteOnPost(params: {
             where: { discussionId_userId: compound },
             data: { value },
           })
-      : prisma.vote.create({ data: { discussionId: params.discussionId, userId: params.userId, value } }),
+      : prisma.vote.create({
+          data: { discussionId: params.discussionId, userId: params.userId, value },
+        }),
     prisma.discussion.update({
       where: { id: params.discussionId },
       data: { score: { increment: delta } },
@@ -470,11 +478,21 @@ const mapTabToCategory = (tab?: DiscussionFeedTab): DiscussionCategory => {
   }
 };
 
-export async function updateDiscussionState(params: { discussionId: string; state: DiscussionState }) {
-  await prisma.discussion.update({ where: { id: params.discussionId }, data: { state: params.state } });
+export async function updateDiscussionState(params: {
+  discussionId: string;
+  state: DiscussionState;
+}) {
+  await prisma.discussion.update({
+    where: { id: params.discussionId },
+    data: { state: params.state },
+  });
 }
 
-export async function setThreadLock(params: { threadId: string; locked: boolean; moderatorId: string }) {
+export async function setThreadLock(params: {
+  threadId: string;
+  locked: boolean;
+  moderatorId: string;
+}) {
   const data = params.locked
     ? { isLocked: true, lockedAt: new Date(), lockedById: params.moderatorId }
     : { isLocked: false, lockedAt: null, lockedById: null };

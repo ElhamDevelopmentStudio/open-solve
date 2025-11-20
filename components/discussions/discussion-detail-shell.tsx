@@ -117,7 +117,12 @@ export function DiscussionDetailShell({ threadId }: DiscussionDetailShellProps) 
       </section>
 
       <section className="rounded-3xl border border-border/70 bg-card/70 p-4">
-        <DiscussionComposer mode="reply" threadId={thread.id} parentId={thread.id} onSubmitted={() => repliesQuery.refetch()} />
+        <DiscussionComposer
+          mode="reply"
+          threadId={thread.id}
+          parentId={thread.id}
+          onSubmitted={() => repliesQuery.refetch()}
+        />
       </section>
     </div>
   );

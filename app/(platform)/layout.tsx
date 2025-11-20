@@ -38,14 +38,22 @@ export default async function PlatformLayout({ children }: PropsWithChildren) {
           {session.user.role.toLowerCase()}
         </Badge>
       }
-      sidebarFooter={<PlatformSidebarFooter staffAccess={staffAccess} isAdmin={session.user.role === "ADMIN"} />}
+      sidebarFooter={
+        <PlatformSidebarFooter staffAccess={staffAccess} isAdmin={session.user.role === "ADMIN"} />
+      }
     >
       <div className="min-h-[calc(100vh-3.5rem)] bg-background p-4 sm:p-6">{children}</div>
     </SidebarShell>
   );
 }
 
-function PlatformSidebarFooter({ staffAccess, isAdmin }: { staffAccess: boolean; isAdmin: boolean }) {
+function PlatformSidebarFooter({
+  staffAccess,
+  isAdmin,
+}: {
+  staffAccess: boolean;
+  isAdmin: boolean;
+}) {
   return (
     <div className="space-y-3 text-xs text-muted-foreground">
       {staffAccess ? (

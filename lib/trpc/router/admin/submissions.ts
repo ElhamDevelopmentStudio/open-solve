@@ -15,9 +15,7 @@ const listSubmissionsInput = z.object({
 export const adminSubmissionsRouter = router({
   list: adminProcedure.input(listSubmissionsInput).query(async ({ input }) => {
     const where = {
-      ...(input.status && input.status.length > 0
-        ? { status: { in: input.status } }
-        : {}),
+      ...(input.status && input.status.length > 0 ? { status: { in: input.status } } : {}),
       ...(input.query
         ? {
             OR: [
@@ -82,7 +80,7 @@ export const adminSubmissionsRouter = router({
         reason: z.string().max(200).optional(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const submission = await prisma.submission.findUnique({
         where: { id: input.submissionId },
         select: {

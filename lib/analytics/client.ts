@@ -1,7 +1,11 @@
 "use client";
 
 import type { AnalyticsContextPayload, AnalyticsEventEnvelope } from "@/lib/analytics/envelope";
-import { ANALYTICS_EVENTS, type AnalyticsEventName, type AnalyticsPayload } from "@/lib/analytics/events";
+import {
+  ANALYTICS_EVENTS,
+  type AnalyticsEventName,
+  type AnalyticsPayload,
+} from "@/lib/analytics/events";
 
 const ANALYTICS_ENDPOINT = "/api/analytics";
 const SESSION_STORAGE_KEY = "opensolve:analyticsSessionId";
@@ -107,6 +111,10 @@ export function getAnalyticsDeviceSnapshot(): DeviceSnapshot {
   return ensureDeviceInfo();
 }
 
+export function getAnalyticsSessionId() {
+  return ensureSessionId();
+}
+
 function ensureDeviceInfo(): DeviceSnapshot {
   if (cachedDeviceInfo) {
     return cachedDeviceInfo;
@@ -171,7 +179,8 @@ function readViewport() {
 }
 
 function createSessionId() {
-  const cryptoObj = typeof globalThis !== "undefined" && globalThis.crypto ? globalThis.crypto : undefined;
+  const cryptoObj =
+    typeof globalThis !== "undefined" && globalThis.crypto ? globalThis.crypto : undefined;
   if (cryptoObj?.randomUUID) {
     return cryptoObj.randomUUID();
   }

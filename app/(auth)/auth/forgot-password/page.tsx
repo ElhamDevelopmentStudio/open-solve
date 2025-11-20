@@ -89,11 +89,3 @@ export default function ForgotPasswordPage() {
     </Card>
   );
 }
-
-
-
-
-
-
-
-

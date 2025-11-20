@@ -5,7 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -68,8 +75,10 @@ export function ProfileClient({ handle }: ProfileClientProps) {
 }
 
 function ProfileView({ profile }: { profile: ProfileDetail }) {
-  const showCountry = profile.showCountry || profile.permissions.isOwner || profile.permissions.isStaff;
-  const showSocials = profile.showSocials || profile.permissions.isOwner || profile.permissions.isStaff;
+  const showCountry =
+    profile.showCountry || profile.permissions.isOwner || profile.permissions.isStaff;
+  const showSocials =
+    profile.showSocials || profile.permissions.isOwner || profile.permissions.isStaff;
   const showPrivacySettings = profile.permissions.isOwner || profile.permissions.isStaff;
 
   return (
@@ -98,15 +107,22 @@ function ProfileHero({
   showSocials: boolean;
 }) {
   const countryLabel = showCountry && profile.country ? formatCountry(profile.country) : null;
-  const socials = useMemo(() => buildSocialLinks(profile.socials, showSocials), [profile.socials, showSocials]);
+  const socials = useMemo(
+    () => buildSocialLinks(profile.socials, showSocials),
+    [profile.socials, showSocials],
+  );
 
   return (
     <div className="premium-card overflow-hidden rounded-2xl">
       <div className="flex flex-col gap-6 p-8 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-5 lg:flex-row lg:items-center">
           <Avatar className="h-28 w-28 ring-4 ring-border/30 ring-offset-2 ring-offset-background">
-            {profile.avatarUrl ? <AvatarImage src={profile.avatarUrl} alt={profile.handle} /> : null}
-            <AvatarFallback className="text-2xl font-bold">{profile.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
+            {profile.avatarUrl ? (
+              <AvatarImage src={profile.avatarUrl} alt={profile.handle} />
+            ) : null}
+            <AvatarFallback className="text-2xl font-bold">
+              {profile.handle.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
@@ -118,12 +134,17 @@ function ProfileHero({
               </div>
               <RoleBadge role={profile.role} status={profile.status} />
               {!profile.showOnLeaderboard ? (
-                <Badge variant="outline" className="rounded-full border-amber-300/60 text-amber-600 dark:border-amber-400/40 dark:text-amber-200">
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-amber-300/60 text-amber-600 dark:border-amber-400/40 dark:text-amber-200"
+                >
                   Leaderboards opt-out
                 </Badge>
               ) : null}
             </div>
-            {profile.bio ? <p className="max-w-2xl text-sm text-muted-foreground">{profile.bio}</p> : null}
+            {profile.bio ? (
+              <p className="max-w-2xl text-sm text-muted-foreground">{profile.bio}</p>
+            ) : null}
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               {countryLabel ? (
                 <span className="inline-flex items-center gap-1.5">
@@ -131,12 +152,20 @@ function ProfileHero({
                   {countryLabel}
                 </span>
               ) : null}
-              {profile.timezone ? <span className="text-xs uppercase">{profile.timezone}</span> : null}
+              {profile.timezone ? (
+                <span className="text-xs uppercase">{profile.timezone}</span>
+              ) : null}
             </div>
             {socials.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {socials.map((social) => (
-                  <Button key={social.href} size="sm" variant="outline" className="h-8 gap-1.5 rounded-xl" asChild>
+                  <Button
+                    key={social.href}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5 rounded-xl"
+                    asChild
+                  >
                     <a href={social.href} target="_blank" rel="noreferrer">
                       {social.icon}
                       <span className="text-xs">{social.label}</span>
@@ -173,7 +202,9 @@ function StatsGrid({ profile }: { profile: ProfileDetail }) {
     {
       label: "Total solved",
       value: profile.stats.totalSolved.toLocaleString(),
-      helper: profile.stats.lastAcceptedAt ? `Last AC ${formatDistanceToNow(profile.stats.lastAcceptedAt, { addSuffix: true })}` : "",
+      helper: profile.stats.lastAcceptedAt
+        ? `Last AC ${formatDistanceToNow(profile.stats.lastAcceptedAt, { addSuffix: true })}`
+        : "",
       icon: <Trophy className="h-5 w-5 text-primary" />,
     },
     {
@@ -185,7 +216,9 @@ function StatsGrid({ profile }: { profile: ProfileDetail }) {
     {
       label: "Acceptance rate",
       value: `${Math.round(profile.stats.acceptanceRate * 100)}%`,
-      helper: profile.stats.firstAcceptedAt ? `First AC ${new Date(profile.stats.firstAcceptedAt).getFullYear()}` : "",
+      helper: profile.stats.firstAcceptedAt
+        ? `First AC ${new Date(profile.stats.firstAcceptedAt).getFullYear()}`
+        : "",
       icon: <ShieldCheck className="h-5 w-5 text-emerald-500" />,
     },
     {
@@ -201,11 +234,17 @@ function StatsGrid({ profile }: { profile: ProfileDetail }) {
       {cards.map((card) => (
         <div key={card.label} className="premium-card rounded-2xl p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted/60">{card.icon}</div>
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted/60">
+              {card.icon}
+            </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{card.label}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {card.label}
+              </p>
               <p className="text-2xl font-bold tracking-tight">{card.value}</p>
-              {card.helper ? <p className="truncate text-xs text-muted-foreground">{card.helper}</p> : null}
+              {card.helper ? (
+                <p className="truncate text-xs text-muted-foreground">{card.helper}</p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -214,8 +253,19 @@ function StatsGrid({ profile }: { profile: ProfileDetail }) {
   );
 }
 
-function RoleBadge({ role, status }: { role: ProfileDetail["role"]; status: ProfileDetail["status"] }) {
-  const base = role === "ADMIN" ? "bg-primary/15 text-primary" : role === "PROBLEM_CURATOR" ? "bg-purple-500/15 text-purple-500" : "bg-muted text-muted-foreground";
+function RoleBadge({
+  role,
+  status,
+}: {
+  role: ProfileDetail["role"];
+  status: ProfileDetail["status"];
+}) {
+  const base =
+    role === "ADMIN"
+      ? "bg-primary/15 text-primary"
+      : role === "PROBLEM_CURATOR"
+        ? "bg-purple-500/15 text-purple-500"
+        : "bg-muted text-muted-foreground";
   return (
     <Badge className={cn("rounded-full text-xs font-medium", base)}>
       {status === "SHADOW_BANNED" ? "Shadow Banned" : role.replace("_", " ").toLowerCase()}
@@ -235,10 +285,19 @@ function ChartsSection({ profile }: { profile: ProfileDetail }) {
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="premium-card space-y-4 rounded-2xl p-6">
         <h3 className="text-lg font-semibold">Solved by Difficulty</h3>
-        <ChartContainer className="h-64" config={{ count: { label: "Problems", color: "var(--chart-1)" } }}>
+        <ChartContainer
+          className="h-64"
+          config={{ count: { label: "Problems", color: "var(--chart-1)" } }}
+        >
           <BarChart data={difficultyData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="label" stroke="currentColor" fontSize={12} tickLine={false} axisLine={false} />
+            <XAxis
+              dataKey="label"
+              stroke="currentColor"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-1)" />
           </BarChart>
@@ -247,16 +306,23 @@ function ChartsSection({ profile }: { profile: ProfileDetail }) {
       <div className="premium-card space-y-4 rounded-2xl p-6">
         <h3 className="text-lg font-semibold">Top Tags</h3>
         {tagData.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Tags will appear once this solver has public solves.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Tags will appear once this solver has public solves.
+          </p>
         ) : (
           <div className="space-y-3">
             {tagData.map((tag) => (
-              <div key={tag.slug} className="flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 smooth-transition hover:border-border">
+              <div
+                key={tag.slug}
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 smooth-transition hover:border-border"
+              >
                 <div>
                   <p className="font-medium">#{tag.slug}</p>
                   <p className="text-xs text-muted-foreground">{tag.name}</p>
                 </div>
-                <Badge variant="secondary" className="rounded-full">{tag.count.toLocaleString()}</Badge>
+                <Badge variant="secondary" className="rounded-full">
+                  {tag.count.toLocaleString()}
+                </Badge>
               </div>
             ))}
           </div>
@@ -283,7 +349,10 @@ function ActivitySection({ profile }: { profile: ProfileDetail }) {
             <div
               key={cell.date}
               title={`${new Date(cell.date).toLocaleDateString()} — ${cell.count} solves`}
-              className={cn("h-4 w-full rounded-sm smooth-transition hover:scale-110", heatColor(cell.count, maxHeat))}
+              className={cn(
+                "h-4 w-full rounded-sm smooth-transition hover:scale-110",
+                heatColor(cell.count, maxHeat),
+              )}
             />
           ))}
         </div>
@@ -291,10 +360,19 @@ function ActivitySection({ profile }: { profile: ProfileDetail }) {
       </div>
       <div className="premium-card space-y-4 rounded-2xl p-6">
         <h3 className="text-lg font-semibold">Time-of-Day Focus</h3>
-        <ChartContainer className="h-64" config={{ count: { label: "Solves", color: "var(--chart-5)" } }}>
+        <ChartContainer
+          className="h-64"
+          config={{ count: { label: "Solves", color: "var(--chart-5)" } }}
+        >
           <BarChart data={hourlyData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="hour" tickLine={false} axisLine={false} stroke="currentColor" fontSize={11} />
+            <XAxis
+              dataKey="hour"
+              tickLine={false}
+              axisLine={false}
+              stroke="currentColor"
+              fontSize={11}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-5)" />
           </BarChart>
@@ -322,17 +400,25 @@ function RecentSolves({ profile }: { profile: ProfileDetail }) {
       </div>
       <div className="space-y-3">
         {solves.map((solve) => (
-          <div key={solve.id} className="rounded-xl border border-border/70 bg-card/50 p-4 smooth-transition hover:border-border">
+          <div
+            key={solve.id}
+            className="rounded-xl border border-border/70 bg-card/50 p-4 smooth-transition hover:border-border"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <Link href={`/problems/${solve.problem.slug}`} className="text-sm font-medium text-primary hover:underline">
+                <Link
+                  href={`/problems/${solve.problem.slug}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
                   {solve.problem.title}
                 </Link>
                 <div className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(solve.createdAt), { addSuffix: true })}
                 </div>
               </div>
-              <Badge variant="secondary" className="rounded-full">{solve.languageCode}</Badge>
+              <Badge variant="secondary" className="rounded-full">
+                {solve.languageCode}
+              </Badge>
             </div>
           </div>
         ))}
@@ -350,9 +436,14 @@ function BadgesSection({ profile }: { profile: ProfileDetail }) {
       <h3 className="text-lg font-semibold">Badges</h3>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {profile.badges.map((badge) => (
-          <div key={badge.slug} className="rounded-xl border border-border/70 bg-gradient-to-br from-card to-card/50 p-4 shadow-sm smooth-transition hover:border-border hover:shadow-md">
+          <div
+            key={badge.slug}
+            className="rounded-xl border border-border/70 bg-gradient-to-br from-card to-card/50 p-4 shadow-sm smooth-transition hover:border-border hover:shadow-md"
+          >
             <p className="font-semibold">{badge.name}</p>
-            {badge.description ? <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p> : null}
+            {badge.description ? (
+              <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p>
+            ) : null}
           </div>
         ))}
       </div>
@@ -360,11 +451,7 @@ function BadgesSection({ profile }: { profile: ProfileDetail }) {
   );
 }
 
-function StaffInsights({
-  insights,
-}: {
-  insights: NonNullable<ProfileDetail["staffInsights"]>;
-}) {
+function StaffInsights({ insights }: { insights: NonNullable<ProfileDetail["staffInsights"]> }) {
   return (
     <div className="premium-card space-y-4 rounded-2xl border-destructive/20 p-6">
       <div className="flex items-center gap-3">
@@ -379,7 +466,11 @@ function StaffInsights({
       <div className="space-y-2 text-sm">
         <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
           <span>Rapid solve spike:</span>
-          <span className={insights.rapidSolveSpike ? "font-semibold text-destructive" : "text-muted-foreground"}>
+          <span
+            className={
+              insights.rapidSolveSpike ? "font-semibold text-destructive" : "text-muted-foreground"
+            }
+          >
             {insights.rapidSolveSpike ? "Yes" : "No"}
           </span>
         </div>
@@ -389,7 +480,13 @@ function StaffInsights({
         </div>
         <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
           <span>Account status:</span>
-          <span className={insights.shadowBanned ? "font-semibold text-destructive" : "font-semibold text-success"}>
+          <span
+            className={
+              insights.shadowBanned
+                ? "font-semibold text-destructive"
+                : "font-semibold text-success"
+            }
+          >
             {insights.shadowBanned ? "Shadow Banned" : "Active"}
           </span>
         </div>
@@ -398,7 +495,13 @@ function StaffInsights({
   );
 }
 
-function ProfilePrivacyCard({ handle, settings }: { handle: string; settings: ProfileSettingsInput }) {
+function ProfilePrivacyCard({
+  handle,
+  settings,
+}: {
+  handle: string;
+  settings: ProfileSettingsInput;
+}) {
   const utils = trpc.useUtils();
   const form = useForm<ProfileSettingsInput>({
     resolver: zodResolver(profileSettingsSchema),
@@ -426,15 +529,40 @@ function ProfilePrivacyCard({ handle, settings }: { handle: string; settings: Pr
     <div className="premium-card space-y-6 rounded-2xl p-8">
       <div>
         <h3 className="text-lg font-semibold">Privacy & Sharing</h3>
-        <p className="text-sm text-muted-foreground">Control what information is visible on your profile</p>
+        <p className="text-sm text-muted-foreground">
+          Control what information is visible on your profile
+        </p>
       </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} className="space-y-6">
+        <form
+          onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+          className="space-y-6"
+        >
           <div className="space-y-3">
-            {renderToggle(form, "shareAcceptedCode", "Share Accepted Code", "Opt-in to displaying AC snippets on your profile")}
-            {renderToggle(form, "showOnLeaderboard", "Appear on Leaderboards", "Opt-out removes you from public rankings")}
-            {renderToggle(form, "showCountry", "Show Country", "Controls whether your flag is visible to others")}
-            {renderToggle(form, "showSocials", "Show Social Links", "Hide or reveal linked accounts on your profile")}
+            {renderToggle(
+              form,
+              "shareAcceptedCode",
+              "Share Accepted Code",
+              "Opt-in to displaying AC snippets on your profile",
+            )}
+            {renderToggle(
+              form,
+              "showOnLeaderboard",
+              "Appear on Leaderboards",
+              "Opt-out removes you from public rankings",
+            )}
+            {renderToggle(
+              form,
+              "showCountry",
+              "Show Country",
+              "Controls whether your flag is visible to others",
+            )}
+            {renderToggle(
+              form,
+              "showSocials",
+              "Show Social Links",
+              "Hide or reveal linked accounts on your profile",
+            )}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {(["github", "linkedin", "twitter", "website"] as const).map((key) => (
@@ -528,7 +656,10 @@ function ProfileSkeleton() {
 
 function formatCountry(country: string) {
   const code = country.trim().toUpperCase();
-  const flag = code.length === 2 ? String.fromCodePoint(...code.split("").map((char) => 127397 + char.charCodeAt(0))) : "";
+  const flag =
+    code.length === 2
+      ? String.fromCodePoint(...code.split("").map((char) => 127397 + char.charCodeAt(0)))
+      : "";
   return `${flag} ${code}`.trim();
 }
 
@@ -544,7 +675,11 @@ function buildSocialLinks(
     links.push({ href: socials.github, label: "GitHub", icon: <Github className="h-4 w-4" /> });
   }
   if (socials.linkedin) {
-    links.push({ href: socials.linkedin, label: "LinkedIn", icon: <Linkedin className="h-4 w-4" /> });
+    links.push({
+      href: socials.linkedin,
+      label: "LinkedIn",
+      icon: <Linkedin className="h-4 w-4" />,
+    });
   }
   if (socials.twitter) {
     links.push({ href: socials.twitter, label: "Twitter", icon: <LinkIcon className="h-4 w-4" /> });

@@ -31,7 +31,9 @@ export async function createSession(
   const refreshToken = generateRefreshToken();
   const now = new Date();
   const rememberMe = options?.rememberMe ?? false;
-  const sessionExpires = new Date(now.getTime() + (rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION));
+  const sessionExpires = new Date(
+    now.getTime() + (rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION),
+  );
   const refreshExpires = new Date(now.getTime() + REFRESH_DURATION);
 
   const session = await prisma.session.create({

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { renderProblemLibrary } from "@/app/(reader)/problems/page";
+import {
+  renderProblemLibraryPage,
+  resolveViewerSessionFlag,
+} from "@/components/problems/problem-library-page";
 import { DIFFICULTIES } from "@/lib/problems/constants";
 import { notFound } from "next/navigation";
 
@@ -42,7 +45,10 @@ export default async function DifficultyProblemsPage({
     notFound();
   }
 
-  const resolvedSearchParams = await searchParams;
+  const [resolvedSearchParams, viewerHasSession] = await Promise.all([
+    searchParams,
+    resolveViewerSessionFlag(),
+  ]);
   const existing = resolvedSearchParams.difficulty;
   const existingArray = Array.isArray(existing)
     ? existing
@@ -50,8 +56,11 @@ export default async function DifficultyProblemsPage({
       ? [existing]
       : [];
 
-  return renderProblemLibrary({
-    ...resolvedSearchParams,
-    difficulty: [level, ...existingArray.filter((item) => item !== level)],
+  return renderProblemLibraryPage({
+    searchParams: {
+      ...resolvedSearchParams,
+      difficulty: [level, ...existingArray.filter((item) => item !== level)],
+    },
+    viewerHasSession,
   });
 }

@@ -72,7 +72,12 @@ type PracticeLeaderboardProps = {
   slug?: string;
 };
 
-export function DifficultyLeaderboardClient({ initialWindow, title, subtitle, difficulty }: PracticeLeaderboardProps) {
+export function DifficultyLeaderboardClient({
+  initialWindow,
+  title,
+  subtitle,
+  difficulty,
+}: PracticeLeaderboardProps) {
   const [window, setWindow] = useState<LeaderboardWindow>(initialWindow);
   const utils = trpc.useUtils();
   const query = trpc.leaderboard.difficulty.useInfiniteQuery(
@@ -84,7 +89,11 @@ export function DifficultyLeaderboardClient({ initialWindow, title, subtitle, di
 
   useLeaderboardRealtime((updatedWindow) => {
     if (updatedWindow === window) {
-      void utils.leaderboard.difficulty.invalidate({ window, difficulty: difficulty as "EASY" | "MEDIUM" | "HARD", limit: PAGE_SIZE });
+      void utils.leaderboard.difficulty.invalidate({
+        window,
+        difficulty: difficulty as "EASY" | "MEDIUM" | "HARD",
+        limit: PAGE_SIZE,
+      });
     }
   });
 
@@ -111,7 +120,12 @@ export function DifficultyLeaderboardClient({ initialWindow, title, subtitle, di
   );
 }
 
-export function TagLeaderboardClient({ initialWindow, title, subtitle, slug }: PracticeLeaderboardProps) {
+export function TagLeaderboardClient({
+  initialWindow,
+  title,
+  subtitle,
+  slug,
+}: PracticeLeaderboardProps) {
   const [window, setWindow] = useState<LeaderboardWindow>(initialWindow);
   const utils = trpc.useUtils();
   const query = trpc.leaderboard.tag.useInfiniteQuery(
@@ -190,14 +204,20 @@ function LeaderboardSection({
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-            <Badge variant="secondary" className="rounded-full text-[10px] font-semibold uppercase tracking-wide">
+            <Badge
+              variant="secondary"
+              className="rounded-full text-[10px] font-semibold uppercase tracking-wide"
+            >
               Live
             </Badge>
           </div>
           {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
         {onWindowChange ? (
-          <Tabs value={window} onValueChange={(value) => onWindowChange(value as LeaderboardWindow)}>
+          <Tabs
+            value={window}
+            onValueChange={(value) => onWindowChange(value as LeaderboardWindow)}
+          >
             <TabsList className="rounded-xl">
               {WINDOW_TABS.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg capitalize">
@@ -213,12 +233,20 @@ function LeaderboardSection({
       <LeaderboardTable entries={entries} isLoading={isLoading} />
       <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-muted-foreground">
         <p>
-          Updated {meta?.generatedAt ? formatDistanceToNow(new Date(meta.generatedAt), { addSuffix: true }) : "recently"}
+          Updated{" "}
+          {meta?.generatedAt
+            ? formatDistanceToNow(new Date(meta.generatedAt), { addSuffix: true })
+            : "recently"}
         </p>
         <p>{meta?.totalEntries ? `${meta.totalEntries.toLocaleString()} competitors` : null}</p>
       </div>
       {hasMore ? (
-        <Button onClick={loadMore} disabled={isFetchingMore} variant="outline" className="w-full rounded-xl">
+        <Button
+          onClick={loadMore}
+          disabled={isFetchingMore}
+          variant="outline"
+          className="w-full rounded-xl"
+        >
           {isFetchingMore ? (
             <>
               <Loading03Icon className="mr-2 h-4 w-4 animate-spin" strokeWidth={2} /> Loading more
@@ -232,7 +260,13 @@ function LeaderboardSection({
   );
 }
 
-function LeaderboardHero({ hero, meta }: { hero: LeaderboardEntry[]; meta?: { periodStart: Date | null; periodEnd: Date | null } | null }) {
+function LeaderboardHero({
+  hero,
+  meta,
+}: {
+  hero: LeaderboardEntry[];
+  meta?: { periodStart: Date | null; periodEnd: Date | null } | null;
+}) {
   if (hero.length === 0) {
     return null;
   }
@@ -244,15 +278,20 @@ function LeaderboardHero({ hero, meta }: { hero: LeaderboardEntry[]; meta?: { pe
           key={entry.user.id}
           className={cn(
             "premium-card space-y-4 rounded-2xl p-6",
-            index === 0 && "border-primary/40 shadow-lg shadow-primary/10"
+            index === 0 && "border-primary/40 shadow-lg shadow-primary/10",
           )}
         >
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "flex h-12 w-12 items-center justify-center rounded-xl",
-              index === 0 ? "bg-primary/10" : "bg-muted"
-            )}>
-              <Award01Icon className={cn("h-6 w-6", index === 0 ? "text-primary" : "text-muted-foreground")} strokeWidth={2} />
+            <div
+              className={cn(
+                "flex h-12 w-12 items-center justify-center rounded-xl",
+                index === 0 ? "bg-primary/10" : "bg-muted",
+              )}
+            >
+              <Award01Icon
+                className={cn("h-6 w-6", index === 0 ? "text-primary" : "text-muted-foreground")}
+                strokeWidth={2}
+              />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-lg font-bold">
@@ -263,12 +302,16 @@ function LeaderboardHero({ hero, meta }: { hero: LeaderboardEntry[]; meta?: { pe
           </div>
           <div className="flex items-center justify-around rounded-xl border border-border/50 bg-card/30 py-3">
             <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Score</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Score
+              </p>
               <p className="text-2xl font-bold">{formatScore(entry.score)}</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Solved</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Solved
+              </p>
               <p className="text-2xl font-bold">{entry.solved}</p>
             </div>
           </div>
@@ -287,7 +330,8 @@ function ViewerBadge({ entry }: ViewerBadgeProps) {
     <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-6 py-4 text-sm">
       <Medal01Icon className="h-5 w-5 text-primary" strokeWidth={2} />
       <p className="font-medium text-primary">
-        You&apos;re currently ranked <span className="font-bold">#{entry.rank}</span> with <span className="font-bold">{Math.round(entry.score)}</span> points
+        You&apos;re currently ranked <span className="font-bold">#{entry.rank}</span> with{" "}
+        <span className="font-bold">{Math.round(entry.score)}</span> points
       </p>
     </div>
   );
@@ -300,14 +344,19 @@ type TableProps = {
 
 function LeaderboardTable({ entries, isLoading }: TableProps) {
   const showSubmissions = entries.some((entry) => typeof entry.submissions === "number");
-  const showAvgRuntime = entries.some((entry) => typeof entry.avgRuntimeMs === "number" && entry.avgRuntimeMs !== null);
-  const showPenalty = entries.some((entry) => typeof entry.timePenalty === "number" && entry.timePenalty !== null);
+  const showAvgRuntime = entries.some(
+    (entry) => typeof entry.avgRuntimeMs === "number" && entry.avgRuntimeMs !== null,
+  );
+  const showPenalty = entries.some(
+    (entry) => typeof entry.timePenalty === "number" && entry.timePenalty !== null,
+  );
 
   if (isLoading && entries.length === 0) {
     return (
       <div className="premium-card rounded-2xl p-12">
         <div className="flex items-center justify-center text-muted-foreground">
-          <Loading03Icon className="mr-2 h-5 w-5 animate-spin" strokeWidth={2} /> Loading leaderboard…
+          <Loading03Icon className="mr-2 h-5 w-5 animate-spin" strokeWidth={2} /> Loading
+          leaderboard…
         </div>
       </div>
     );
@@ -345,11 +394,18 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
             </div>
             <div className="col-span-2 flex items-center gap-3 lg:col-span-4">
               <Avatar className="h-11 w-11 ring-2 ring-border/30 ring-offset-2 ring-offset-background">
-                {entry.user.avatarUrl ? <AvatarImage src={entry.user.avatarUrl} alt={entry.user.handle} /> : null}
-                <AvatarFallback className="text-xs font-semibold">{entry.user.handle.slice(0, 2).toUpperCase()}</AvatarFallback>
+                {entry.user.avatarUrl ? (
+                  <AvatarImage src={entry.user.avatarUrl} alt={entry.user.handle} />
+                ) : null}
+                <AvatarFallback className="text-xs font-semibold">
+                  {entry.user.handle.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <Link href={`/u/${entry.user.handle}`} className="font-semibold text-primary hover:underline">
+                <Link
+                  href={`/u/${entry.user.handle}`}
+                  className="font-semibold text-primary hover:underline"
+                >
                   @{entry.user.handle}
                 </Link>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -388,13 +444,25 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
 
 function RoleBadge({ role, status }: { role: string; status: string }) {
   if (status === "SHADOW_BANNED") {
-    return <Badge variant="destructive" className="rounded-full text-[10px]">Shadow Banned</Badge>;
+    return (
+      <Badge variant="destructive" className="rounded-full text-[10px]">
+        Shadow Banned
+      </Badge>
+    );
   }
   if (role === "ADMIN") {
-    return <Badge variant="secondary" className="rounded-full text-[10px]">Admin</Badge>;
+    return (
+      <Badge variant="secondary" className="rounded-full text-[10px]">
+        Admin
+      </Badge>
+    );
   }
   if (role === "PROBLEM_CURATOR") {
-    return <Badge variant="outline" className="rounded-full text-[10px]">Curator</Badge>;
+    return (
+      <Badge variant="outline" className="rounded-full text-[10px]">
+        Curator
+      </Badge>
+    );
   }
   return null;
 }

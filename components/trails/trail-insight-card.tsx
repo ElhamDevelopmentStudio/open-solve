@@ -27,7 +27,12 @@ export function TrailInsightCard({ insight, problemId }: TrailInsightCardProps) 
             entry.id === variables.insightId
               ? {
                   ...entry,
-                  viewerVote: entry.viewerVote === (variables.direction === "UP" ? 1 : -1) ? 0 : variables.direction === "UP" ? 1 : -1,
+                  viewerVote:
+                    entry.viewerVote === (variables.direction === "UP" ? 1 : -1)
+                      ? 0
+                      : variables.direction === "UP"
+                        ? 1
+                        : -1,
                   score:
                     entry.score +
                     (entry.viewerVote === (variables.direction === "UP" ? 1 : -1)
@@ -56,8 +61,7 @@ export function TrailInsightCard({ insight, problemId }: TrailInsightCardProps) 
     voteMutation.mutate({ insightId: insight.id, direction });
   };
   return (
-    <div className={cn("rounded-2xl border p-4", insight.isHidden && "opacity-60")}
-    >
+    <div className={cn("rounded-2xl border p-4", insight.isHidden && "opacity-60")}>
       <div className="flex items-center justify-between">
         <Badge variant="outline" className="capitalize">
           {insight.category.toLowerCase()}
@@ -70,13 +74,19 @@ export function TrailInsightCard({ insight, problemId }: TrailInsightCardProps) 
       <p className="mt-3 text-sm text-foreground">{insight.content}</p>
       <div className="mt-4 flex items-center justify-between">
         <div className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2">
-          <Button variant="ghost" size="icon-sm" className={cn(insight.viewerVote === 1 && "text-primary")}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={cn(insight.viewerVote === 1 && "text-primary")}
             onClick={() => handleVote("UP")}
           >
             <ArrowBigUp className="h-4 w-4" />
           </Button>
           <span className="text-sm font-semibold">{insight.score}</span>
-          <Button variant="ghost" size="icon-sm" className={cn(insight.viewerVote === -1 && "text-destructive")}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={cn(insight.viewerVote === -1 && "text-destructive")}
             onClick={() => handleVote("DOWN")}
           >
             <ArrowBigDown className="h-4 w-4" />

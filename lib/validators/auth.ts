@@ -90,12 +90,3 @@ export type EnableTwoFactorInput = z.infer<typeof enableTwoFactorSchema>;
 export type DisableTwoFactorInput = z.infer<typeof disableTwoFactorSchema>;
 export type VerifyRecoveryCodeInput = z.infer<typeof verifyRecoveryCodeSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-
-
-
-
-
-
-
-
-

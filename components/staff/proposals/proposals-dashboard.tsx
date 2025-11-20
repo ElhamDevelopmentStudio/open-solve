@@ -5,12 +5,7 @@ import { useMemo, useState, type ComponentType, type SVGProps } from "react";
 import { formatDistanceToNow } from "date-fns";
 import type { inferRouterOutputs } from "@trpc/server";
 import { ProblemProposalStatus } from "@prisma/client";
-import {
-  ClipboardIcon,
-  FilterIcon,
-  Shield01Icon,
-  SparklesIcon,
-} from "hugeicons-react";
+import { ClipboardIcon, FilterIcon, Shield01Icon, SparklesIcon } from "hugeicons-react";
 
 import type { AppRouter } from "@/lib/trpc/router";
 import { trpc } from "@/lib/trpc/client";
@@ -19,11 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DataTable,
-  type DataTableColumn,
-  DataTableColumnHeader,
-} from "@/components/ui/data-table";
+import { DataTable, type DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -49,10 +40,9 @@ const statusStyles: Record<ProblemProposalStatus, string> = {
 
 export function StaffProposalsDashboard() {
   const [statusFilter, setStatusFilter] = useState<ProblemProposalStatus | "ALL">("ALL");
-  const proposalsQuery = trpc.proposals.staffList.useQuery({
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-  });
-  const proposals = proposalsQuery.data ?? [];
+  const filters = statusFilter === "ALL" ? undefined : { status: statusFilter };
+  const proposalsQuery = trpc.proposals.staffList.useQuery(filters);
+  const proposals = useMemo(() => proposalsQuery.data ?? [], [proposalsQuery.data]);
   const metrics = useMemo(() => buildProposalMetrics(proposals), [proposals]);
   const columns = useProposalColumns();
 
@@ -63,7 +53,8 @@ export function StaffProposalsDashboard() {
           <p className="text-xs uppercase text-muted-foreground">Community pipeline</p>
           <h1 className="text-3xl font-semibold tracking-tight">Proposal review</h1>
           <p className="text-sm text-muted-foreground">
-            Triage incoming problems, coach authors, and graduate ideas into the official problem bank.
+            Triage incoming problems, coach authors, and graduate ideas into the official problem
+            bank.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -105,7 +96,10 @@ export function StaffProposalsDashboard() {
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+              >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
@@ -178,7 +172,7 @@ function useProposalColumns(): DataTableColumn<ProposalRow>[] {
         cell: ({ row }) => (
           <div className="text-sm">
             {row.original.reviewer
-              ? row.original.reviewer.handle ?? row.original.reviewer.name
+              ? (row.original.reviewer.handle ?? row.original.reviewer.name)
               : "Unassigned"}
           </div>
         ),

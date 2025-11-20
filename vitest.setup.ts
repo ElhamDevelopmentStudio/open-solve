@@ -26,7 +26,10 @@ if (skipDbSetup) {
   process.env.DATABASE_URL = dbUrl.toString();
   process.env.TEST_DB_SCHEMA = testSchema;
 
-  execSync(`DATABASE_URL=${process.env.DATABASE_URL} npx prisma migrate deploy`, {
-    stdio: "inherit",
-  });
+  execSync(
+    `DATABASE_URL=${process.env.DATABASE_URL} npx prisma db push --skip-generate --accept-data-loss`,
+    {
+      stdio: "inherit",
+    },
+  );
 }

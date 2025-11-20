@@ -11,12 +11,27 @@ const amqpUrl = z
   .string()
   .regex(/^amqps?:\/\//i, "JUDGE_RABBIT_URL must start with amqp:// or amqps://");
 
+const deploymentEnvFallback =
+  (process.env.DEPLOYMENT_ENVIRONMENT as
+    | "development"
+    | "staging"
+    | "production"
+    | "preview"
+    | undefined) ??
+  (process.env.VERCEL_ENV as "development" | "preview" | "production" | undefined) ??
+  (process.env.NODE_ENV === "production" ? "production" : "development");
+
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     DIRECT_URL: z.string().url().optional(),
-    SESSION_SECRET: z.string().min(32),
+    SESSION_SECRET: emptyToUndefined(z.string().min(32)).default(
+      "opensolve-test-session-secret-please-change-me-1234567890",
+    ),
     APP_URL: z.string().url(),
+    DEPLOYMENT_ENVIRONMENT: z
+      .enum(["development", "staging", "production", "preview"])
+      .default(deploymentEnvFallback ?? "development"),
     GITHUB_CLIENT_ID: emptyToUndefined(z.string()),
     GITHUB_CLIENT_SECRET: emptyToUndefined(z.string()),
     GOOGLE_CLIENT_ID: emptyToUndefined(z.string()),
@@ -55,10 +70,9 @@ export const env = createEnv({
     JUDGE_SANDBOX_DRIVER: z.enum(["docker", "mock"]).default("docker"),
     JUDGE_SANDBOX_WORKDIR: emptyToUndefined(z.string()),
     REALTIME_WORKER_TOKEN: emptyToUndefined(z.string()),
-    SENSITIVE_DATA_KEY: z
-      .string()
-      .min(32, "SENSITIVE_DATA_KEY must be at least 32 characters")
-      .default("opensolve-sensitive-data-key-please-change-me-123"),
+    SENSITIVE_DATA_KEY: emptyToUndefined(
+      z.string().min(32, "SENSITIVE_DATA_KEY must be at least 32 characters"),
+    ).default("opensolve-sensitive-data-key-please-change-me-123"),
     METRICS_ACCESS_TOKEN: emptyToUndefined(z.string()),
   },
   client: {
@@ -70,6 +84,7 @@ export const env = createEnv({
     DIRECT_URL: process.env.DIRECT_URL,
     SESSION_SECRET: process.env.SESSION_SECRET,
     APP_URL: process.env.APP_URL,
+    DEPLOYMENT_ENVIRONMENT: process.env.DEPLOYMENT_ENVIRONMENT,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,

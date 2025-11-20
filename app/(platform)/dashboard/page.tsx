@@ -1,4 +1,7 @@
-import { RecentSubmissionsTable, type RecentSubmissionRow } from "@/components/dashboard/recent-submissions-table";
+import {
+  RecentSubmissionsTable,
+  type RecentSubmissionRow,
+} from "@/components/dashboard/recent-submissions-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +53,8 @@ export default async function DashboardPage() {
     submissionSummary.totalAttempts > 0
       ? Math.round((submissionSummary.acceptedAttempts / submissionSummary.totalAttempts) * 100)
       : 0;
-  const nextContest = contestOverview.featured ?? contestOverview.upcoming[0] ?? contestOverview.live[0] ?? null;
+  const nextContest =
+    contestOverview.featured ?? contestOverview.upcoming[0] ?? contestOverview.live[0] ?? null;
   const practiceDeck = problemList.items.slice(0, 4);
   const submissionRows: RecentSubmissionRow[] = submissionSnapshot.items.map((item) => ({
     id: item.id,
@@ -96,7 +100,9 @@ export default async function DashboardPage() {
     {
       label: "Fastest runtime",
       value: submissionSummary.fastestRuntimeMs ? `${submissionSummary.fastestRuntimeMs} ms` : "—",
-      meta: submissionSummary.bestMemoryKb ? `${submissionSummary.bestMemoryKb} kb memory` : "No benchmark",
+      meta: submissionSummary.bestMemoryKb
+        ? `${submissionSummary.bestMemoryKb} kb memory`
+        : "No benchmark",
       icon: ArrowRight05Icon,
       accent: "text-purple-600 dark:text-purple-300",
     },
@@ -133,10 +139,12 @@ export default async function DashboardPage() {
                 Mission Control
               </p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-                {session?.user.name ?? session?.user.handle ?? "Solver"}, get ready for the next solve.
+                {session?.user.name ?? session?.user.handle ?? "Solver"}, get ready for the next
+                solve.
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Monitor your submissions, upcoming contests, and proposals without leaving this cockpit.
+                Monitor your submissions, upcoming contests, and proposals without leaving this
+                cockpit.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -182,7 +190,7 @@ export default async function DashboardPage() {
               </div>
             </div>
             <Button asChild className="mt-6 w-full">
-              <Link href="/problems">Solve a problem</Link>
+              <Link href="/workspace/problems">Solve a problem</Link>
             </Button>
           </div>
         </div>
@@ -259,7 +267,10 @@ export default async function DashboardPage() {
                   className="rounded-2xl border border-border/60 p-3 transition hover:border-primary/50"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <Link href="/proposals" className="text-sm font-medium text-foreground hover:text-primary">
+                    <Link
+                      href="/proposals"
+                      className="text-sm font-medium text-foreground hover:text-primary"
+                    >
                       {proposal.title}
                     </Link>
                     <Badge variant="outline" className={statusBadgeClass(proposal.status)}>
@@ -497,7 +508,15 @@ function formatDate(date: Date | string) {
   });
 }
 
-function ContestStat({ label, value, muted }: { label: string; value: string | number; muted?: string }) {
+function ContestStat({
+  label,
+  value,
+  muted,
+}: {
+  label: string;
+  value: string | number;
+  muted?: string;
+}) {
   return (
     <div>
       <p className="text-xs uppercase text-muted-foreground">{label}</p>
@@ -521,7 +540,12 @@ function EmptyState({
   compact?: boolean;
 }) {
   return (
-    <div className={cn("rounded-2xl border border-dashed border-border/70 p-6 text-center", compact && "py-8")}>
+    <div
+      className={cn(
+        "rounded-2xl border border-dashed border-border/70 p-6 text-center",
+        compact && "py-8",
+      )}
+    >
       <Award02Icon className="mx-auto h-10 w-10 text-muted-foreground/60" />
       <p className="mt-3 font-medium text-foreground">{title}</p>
       <p className="text-sm text-muted-foreground">{description}</p>

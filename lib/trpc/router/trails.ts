@@ -17,7 +17,13 @@ const viewerFromCtx = (ctxUser?: { id: string; role: UserRole } | null) =>
 export const trailsRouter = router({
   getForProblem: publicProcedure
     .input(z.object({ slug: z.string().optional(), problemId: z.string().cuid().optional() }))
-    .query(({ input, ctx }) => getTrailGraph({ problemId: input.problemId, slug: input.slug, viewer: viewerFromCtx(ctx.user) })),
+    .query(({ input, ctx }) =>
+      getTrailGraph({
+        problemId: input.problemId,
+        slug: input.slug,
+        viewer: viewerFromCtx(ctx.user),
+      }),
+    ),
   addInsight: protectedProcedure
     .input(
       z.object({
@@ -39,8 +45,27 @@ export const trailsRouter = router({
     ),
   vote: protectedProcedure
     .input(z.object({ insightId: z.string().cuid(), direction: z.enum(["UP", "DOWN"]) }))
-    .mutation(({ input, ctx }) => voteTrailInsight({ insightId: input.insightId, userId: ctx.user.id, direction: input.direction })),
+    .mutation(({ input, ctx }) =>
+      voteTrailInsight({
+        insightId: input.insightId,
+        userId: ctx.user.id,
+        direction: input.direction,
+      }),
+    ),
   report: protectedProcedure
-    .input(z.object({ insightId: z.string().cuid(), reason: reportEnum, note: z.string().max(500).optional() }))
-    .mutation(({ input, ctx }) => reportTrailInsight({ insightId: input.insightId, reason: input.reason, note: input.note, reporterId: ctx.user.id })),
+    .input(
+      z.object({
+        insightId: z.string().cuid(),
+        reason: reportEnum,
+        note: z.string().max(500).optional(),
+      }),
+    )
+    .mutation(({ input, ctx }) =>
+      reportTrailInsight({
+        insightId: input.insightId,
+        reason: input.reason,
+        note: input.note,
+        reporterId: ctx.user.id,
+      }),
+    ),
 });

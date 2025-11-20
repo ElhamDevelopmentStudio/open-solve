@@ -49,7 +49,13 @@ export default async function SettingsLayout({ children }: PropsWithChildren) {
           </div>
           <div className="flex flex-wrap gap-3">
             {heroActions.map((action) => (
-              <Button key={action.href} asChild variant={action.variant} size="sm" className="rounded-full">
+              <Button
+                key={action.href}
+                asChild
+                variant={action.variant}
+                size="sm"
+                className="rounded-full"
+              >
                 <Link href={action.href}>{action.label}</Link>
               </Button>
             ))}
@@ -74,7 +80,9 @@ export default async function SettingsLayout({ children }: PropsWithChildren) {
         ))}
       </section>
 
-      <section className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm">{children}</section>
+      <section className="rounded-3xl border border-border/60 bg-card/70 p-6 shadow-sm">
+        {children}
+      </section>
     </div>
   );
 }
