@@ -1,25 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
-import type { inferRouterOutputs } from "@trpc/server";
-
 import { Activity, ArrowUpRight, ShieldAlert, Sparkles } from "@/components/icons";
 import {
-  Badge,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Tooltip,
-  TooltipContent,
+  Badge,
   TooltipProvider,
+  Tooltip,
   TooltipTrigger,
+  TooltipContent,
 } from "@/components/ui";
 import { DataTable, DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
-import { adminConfig } from "@/config/admin";
 import { trpc } from "@/lib/trpc/client";
 import type { AppRouter } from "@/lib/trpc/router";
+import type { inferRouterOutputs } from "@trpc/server";
+import { useMemo } from "react";
 
 type Overview = inferRouterOutputs<AppRouter>["admin"]["analytics"]["overview"];
 type ProblemRow = inferRouterOutputs<AppRouter>["admin"]["analytics"]["problems"][number];
@@ -48,25 +46,25 @@ export function AdminAnalyticsDashboard({
   const problems = problemsQuery.data ?? initialProblems;
   const cards = [
     {
-      label: adminConfig.analytics.cards.views,
+      label: "Problem views",
       value: overview.totals.views.toLocaleString(),
       helper: `${overview.totals.uniqueSessions.toLocaleString()} unique sessions`,
       icon: Activity,
     },
     {
-      label: adminConfig.analytics.cards.intent,
+      label: "Solve intent",
       value: percent(overview.totals.solveIntentRate),
       helper: "Clicked Start Solving",
       icon: Sparkles,
     },
     {
-      label: adminConfig.analytics.cards.hints,
+      label: "Hint usage",
       value: percent(overview.totals.hintUsageRate),
       helper: "Opened notes or hints",
       icon: ShieldAlert,
     },
     {
-      label: adminConfig.analytics.cards.bounce,
+      label: "Bounce rate",
       value: percent(overview.totals.bounceRate),
       helper: "Exited before interacting",
       icon: ArrowUpRight,
@@ -126,39 +124,27 @@ export function AdminAnalyticsDashboard({
   const deviceTotal = overview.devices.reduce((sum, device) => sum + device.count, 0) || 1;
 
   return (
-    <div className="space-y-8 font-mono">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-2 border-border bg-background p-6">
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">
-            {adminConfig.analytics.marker}
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase text-muted-foreground tracking-[0.3em]">
+            Experience telemetry
           </p>
-          <h1 className="text-4xl font-black tracking-tight">
-            {adminConfig.analytics.headline.line1}
-            <br />
-            {adminConfig.analytics.headline.line2}
-            <br />
-            <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
-              {adminConfig.analytics.headline.line3}
-            </span>
-          </h1>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {adminConfig.analytics.description} Window: last {Math.round(overview.windowHours / 24)}{" "}
-            days.
+          <h1 className="text-3xl font-semibold tracking-tight">User interaction analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            Window: last {Math.round(overview.windowHours / 24)} days
           </p>
         </div>
-        <Badge className="rounded-none border-2 border-border bg-background px-3 py-1 text-[10px] font-bold uppercase text-primary">
-          {adminConfig.analytics.cards.live}
+        <Badge variant="outline" className="border-primary/30 text-primary">
+          Live refresh
         </Badge>
       </div>
 
-      <div className="grid gap-px bg-border/40 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <Card
-              key={card.label}
-              className="border-2 border-border bg-background p-0 shadow-none transition-colors hover:border-primary/50 hover:bg-accent"
-            >
+            <Card key={card.label} className="border-border/60 bg-card/80">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -168,7 +154,7 @@ export function AdminAnalyticsDashboard({
                     <p className="mt-2 text-2xl font-semibold">{card.value}</p>
                     <p className="text-xs text-muted-foreground">{card.helper}</p>
                   </div>
-                  <span className="border-2 border-border bg-primary/10 p-3 text-primary">
+                  <span className="rounded-xl bg-primary/10 p-3 text-primary">
                     <Icon className="h-5 w-5" />
                   </span>
                 </div>
@@ -178,17 +164,15 @@ export function AdminAnalyticsDashboard({
         })}
       </div>
 
-      <div className="grid gap-px bg-border/40 lg:grid-cols-3">
-        <Card className="border-2 border-border bg-background lg:col-span-2">
-          <CardHeader className="border-b-2 border-border">
-            <CardTitle className="text-lg font-black">
-              {adminConfig.analytics.devices.title}
-            </CardTitle>
-            <CardDescription>{adminConfig.analytics.devices.description}</CardDescription>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="border-border/60 bg-card/80 lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Device mix</CardTitle>
+            <CardDescription>Sessions per device type</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {overview.devices.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{adminConfig.analytics.devices.empty}</p>
+              <p className="text-sm text-muted-foreground">No device data yet.</p>
             ) : (
               overview.devices.map((device) => (
                 <div key={device.deviceType} className="space-y-1">
@@ -198,9 +182,9 @@ export function AdminAnalyticsDashboard({
                       {percent(device.count / deviceTotal)}
                     </p>
                   </div>
-                  <div className="h-2 bg-muted">
+                  <div className="h-2 rounded-full bg-muted">
                     <div
-                      className="h-2 bg-primary"
+                      className="h-2 rounded-full bg-primary"
                       style={{ width: `${(device.count / deviceTotal) * 100}%` }}
                     />
                   </div>
@@ -209,55 +193,42 @@ export function AdminAnalyticsDashboard({
             )}
           </CardContent>
         </Card>
-        <Card className="border-2 border-border bg-background">
-          <CardHeader className="border-b-2 border-border">
-            <CardTitle className="text-lg font-black">
-              {adminConfig.analytics.quality.title}
-            </CardTitle>
-            <CardDescription>{adminConfig.analytics.quality.description}</CardDescription>
+        <Card className="border-border/60 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-base">Quality signals</CardTitle>
+            <CardDescription>Realtime error and stuck signals</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between border-2 border-border px-3 py-2">
+            <div className="flex items-center justify-between rounded-2xl border border-border/60 px-3 py-2">
               <div>
-                <p className="text-sm font-medium">{adminConfig.analytics.quality.tti}</p>
+                <p className="text-sm font-medium">Average time to interact</p>
                 <p className="text-xs text-muted-foreground">
                   {durationLabel(overview.totals.avgTimeToFirstInteractionMs)}
                 </p>
               </div>
-              <Badge
-                variant="secondary"
-                className="rounded-none border-2 border-border text-[11px]"
-              >
-                {overview.totals.avgTimeToFirstInteractionMs
-                  ? adminConfig.analytics.quality.healthy
-                  : adminConfig.analytics.quality.collecting}
+              <Badge variant="secondary" className="text-[11px]">
+                {overview.totals.avgTimeToFirstInteractionMs ? "healthy" : "collecting"}
               </Badge>
             </div>
             <TooltipProvider>
               <div className="space-y-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center justify-between border-2 border-border px-3 py-2">
+                    <div className="flex items-center justify-between rounded-2xl border border-border/60 px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium">
-                          {adminConfig.analytics.quality.client}
-                        </p>
+                        <p className="text-sm font-medium">Client errors</p>
                         <p className="text-xs text-muted-foreground">UI exceptions</p>
                       </div>
                       <Badge variant="destructive">{overview.errorCounts.clientErrors}</Badge>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent className="rounded-none border-2 border-border bg-background font-mono text-xs text-foreground">
-                    Captured via client.error events
-                  </TooltipContent>
+                  <TooltipContent>Captured via client.error events</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center justify-between border-2 border-border px-3 py-2">
+                    <div className="flex items-center justify-between rounded-2xl border border-border/60 px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium">
-                          {adminConfig.analytics.quality.network}
-                        </p>
+                        <p className="text-sm font-medium">Network failures</p>
                         <p className="text-xs text-muted-foreground">tRPC and beacon errors</p>
                       </div>
                       <Badge variant="outline" className="text-destructive">
@@ -265,9 +236,7 @@ export function AdminAnalyticsDashboard({
                       </Badge>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent className="rounded-none border-2 border-border bg-background font-mono text-xs text-foreground">
-                    Failed `network.request_failed` events
-                  </TooltipContent>
+                  <TooltipContent>Failed `network.request_failed` events</TooltipContent>
                 </Tooltip>
               </div>
             </TooltipProvider>
@@ -275,16 +244,14 @@ export function AdminAnalyticsDashboard({
         </Card>
       </div>
 
-      <Card className="border-2 border-border bg-background">
+      <Card className="border-border/60 bg-card/80">
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle className="text-lg font-black">
-              {adminConfig.analytics.table.title}
-            </CardTitle>
-            <CardDescription>{adminConfig.analytics.table.description}</CardDescription>
+            <CardTitle className="text-base">Top problem insights</CardTitle>
+            <CardDescription>Pages with highest view volume in this window</CardDescription>
           </div>
-          <Badge className="rounded-none border-2 border-border px-3 py-1 text-[10px] font-bold uppercase">
-            {problems.length} {adminConfig.analytics.table.tracked}
+          <Badge variant="secondary" className="text-[11px]">
+            {problems.length} tracked
           </Badge>
         </CardHeader>
         <CardContent>

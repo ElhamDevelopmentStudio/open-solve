@@ -1,18 +1,23 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
-import { useState } from "react";
-
-import { LoaderCircle, Send, Trophy, User } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { leaderboardsConfig } from "@/config/leaderboards";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLeaderboardRealtime } from "@/hooks/use-leaderboard-realtime";
 import type { LeaderboardEntry, LeaderboardWindow } from "@/lib/leaderboard/service";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { Award01Icon, Loading03Icon, Medal01Icon } from "hugeicons-react";
+import Link from "next/link";
+import { useState } from "react";
+
+const WINDOW_TABS: Array<{ value: LeaderboardWindow; label: string }> = [
+  { value: "all_time", label: "All time" },
+  { value: "monthly", label: "Monthly" },
+  { value: "weekly", label: "Weekly" },
+];
 
 const PAGE_SIZE = 30;
 
@@ -193,79 +198,64 @@ function LeaderboardSection({
   hasMore,
   loadMore,
 }: LeaderboardSectionProps) {
-  const { section } = leaderboardsConfig;
-
   return (
     <div className="space-y-6">
-      <div className="border-2 border-border bg-background p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="font-mono text-2xl font-black uppercase sm:text-3xl">{title}</h1>
-              <Badge
-                variant="secondary"
-                className="rounded-none border border-success/30 bg-success/10 font-mono text-[10px] font-bold uppercase text-success"
-              >
-                {section.badge}
-              </Badge>
-            </div>
-            {subtitle && <p className="font-mono text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <Badge
+              variant="secondary"
+              className="rounded-full text-[10px] font-semibold uppercase tracking-wide"
+            >
+              Live
+            </Badge>
           </div>
-          {onWindowChange && (
-            <div className="grid grid-cols-3 gap-px border-2 border-border bg-border">
-              {section.windows.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => onWindowChange(tab.value as LeaderboardWindow)}
-                  className={`border-none bg-background px-4 py-2 font-mono text-xs font-bold uppercase transition-colors hover:bg-accent ${
-                    window === tab.value
-                      ? "bg-primary/5 text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
+        {onWindowChange ? (
+          <Tabs
+            value={window}
+            onValueChange={(value) => onWindowChange(value as LeaderboardWindow)}
+          >
+            <TabsList className="rounded-xl">
+              {WINDOW_TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg capitalize">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : null}
       </div>
-
       <LeaderboardHero hero={hero} meta={meta} />
-      {viewerEntry && <ViewerBadge entry={viewerEntry} />}
+      {viewerEntry ? <ViewerBadge entry={viewerEntry} /> : null}
       <LeaderboardTable entries={entries} isLoading={isLoading} />
-
-      <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-border bg-background p-4 font-mono text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-muted-foreground">
         <p>
-          {section.meta.updated}{" "}
+          Updated{" "}
           {meta?.generatedAt
             ? formatDistanceToNow(new Date(meta.generatedAt), { addSuffix: true })
-            : section.meta.recent}
+            : "recently"}
         </p>
-        <p>
-          {meta?.totalEntries
-            ? `${meta.totalEntries.toLocaleString()} ${section.meta.competitors}`
-            : null}
-        </p>
+        <p>{meta?.totalEntries ? `${meta.totalEntries.toLocaleString()} competitors` : null}</p>
       </div>
-
-      {hasMore && (
+      {hasMore ? (
         <Button
           onClick={loadMore}
           disabled={isFetchingMore}
           variant="outline"
-          className="h-11 w-full rounded-none border-2 border-border font-mono text-sm font-bold uppercase hover:border-primary/50"
+          className="w-full rounded-xl"
         >
           {isFetchingMore ? (
             <>
-              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              {section.actions.loadingMore}
+              <Loading03Icon className="mr-2 h-4 w-4 animate-spin" strokeWidth={2} /> Loading more
             </>
           ) : (
-            section.actions.loadMore
+            "Load more"
           )}
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -277,55 +267,52 @@ function LeaderboardHero({
   hero: LeaderboardEntry[];
   meta?: { periodStart: Date | null; periodEnd: Date | null } | null;
 }) {
-  const { section } = leaderboardsConfig;
-
   if (hero.length === 0) {
     return null;
   }
-
   const range = meta?.periodStart ? formatRange(meta.periodStart, meta?.periodEnd ?? null) : null;
-
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-3">
       {hero.map((entry, index) => (
         <div
           key={entry.user.id}
           className={cn(
-            "border-2 border-border bg-background p-6",
-            index === 0 && "border-primary/50 bg-primary/5",
+            "premium-card space-y-4 rounded-2xl p-6",
+            index === 0 && "border-primary/40 shadow-lg shadow-primary/10",
           )}
         >
-          <div className="mb-4 flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex h-12 w-12 items-center justify-center border-2",
-                index === 0 ? "border-primary bg-primary/10" : "border-border bg-background",
+                "flex h-12 w-12 items-center justify-center rounded-xl",
+                index === 0 ? "bg-primary/10" : "bg-muted",
               )}
             >
-              <Trophy
+              <Award01Icon
                 className={cn("h-6 w-6", index === 0 ? "text-primary" : "text-muted-foreground")}
+                strokeWidth={2}
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-mono text-base font-bold">
+              <p className="text-lg font-bold">
                 #{entry.rank} {entry.user.handle}
               </p>
-              {range && <p className="truncate font-mono text-xs text-muted-foreground">{range}</p>}
+              {range ? <p className="truncate text-xs text-muted-foreground">{range}</p> : null}
             </div>
           </div>
-          <div className="flex items-center justify-around border-2 border-border bg-background/50 py-4">
+          <div className="flex items-center justify-around rounded-xl border border-border/50 bg-card/30 py-3">
             <div className="text-center">
-              <p className="font-mono text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {section.hero.score}
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Score
               </p>
-              <p className="font-mono text-2xl font-bold">{formatScore(entry.score)}</p>
+              <p className="text-2xl font-bold">{formatScore(entry.score)}</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="text-center">
-              <p className="font-mono text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {section.hero.solved}
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Solved
               </p>
-              <p className="font-mono text-2xl font-bold">{entry.solved}</p>
+              <p className="text-2xl font-bold">{entry.solved}</p>
             </div>
           </div>
         </div>
@@ -339,16 +326,12 @@ type ViewerBadgeProps = {
 };
 
 function ViewerBadge({ entry }: ViewerBadgeProps) {
-  const { section } = leaderboardsConfig;
-
   return (
-    <div className="flex items-center gap-3 border-2 border-primary/30 bg-primary/5 px-6 py-4 font-mono text-sm">
-      <Send className="h-5 w-5 text-primary" />
-      <p className="text-foreground">
-        {section.viewer.prefix} <span className="font-bold text-primary">#{entry.rank}</span>{" "}
-        {section.viewer.with}{" "}
-        <span className="font-bold text-primary">{Math.round(entry.score)}</span>{" "}
-        {section.viewer.points}
+    <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-6 py-4 text-sm">
+      <Medal01Icon className="h-5 w-5 text-primary" strokeWidth={2} />
+      <p className="font-medium text-primary">
+        You&apos;re currently ranked <span className="font-bold">#{entry.rank}</span> with{" "}
+        <span className="font-bold">{Math.round(entry.score)}</span> points
       </p>
     </div>
   );
@@ -360,8 +343,6 @@ type TableProps = {
 };
 
 function LeaderboardTable({ entries, isLoading }: TableProps) {
-  const { section } = leaderboardsConfig;
-
   const showSubmissions = entries.some((entry) => typeof entry.submissions === "number");
   const showAvgRuntime = entries.some(
     (entry) => typeof entry.avgRuntimeMs === "number" && entry.avgRuntimeMs !== null,
@@ -372,66 +353,64 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
 
   if (isLoading && entries.length === 0) {
     return (
-      <div className="flex items-center justify-center border-2 border-border bg-background p-16 font-mono text-sm text-muted-foreground">
-        <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />
-        {section.table.loading}
+      <div className="premium-card rounded-2xl p-12">
+        <div className="flex items-center justify-center text-muted-foreground">
+          <Loading03Icon className="mr-2 h-5 w-5 animate-spin" strokeWidth={2} /> Loading
+          leaderboard…
+        </div>
       </div>
     );
   }
 
   if (entries.length === 0) {
     return (
-      <div className="border-2 border-dashed border-border bg-background p-16 text-center font-mono text-sm text-muted-foreground">
-        {section.table.empty}
+      <div className="premium-card rounded-2xl p-12">
+        <p className="text-center text-muted-foreground">
+          Leaderboard entries will appear once submissions are available
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden border-2 border-border bg-background">
-      <div className="hidden border-b-2 border-border bg-muted/30 font-mono text-xs font-bold uppercase text-muted-foreground lg:grid lg:grid-cols-12">
-        <span className="col-span-1 px-6 py-4">{section.table.headers.rank}</span>
-        <span className="col-span-4 px-6 py-4">{section.table.headers.competitor}</span>
-        <span className="col-span-2 px-6 py-4">{section.table.headers.score}</span>
-        <span className="col-span-2 px-6 py-4">{section.table.headers.solved}</span>
-        {showSubmissions && (
-          <span className="col-span-1 px-6 py-4">{section.table.headers.attempts}</span>
-        )}
-        {showPenalty && (
-          <span className="col-span-1 px-6 py-4">{section.table.headers.penalty}</span>
-        )}
-        {showAvgRuntime && (
-          <span className="col-span-1 px-6 py-4">{section.table.headers.runtime}</span>
-        )}
+    <div className="premium-card overflow-hidden rounded-2xl">
+      <div className="hidden border-b bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:grid lg:grid-cols-12">
+        <span className="col-span-1 px-6 py-4">Rank</span>
+        <span className="col-span-4 px-6 py-4">Competitor</span>
+        <span className="col-span-2 px-6 py-4">Score</span>
+        <span className="col-span-2 px-6 py-4">Solved</span>
+        {showSubmissions ? <span className="col-span-1 px-6 py-4">Attempts</span> : null}
+        {showPenalty ? <span className="col-span-1 px-6 py-4">Penalty</span> : null}
+        {showAvgRuntime ? <span className="col-span-1 px-6 py-4">Runtime</span> : null}
       </div>
-      <div className="divide-y-2 divide-border">
+      <div className="divide-y divide-border/50">
         {entries.map((entry, index) => (
           <div
             key={`${entry.user.id}-${entry.rank}-${index}`}
-            className="grid grid-cols-2 items-center gap-3 px-6 py-5 font-mono text-sm transition-colors hover:bg-accent lg:grid-cols-12"
+            className="grid grid-cols-2 items-center gap-3 px-6 py-5 text-sm smooth-transition hover:bg-muted/30 lg:grid-cols-12"
           >
             <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
-              <span className="text-base font-bold text-primary">#{entry.rank}</span>
+              <span className="text-base font-bold">#{entry.rank}</span>
             </div>
             <div className="col-span-2 flex items-center gap-3 lg:col-span-4">
-              <Avatar className="h-11 w-11 rounded-none border-2 border-border">
+              <Avatar className="h-11 w-11 ring-2 ring-border/30 ring-offset-2 ring-offset-background">
                 {entry.user.avatarUrl ? (
                   <AvatarImage src={entry.user.avatarUrl} alt={entry.user.handle} />
                 ) : null}
-                <AvatarFallback className="rounded-none bg-primary/10 font-mono text-xs font-bold uppercase text-primary">
-                  <User className="h-4 w-4" />
+                <AvatarFallback className="text-xs font-semibold">
+                  {entry.user.handle.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/u/${entry.user.handle}`}
-                  className="font-bold text-foreground hover:text-primary hover:underline"
+                  className="font-semibold text-primary hover:underline"
                 >
                   @{entry.user.handle}
                 </Link>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <RoleBadge role={entry.user.role} status={entry.user.status} />
-                  {entry.user.country && <span>{formatCountry(entry.user.country)}</span>}
+                  {entry.user.country ? <span>{formatCountry(entry.user.country)}</span> : null}
                 </div>
               </div>
             </div>
@@ -439,23 +418,23 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
               <p className="text-base font-bold">{formatScore(entry.score)}</p>
             </div>
             <div className="col-span-1 lg:col-span-2">
-              <p className="font-bold">{entry.solved}</p>
+              <p className="font-semibold">{entry.solved}</p>
             </div>
-            {showSubmissions && (
+            {showSubmissions ? (
               <div className="col-span-1">
                 {typeof entry.submissions === "number" ? entry.submissions : "–"}
               </div>
-            )}
-            {showPenalty && (
+            ) : null}
+            {showPenalty ? (
               <div className="col-span-1 text-xs text-muted-foreground">
                 {typeof entry.timePenalty === "number" ? `${entry.timePenalty}` : "–"}
               </div>
-            )}
-            {showAvgRuntime && (
+            ) : null}
+            {showAvgRuntime ? (
               <div className="col-span-1 text-xs text-muted-foreground">
                 {entry.avgRuntimeMs ? `${Math.round(entry.avgRuntimeMs)} ms` : "–"}
               </div>
-            )}
+            ) : null}
           </div>
         ))}
       </div>
@@ -466,21 +445,21 @@ function LeaderboardTable({ entries, isLoading }: TableProps) {
 function RoleBadge({ role, status }: { role: string; status: string }) {
   if (status === "SHADOW_BANNED") {
     return (
-      <Badge variant="destructive" className="rounded-none border font-mono text-[10px] font-bold">
+      <Badge variant="destructive" className="rounded-full text-[10px]">
         Shadow Banned
       </Badge>
     );
   }
   if (role === "ADMIN") {
     return (
-      <Badge variant="secondary" className="rounded-none border font-mono text-[10px] font-bold">
+      <Badge variant="secondary" className="rounded-full text-[10px]">
         Admin
       </Badge>
     );
   }
   if (role === "PROBLEM_CURATOR") {
     return (
-      <Badge variant="outline" className="rounded-none border font-mono text-[10px] font-bold">
+      <Badge variant="outline" className="rounded-full text-[10px]">
         Curator
       </Badge>
     );

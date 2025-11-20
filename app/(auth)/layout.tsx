@@ -1,12 +1,8 @@
-import Link from "next/link";
-import type { PropsWithChildren } from "react";
-import { redirect } from "next/navigation";
-
-import { CommandPalette } from "@/components/marketing/command-palette";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { CheckCircle2, Code2, Sparkles } from "@/components/icons";
-import { authConfig } from "@/config/auth";
 import { getSession } from "@/lib/auth/session";
+import { Code2, Sparkles } from "@/components/icons";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import type { PropsWithChildren } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -16,75 +12,72 @@ export default async function AuthLayout({ children }: PropsWithChildren) {
     redirect("/dashboard");
   }
 
-  const { layout } = authConfig;
-
   return (
-    <>
-      <CommandPalette />
-      <div className="min-h-screen bg-background text-foreground">
-        <header className="border-b border-border/70 bg-background/95 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-4 lg:px-12">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-none border-2 border-primary bg-linear-to-br from-primary/15 to-transparent">
-                <Code2 className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex flex-col leading-tight">
-                <span className="font-mono text-sm font-bold uppercase tracking-tight">
-                  OpenSolve
-                </span>
-                <span className="font-mono text-[11px] uppercase text-muted-foreground">
-                  {layout.badge}
-                </span>
-              </div>
-            </Link>
-            <div className="flex items-center gap-3">
-              <kbd className="rounded-none border border-border px-2 py-1 font-mono text-xs">
-                ⌘K
-              </kbd>
-              <ThemeToggle />
+    <div className="relative flex min-h-screen">
+      <div className="hidden w-2/5 bg-gradient-to-br from-primary/5 via-background to-purple-500/5 lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Code2 className="h-5 w-5" />
+            </div>
+            OpenSolve
+          </Link>
+        </div>
+
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3 w-3" />
+              For developers, by developers
+            </div>
+            <h2 className="max-w-md text-3xl font-bold leading-tight tracking-tight">
+              Master algorithms through deliberate practice
+            </h2>
+            <p className="max-w-sm text-muted-foreground">
+              Join a community of engineers solving problems, competing in contests, and sharpening
+              their craft every day.
+            </p>
+          </div>
+
+          <div className="space-y-4 border-l-2 border-border pl-6">
+            <div>
+              <div className="text-2xl font-bold">12,000+</div>
+              <div className="text-sm text-muted-foreground">Active developers</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">500+</div>
+              <div className="text-sm text-muted-foreground">Curated problems</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">50+</div>
+              <div className="text-sm text-muted-foreground">Weekly contests</div>
             </div>
           </div>
-        </header>
+        </div>
 
-        <main className="mx-auto flex max-w-screen-2xl flex-col gap-8 px-6 py-10 lg:px-12 lg:py-14">
-          <div className="grid gap-8 lg:grid-cols-[28rem_1fr]">
-            <aside className="flex flex-col gap-5 border-2 border-border bg-background/90 p-6 shadow-primary/20">
-              <div className="inline-flex items-center gap-2 border-2 border-primary/50 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-primary">
-                <Sparkles className="h-4 w-4" />
-                Secure entry
-              </div>
-              <h2 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-3xl font-black leading-tight text-transparent">
-                {layout.headline}
-              </h2>
-              <p className="font-mono text-sm text-muted-foreground">{layout.tagline}</p>
-              <div className="space-y-3 border-2 border-border p-4">
-                <div className="font-mono text-xs font-bold uppercase text-primary/80">
-                  [00] Platform pulse
-                </div>
-                <div className="grid gap-px bg-border/40">
-                  {layout.stats.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="flex items-center justify-between bg-background px-3 py-2 text-sm"
-                    >
-                      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                        {stat.label}
-                      </span>
-                      <span className="font-mono text-sm font-bold">{stat.value}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  Authentication is audited and contest-safe by design.
-                </div>
-              </div>
-            </aside>
-
-            <section className="space-y-8">{children}</section>
-          </div>
-        </main>
+        <div className="text-xs text-muted-foreground">© 2025 OpenSolve. Built with care.</div>
       </div>
-    </>
+
+      <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Code2 className="h-5 w-5" />
+              </div>
+              OpenSolve
+            </Link>
+          </div>
+
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { SubmissionStatus } from "@prisma/client";
 import { toast } from "sonner";
@@ -78,239 +77,170 @@ export function AdminSubmissionsClient({ initialData }: { initialData: Submissio
     onError: (error) => toast.error("Batch rejudge failed", { description: error.message }),
   });
 
-  const [pendingAction, setPendingAction] = useState<
-    | { type: "singleRejudge"; submissionId: string }
-    | { type: "toggleVisibility"; submissionId: string; hide: boolean }
-    | { type: "batchRejudge" }
-    | null
-  >(null);
-
   return (
-    <>
-      <Card className="border-border/60 bg-card/80">
-        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Judge and verdict control</p>
-            <CardTitle className="text-2xl">Submissions & queue</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Spot stuck jobs, rejudge selectively, and hide sensitive verdicts.
-            </p>
+    <Card className="border-border/60 bg-card/80">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-xs uppercase text-muted-foreground">Judge and verdict control</p>
+          <CardTitle className="text-2xl">Submissions & queue</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Spot stuck jobs, rejudge selectively, and hide sensitive verdicts.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-1 items-center gap-2 rounded-xl border border-border/60 bg-background px-3 py-1.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search ID, user, or problem"
+              className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+            />
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-border/60 bg-background px-3 py-1.5">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search ID, user, or problem"
-                className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
-              />
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as SubmissionStatus | "all")}
-            >
-              <SelectTrigger className="sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {Object.values(SubmissionStatus).map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {submissions.map((submission) => (
-            <div
-              key={submission.id}
-              className="rounded-xl border border-border/60 bg-background/80 p-4 transition hover:border-primary/40"
-            >
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Gavel className="h-4 w-4 text-primary" />
-                    <p className="font-semibold">{submission.problem.currentVersion?.title}</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    #{submission.id} • {submission.user.handle} • {submission.language.displayName}
-                  </p>
-                </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as SubmissionStatus | "all")}
+          >
+            <SelectTrigger className="sm:w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {Object.values(SubmissionStatus).map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {submissions.map((submission) => (
+          <div
+            key={submission.id}
+            className="rounded-xl border border-border/60 bg-background/80 p-4 transition hover:border-primary/40"
+          >
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{submission.status}</Badge>
-                  {submission.verdictCode ? (
-                    <Badge variant="secondary">{submission.verdictCode}</Badge>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      setPendingAction({ type: "singleRejudge", submissionId: submission.id })
-                    }
-                    disabled={rejudge.isPending}
-                  >
-                    Rejudge
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setPendingAction({
-                        type: "toggleVisibility",
-                        submissionId: submission.id,
-                        hide: !submission.hiddenFromProfile,
-                      })
-                    }
-                  >
-                    {submission.hiddenFromProfile ? "Unhide" : "Hide"}
-                  </Button>
+                  <Gavel className="h-4 w-4 text-primary" />
+                  <p className="font-semibold">{submission.problem.currentVersion?.title}</p>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  #{submission.id} • {submission.user.handle} • {submission.language.displayName}
+                </p>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                <span>
-                  {formatDistanceToNow(new Date(submission.createdAt), {
-                    addSuffix: true,
-                  })}
-                </span>
-                <span>{submission.problem.slug}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{submission.status}</Badge>
+                {submission.verdictCode ? (
+                  <Badge variant="secondary">{submission.verdictCode}</Badge>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => rejudge.mutate({ submissionId: submission.id })}
+                  disabled={rejudge.isPending}
+                >
+                  Rejudge
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    toggleVisibility.mutate({
+                      submissionId: submission.id,
+                      hiddenFromProfile: !submission.hiddenFromProfile,
+                    })
+                  }
+                >
+                  {submission.hiddenFromProfile ? "Unhide" : "Hide"}
+                </Button>
               </div>
             </div>
-          ))}
-          {submissions.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-              No submissions match that filter.
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <span>
+                {formatDistanceToNow(new Date(submission.createdAt), {
+                  addSuffix: true,
+                })}
+              </span>
+              <span>{submission.problem.slug}</span>
             </div>
-          ) : null}
-          <div className="mt-8 rounded-xl border border-border/60 bg-background/60 p-4">
-            <h3 className="text-base font-semibold">Batch rejudge</h3>
-            <p className="text-xs text-muted-foreground">
-              Provide at least one constraint (user, problem slug, contest slug, or language).
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Input
-                placeholder="User ID"
-                value={scope.userId}
-                onChange={(event) => setScope((prev) => ({ ...prev, userId: event.target.value }))}
-              />
-              <Input
-                placeholder="Problem slug"
-                value={scope.problemSlug}
-                onChange={(event) =>
-                  setScope((prev) => ({ ...prev, problemSlug: event.target.value }))
-                }
-              />
-              <Input
-                placeholder="Contest slug"
-                value={scope.contestSlug}
-                onChange={(event) =>
-                  setScope((prev) => ({ ...prev, contestSlug: event.target.value }))
-                }
-              />
-              <Input
-                placeholder="Language code (e.g. cpp17)"
-                value={scope.languageCode}
-                onChange={(event) =>
-                  setScope((prev) => ({ ...prev, languageCode: event.target.value }))
-                }
-              />
-              <Input
-                type="number"
-                min={1}
-                max={200}
-                value={scope.limit}
-                onChange={(event) =>
-                  setScope((prev) => ({ ...prev, limit: Number(event.target.value) }))
-                }
-              />
-              <Input
-                placeholder="Reason (optional)"
-                value={scope.reason}
-                onChange={(event) => setScope((prev) => ({ ...prev, reason: event.target.value }))}
-              />
-            </div>
-            <Button
-              className="mt-4"
-              disabled={
-                rejudgeScope.isPending ||
-                (!scope.userId && !scope.problemSlug && !scope.contestSlug && !scope.languageCode)
-              }
-              onClick={() => setPendingAction({ type: "batchRejudge" })}
-            >
-              {rejudgeScope.isPending ? "Rejudging…" : "Rejudge selection"}
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <ConfirmDialog
-        variant="warning"
-        open={pendingAction?.type === "singleRejudge"}
-        onOpenChange={(open) => {
-          if (!open) setPendingAction(null);
-        }}
-        title="Rejudge submission?"
-        description="This will re-run the submission in the judge and may change its verdict."
-        confirmLabel="Rejudge"
-        loading={rejudge.isPending}
-        onConfirm={() => {
-          if (pendingAction?.type === "singleRejudge") {
-            rejudge.mutate({ submissionId: pendingAction.submissionId });
-            setPendingAction(null);
-          }
-        }}
-      />
-      <ConfirmDialog
-        variant="default"
-        open={pendingAction?.type === "toggleVisibility"}
-        onOpenChange={(open) => {
-          if (!open) setPendingAction(null);
-        }}
-        title={
-          pendingAction?.type === "toggleVisibility" && pendingAction.hide
-            ? "Hide submission from profile?"
-            : "Unhide submission?"
-        }
-        description="Visibility changes affect user profile exposure and leaderboards."
-        confirmLabel="Confirm"
-        loading={toggleVisibility.isPending}
-        onConfirm={() => {
-          if (pendingAction?.type === "toggleVisibility") {
-            toggleVisibility.mutate({
-              submissionId: pendingAction.submissionId,
-              hiddenFromProfile: pendingAction.hide,
-            });
-            setPendingAction(null);
-          }
-        }}
-      />
-      <ConfirmDialog
-        variant="destructive"
-        open={pendingAction?.type === "batchRejudge"}
-        onOpenChange={(open) => {
-          if (!open) setPendingAction(null);
-        }}
-        title="Dispatch batch rejudge?"
-        description="Rejudges all submissions matching the provided filters. This can heavily load the judge."
-        confirmLabel="Dispatch"
-        loading={rejudgeScope.isPending}
-        onConfirm={() => {
-          if (pendingAction?.type === "batchRejudge") {
-            rejudgeScope.mutate({
-              userId: scope.userId || undefined,
-              problemSlug: scope.problemSlug || undefined,
-              contestSlug: scope.contestSlug || undefined,
-              languageCode: scope.languageCode || undefined,
-              limit: scope.limit,
-              reason: scope.reason || undefined,
-            });
-            setPendingAction(null);
-          }
-        }}
-      />
-    </>
+        ))}
+        {submissions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
+            No submissions match that filter.
+          </div>
+        ) : null}
+        <div className="mt-8 rounded-xl border border-border/60 bg-background/60 p-4">
+          <h3 className="text-base font-semibold">Batch rejudge</h3>
+          <p className="text-xs text-muted-foreground">
+            Provide at least one constraint (user, problem slug, contest slug, or language).
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Input
+              placeholder="User ID"
+              value={scope.userId}
+              onChange={(event) => setScope((prev) => ({ ...prev, userId: event.target.value }))}
+            />
+            <Input
+              placeholder="Problem slug"
+              value={scope.problemSlug}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, problemSlug: event.target.value }))
+              }
+            />
+            <Input
+              placeholder="Contest slug"
+              value={scope.contestSlug}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, contestSlug: event.target.value }))
+              }
+            />
+            <Input
+              placeholder="Language code (e.g. cpp17)"
+              value={scope.languageCode}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, languageCode: event.target.value }))
+              }
+            />
+            <Input
+              type="number"
+              min={1}
+              max={200}
+              value={scope.limit}
+              onChange={(event) =>
+                setScope((prev) => ({ ...prev, limit: Number(event.target.value) }))
+              }
+            />
+            <Input
+              placeholder="Reason (optional)"
+              value={scope.reason}
+              onChange={(event) => setScope((prev) => ({ ...prev, reason: event.target.value }))}
+            />
+          </div>
+          <Button
+            className="mt-4"
+            disabled={
+              rejudgeScope.isPending ||
+              (!scope.userId && !scope.problemSlug && !scope.contestSlug && !scope.languageCode)
+            }
+            onClick={() =>
+              rejudgeScope.mutate({
+                userId: scope.userId || undefined,
+                problemSlug: scope.problemSlug || undefined,
+                contestSlug: scope.contestSlug || undefined,
+                languageCode: scope.languageCode || undefined,
+                limit: scope.limit,
+                reason: scope.reason || undefined,
+              })
+            }
+          >
+            {rejudgeScope.isPending ? "Rejudging…" : "Rejudge selection"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

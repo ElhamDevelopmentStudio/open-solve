@@ -1,44 +1,31 @@
-import type { ComponentProps, ComponentType } from "react";
-import Link from "next/link";
-import { format, formatDistanceToNow } from "date-fns";
-import type { inferRouterOutputs } from "@trpc/server";
-import { ProblemProposalStatus } from "@prisma/client";
-import {
-  ArrowRight05Icon,
-  Award02Icon,
-  Calendar02Icon,
-  Megaphone01Icon,
-  SparklesIcon,
-  Target01Icon,
-} from "hugeicons-react";
-
-import { dashboardConfig } from "@/config/dashboard";
 import {
   RecentSubmissionsTable,
   type RecentSubmissionRow,
 } from "@/components/dashboard/recent-submissions-table";
-import {
-  SubmissionOutcomeChart,
-  type SubmissionOutcomeDatum,
-} from "@/components/dashboard/submission-outcome-chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
 import type { AppRouter } from "@/lib/trpc/router";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { cn } from "@/lib/utils";
+import { ProblemProposalStatus } from "@prisma/client";
+import type { inferRouterOutputs } from "@trpc/server";
+import { formatDistanceToNow } from "date-fns";
+import {
+  ArrowRight05Icon,
+  Award02Icon,
+  Calendar02Icon,
+  CodeSquareIcon,
+  Megaphone01Icon,
+  SparklesIcon,
+  Target01Icon,
+} from "hugeicons-react";
+import Link from "next/link";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type SubmissionSnapshot = RouterOutputs["submissions"]["listMine"];
 type ProposalEntry = RouterOutputs["proposals"]["listMine"][number];
-type ContestOverviewResponse = RouterOutputs["contests"]["overview"];
-type ProposalStatKey = (typeof dashboardConfig.sections.activity.proposals.stats)[number]["key"];
-type ProposalStats = Record<ProposalStatKey, number>;
-type SubmissionEntry = SubmissionSnapshot["items"][number];
-type ContestPreview =
-  | ContestOverviewResponse["upcoming"][number]
-  | ContestOverviewResponse["live"][number]
-  | NonNullable<ContestOverviewResponse["featured"]>;
 
 const ACCEPTED_CODES = new Set(["AC", "MANUAL_ACCEPTED"]);
 
@@ -87,450 +74,358 @@ export default async function DashboardPage() {
   }));
 
   const proposalStats = summarizeProposals(proposals);
-  const heroHighlights = [
-    {
-      label: dashboardConfig.hero.highlights.solved,
-      value: submissionSummary.solvedProblems.toString(),
-      meta: `${submissionSummary.acceptedAttempts} ${dashboardConfig.metrics.solved.metaSuffix}`,
-    },
-    {
-      label: dashboardConfig.hero.highlights.acceptance,
-      value: `${acceptanceRate}%`,
-      meta: `${submissionSummary.totalAttempts} ${dashboardConfig.metrics.acceptance.metaSuffix}`,
-    },
-    {
-      label: dashboardConfig.hero.highlights.contest,
-      value: nextContest ? nextContest.name : dashboardConfig.emptyStates.contests.title,
-      meta: nextContest
-        ? formatDistanceToNow(new Date(nextContest.startsAt), { addSuffix: true })
-        : dashboardConfig.hero.highlights.contestFallback,
-    },
-  ];
-  const operatorName = session?.user.name ?? session?.user.handle ?? "solver";
 
   const metrics = [
     {
-      label: dashboardConfig.metrics.solved.label,
-      value: submissionSummary.solvedProblems.toString(),
-      meta: `${submissionSummary.acceptedAttempts} ${dashboardConfig.metrics.solved.metaSuffix}`,
+      label: "Solved problems",
+      value: submissionSummary.solvedProblems,
+      meta: `${submissionSummary.acceptedAttempts} accepted`,
       icon: Target01Icon,
-      accent: "text-success",
+      accent: "text-emerald-600 dark:text-emerald-300",
     },
     {
-      label: dashboardConfig.metrics.acceptance.label,
+      label: "Acceptance rate",
       value: `${acceptanceRate}%`,
-      meta: `${submissionSummary.totalAttempts} ${dashboardConfig.metrics.acceptance.metaSuffix}`,
+      meta: `${submissionSummary.totalAttempts} attempts`,
       icon: SparklesIcon,
-      accent: "text-info",
+      accent: "text-blue-600 dark:text-blue-300",
     },
     {
-      label: dashboardConfig.metrics.manual.label,
-      value: submissionSummary.manualPending.toString(),
-      meta:
-        submissionSummary.manualPending > 0
-          ? dashboardConfig.metrics.manual.pending
-          : dashboardConfig.metrics.manual.idle,
+      label: "Manual reviews",
+      value: submissionSummary.manualPending,
+      meta: submissionSummary.manualPending > 0 ? "Awaiting staff action" : "All clear",
       icon: Megaphone01Icon,
-      accent: "text-warning",
+      accent: "text-amber-600 dark:text-amber-300",
     },
     {
-      label: dashboardConfig.metrics.performance.label,
+      label: "Fastest runtime",
       value: submissionSummary.fastestRuntimeMs ? `${submissionSummary.fastestRuntimeMs} ms` : "—",
       meta: submissionSummary.bestMemoryKb
-        ? `${dashboardConfig.metrics.performance.memoryLabel}: ${submissionSummary.bestMemoryKb} kb`
-        : dashboardConfig.metrics.performance.fallback,
+        ? `${submissionSummary.bestMemoryKb} kb memory`
+        : "No benchmark",
       icon: ArrowRight05Icon,
-      accent: "text-primary",
+      accent: "text-purple-600 dark:text-purple-300",
     },
   ];
-  const submissionOutcomeSeries = buildSubmissionOutcomeSeries(submissionSnapshot.items);
+
+  const quickActions = [
+    {
+      label: "Browse problems",
+      href: "/problems",
+      icon: CodeSquareIcon,
+      description: "Filter by tags, difficulty, and editorial access.",
+    },
+    {
+      label: "Review submissions",
+      href: "/submissions",
+      icon: SparklesIcon,
+      description: "Inspect verdicts and rerun local tests.",
+    },
+    {
+      label: "Track proposals",
+      href: "/proposals",
+      icon: Megaphone01Icon,
+      description: "Draft new problems or follow up on feedback.",
+    },
+  ];
 
   return (
-    <div className="space-y-12 pb-16 font-mono text-foreground">
-      <section className="grid gap-8 border-2 border-border bg-card px-6 py-8 shadow-md shadow-primary/15 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.4em] text-primary/80">
-              {dashboardConfig.hero.marker}
-            </p>
-            <div className="mt-4 inline-flex items-center gap-3 border border-border bg-background px-3 py-2 text-[11px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
-              <span className="h-2 w-2 animate-pulse bg-primary" />
-              {dashboardConfig.hero.badge}
-            </div>
-          </div>
-          <h1 className="bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl lg:text-6xl">
-            {dashboardConfig.hero.headline.line1} <br />
-            {dashboardConfig.hero.headline.line2} <br />
-            <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
-              {dashboardConfig.hero.headline.line3}
-            </span>
-          </h1>
-          <p className="text-base text-muted-foreground">{dashboardConfig.hero.description}</p>
-          <p className="text-xs font-bold uppercase text-muted-foreground">
-            Operator: {operatorName}
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Button asChild className="h-14 px-8 text-base font-bold">
-              <Link href={dashboardConfig.hero.ctas.primary.href}>
-                {dashboardConfig.hero.ctas.primary.label}
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="h-14 border-2 border-border px-8 text-base font-bold hover:border-primary/60"
-            >
-              <Link href={dashboardConfig.hero.ctas.secondary.href}>
-                {dashboardConfig.hero.ctas.secondary.label}
-              </Link>
-            </Button>
-          </div>
-          <div className="grid gap-px bg-border/50 sm:grid-cols-3">
-            {heroHighlights.map((highlight) => (
-              <HighlightTile key={highlight.label} {...highlight} />
-            ))}
-          </div>
-          <div className="grid gap-px bg-border/50 md:grid-cols-3">
-            {dashboardConfig.quickActions.map((action) => (
-              <QuickActionLink key={action.href} {...action} />
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col border-2 border-border bg-background p-6">
-          <p className="text-xs font-bold uppercase text-muted-foreground">
-            {dashboardConfig.hero.summaryLabel}
-          </p>
-          <p className="mt-3 text-3xl font-black tracking-tight">
-            {submissionSummary.lastSubmissionAt
-              ? formatDistanceToNow(submissionSummary.lastSubmissionAt, { addSuffix: true })
-              : dashboardConfig.hero.historyFallback}
-          </p>
-          <p className="text-sm text-muted-foreground">{dashboardConfig.hero.summaryHelper}</p>
-          <dl className="mt-6 space-y-4 text-xs text-muted-foreground">
-            <div className="flex items-center justify-between">
-              <dt>{dashboardConfig.hero.attemptsLabel}</dt>
-              <dd className="text-foreground">{submissionSummary.totalAttempts}</dd>
-            </div>
-            <div className="h-2 border border-border bg-muted">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${Math.min(acceptanceRate, 100)}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <dt>{dashboardConfig.hero.acceptanceLabel}</dt>
-              <dd className="text-foreground">{acceptanceRate}%</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <SectionHeader
-          marker={dashboardConfig.metrics.section.marker}
-          title={dashboardConfig.metrics.section.title}
-          description={dashboardConfig.metrics.section.description}
-        />
-        <div className="grid gap-px bg-border/60 md:grid-cols-2 xl:grid-cols-4">
-          {metrics.map((metric) => (
-            <MetricCard key={metric.label} {...metric} />
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-6">
-        <SectionHeader
-          marker={dashboardConfig.sections.telemetry.marker}
-          title={dashboardConfig.sections.telemetry.title}
-          description={dashboardConfig.sections.telemetry.description}
-        />
-        <div className="grid gap-6 xl:grid-cols-[1.3fr,0.7fr]">
-          <div className="border-2 border-border bg-card">
-            <div className="flex flex-col gap-2 border-b-2 border-border px-6 py-5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase text-primary/80">
-                  {dashboardConfig.sections.telemetry.chart.title}
-                </p>
-                <Badge variant="outline" className="text-xs">
-                  {submissionOutcomeSeries.length} DAYS
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {dashboardConfig.sections.telemetry.chart.description}
+    <div className="space-y-8 pb-10">
+      <section className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-6 sm:p-8">
+        <div className="grid gap-8 lg:grid-cols-[2fr,1fr]">
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+                Mission Control
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                {session?.user.name ?? session?.user.handle ?? "Solver"}, get ready for the next
+                solve.
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Monitor your submissions, upcoming contests, and proposals without leaving this
+                cockpit.
               </p>
             </div>
-            <div className="px-2 py-6 sm:px-6">
-              {submissionOutcomeSeries.length > 0 ? (
-                <SubmissionOutcomeChart
-                  data={submissionOutcomeSeries}
-                  acceptedLabel={dashboardConfig.sections.telemetry.chart.acceptedLabel}
-                  failedLabel={dashboardConfig.sections.telemetry.chart.failedLabel}
-                />
-              ) : (
-                <EmptyState
-                  title={dashboardConfig.sections.telemetry.chart.empty.title}
-                  description={dashboardConfig.sections.telemetry.chart.empty.description}
-                  actionHref={dashboardConfig.hero.ctas.primary.href}
-                  actionLabel={dashboardConfig.hero.ctas.primary.label}
-                />
-              )}
+            <div className="grid gap-4 sm:grid-cols-3">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="group rounded-2xl border border-border/70 bg-card/70 p-4 transition hover:border-primary/60"
+                >
+                  <action.icon className="h-5 w-5 text-primary" />
+                  <p className="mt-3 text-sm font-semibold text-foreground">{action.label}</p>
+                  <p className="text-xs text-muted-foreground">{action.description}</p>
+                </Link>
+              ))}
             </div>
           </div>
-          <div className="border-2 border-border bg-card p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase text-primary/80">
-                  {dashboardConfig.sections.backlog.title}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {dashboardConfig.sections.backlog.description}
-                </p>
+          <div className="rounded-2xl border border-border/50 bg-background/70 p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Last submission
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">
+              {submissionSummary.lastSubmissionAt
+                ? formatDistanceToNow(submissionSummary.lastSubmissionAt, { addSuffix: true })
+                : "No history yet"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Keep the streak alive by solving any problem today.
+            </p>
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Attempts</span>
+                <span>{submissionSummary.totalAttempts}</span>
+              </div>
+              <div className="h-2 rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${Math.min(acceptanceRate, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Acceptance</span>
+                <span>{acceptanceRate}%</span>
               </div>
             </div>
-            <div className="mt-6 space-y-4">
-              {practiceDeck.length > 0 ? (
-                practiceDeck.map((problem) => (
-                  <article
-                    key={problem.id}
-                    className="border border-border bg-background px-4 py-4 transition-colors hover:border-primary"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <Link
-                        href={`/problems/${problem.slug}`}
-                        className="text-sm font-bold uppercase tracking-tight text-foreground hover:text-primary"
-                      >
-                        {problem.title}
-                      </Link>
-                      <Badge variant="outline" className="text-[10px] uppercase">
-                        {problem.difficulty?.toLowerCase() ??
-                          dashboardConfig.sections.backlog.unknownDifficulty}
-                      </Badge>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {dashboardConfig.sections.backlog.acceptanceLabel}{" "}
-                      {problem.acceptanceRate !== null
-                        ? `${Math.round(problem.acceptanceRate * 100)}%`
-                        : "—"}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {problem.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag.slug} variant="outline" className="text-[10px] uppercase">
-                          {tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <EmptyState {...dashboardConfig.emptyStates.backlog} />
-              )}
-            </div>
+            <Button asChild className="mt-6 w-full">
+              <Link href="/workspace/problems">Solve a problem</Link>
+            </Button>
           </div>
         </div>
       </section>
 
-      <section className="space-y-6">
-        <SectionHeader
-          marker={dashboardConfig.sections.activity.marker}
-          title={dashboardConfig.sections.activity.title}
-          description={dashboardConfig.sections.activity.description}
-        />
-        <div className="grid gap-6 xl:grid-cols-[1.4fr,0.6fr]">
-          <div className="border-2 border-border bg-card">
-            <div className="flex flex-col gap-2 border-b-2 border-border px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <Card key={metric.label} className="border-border/60">
+            <CardContent className="flex items-start justify-between gap-4 p-5">
               <div>
-                <p className="text-xs font-bold uppercase text-primary/80">
-                  {dashboardConfig.sections.activity.table.title}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {dashboardConfig.sections.activity.table.description}
-                </p>
+                <p className="text-xs uppercase text-muted-foreground">{metric.label}</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{metric.value}</p>
+                <p className="text-xs text-muted-foreground">{metric.meta}</p>
               </div>
-              <Button asChild variant="ghost" className="h-10">
-                <Link href={dashboardConfig.sections.activity.table.actionHref} className="gap-2">
-                  {dashboardConfig.sections.activity.table.actionLabel}
+              <div className="rounded-2xl bg-muted/60 p-3">
+                <metric.icon className={cn("h-5 w-5", metric.accent)} />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[2fr,1fr]">
+        <Card className="border-border/60">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Recent activity</CardTitle>
+                <CardDescription>Latest submissions across contests and practice.</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/submissions" className="gap-2">
+                  View all
                   <ArrowRight05Icon className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
-            <div className="px-6 py-6">
-              {submissionRows.length > 0 ? (
-                <RecentSubmissionsTable data={submissionRows} />
-              ) : (
-                <EmptyState {...dashboardConfig.emptyStates.submissions} />
-              )}
-            </div>
-          </div>
-          <div className="border-2 border-border bg-card p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase text-primary/80">
-                  {dashboardConfig.sections.activity.proposals.title}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {dashboardConfig.sections.activity.proposals.description}
-                </p>
-              </div>
-              <Badge variant="outline" className="text-xs tracking-[0.2em]">
-                {proposals.length} {dashboardConfig.sections.activity.proposals.statusLabel}
-              </Badge>
-            </div>
-            <div className="mt-6 grid gap-px bg-border sm:grid-cols-3">
-              {dashboardConfig.sections.activity.proposals.stats.map((stat) => (
-                <div key={stat.key} className="bg-background px-4 py-5 text-center">
-                  <p className="text-2xl font-black">{proposalStats[stat.key]}</p>
-                  <p className="text-[11px] uppercase text-muted-foreground">{stat.label}</p>
+          </CardHeader>
+          <CardContent>
+            {submissionRows.length > 0 ? (
+              <RecentSubmissionsTable data={submissionRows} />
+            ) : (
+              <EmptyState
+                title="No submissions yet"
+                description="Once you submit code, the latest runs will show up here."
+                actionLabel="Browse problems"
+                actionHref="/problems"
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardHeader>
+            <CardTitle className="text-base">Proposal pipeline</CardTitle>
+            <CardDescription>Drafts and submissions you are currently tracking.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              {proposalStats.map((status) => (
+                <div
+                  key={status.label}
+                  className="rounded-2xl border border-border/50 bg-accent/20 p-3 text-center"
+                >
+                  <p className="text-lg font-semibold text-foreground">{status.value}</p>
+                  <p className="text-[11px] uppercase text-muted-foreground">{status.label}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-6 space-y-4">
+            <div className="space-y-3">
               {proposals.slice(0, 4).map((proposal) => (
-                <article
+                <div
                   key={proposal.id}
-                  className="border border-border bg-background px-4 py-3 transition-colors hover:border-primary"
+                  className="rounded-2xl border border-border/60 p-3 transition hover:border-primary/50"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <Link
                       href="/proposals"
-                      className="text-sm font-bold uppercase tracking-tight text-foreground hover:text-primary"
+                      className="text-sm font-medium text-foreground hover:text-primary"
                     >
                       {proposal.title}
                     </Link>
                     <Badge variant="outline" className={statusBadgeClass(proposal.status)}>
-                      {proposal.status.replace("_", " ").toUpperCase()}
+                      {proposal.status.replace("_", " ").toLowerCase()}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboardConfig.sections.activity.proposals.intendedDifficultyLabel}:{" "}
-                    {proposal.intendedDifficulty}
+                    Intended difficulty: {proposal.intendedDifficulty}
                   </p>
-                </article>
+                </div>
               ))}
               {proposals.length === 0 ? (
-                <EmptyState {...dashboardConfig.emptyStates.proposals} />
+                <EmptyState
+                  title="No proposals submitted"
+                  description="Share a new problem idea with the community."
+                  actionLabel="Start proposal"
+                  actionHref="/proposals"
+                  compact
+                />
               ) : null}
             </div>
-            <Button asChild variant="outline" className="mt-6 w-full">
-              <Link href="/proposals/new">
-                {dashboardConfig.sections.activity.proposals.ctaLabel}
-              </Link>
+            <Button asChild className="w-full" variant="outline">
+              <Link href="/proposals/new">Create proposal</Link>
             </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="space-y-6">
-        <SectionHeader
-          marker={dashboardConfig.sections.contests.marker}
-          title={dashboardConfig.sections.contests.title}
-          description={dashboardConfig.sections.contests.description}
-        />
-        <div className="border-2 border-border bg-card p-6">
-          <div className="flex flex-wrap items-center gap-3 border-b-2 border-border pb-4">
-            <Calendar02Icon className="h-5 w-5 text-primary" />
-            <p className="text-xs font-bold uppercase text-muted-foreground">
-              {dashboardConfig.sections.contests.featuredLabel}
-            </p>
-            <Badge variant="outline" className="text-xs uppercase">
-              {contestOverview.live.length} LIVE · {contestOverview.upcoming.length} UPCOMING
-            </Badge>
-          </div>
-          <div className="mt-6 space-y-6">
-            {nextContest ? (
-              <FeaturedContestCard contest={nextContest} />
-            ) : (
-              <EmptyState {...dashboardConfig.emptyStates.contests} />
-            )}
+      <section className="grid gap-6 xl:grid-cols-[1.3fr,0.7fr]">
+        <Card className="border-border/60">
+          <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
-                <p>{dashboardConfig.sections.contests.upcomingLabel}</p>
-                <span>{contestOverview.upcoming.length} events</span>
-              </div>
-              {contestOverview.upcoming.length > 0 ? (
-                <div className="mt-3 grid gap-px bg-border sm:grid-cols-2">
-                  {contestOverview.upcoming.slice(0, 4).map((contest) => (
-                    <article key={contest.id} className="bg-background px-4 py-4">
-                      <p className="text-sm font-bold uppercase tracking-tight">{contest.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(contest.startsAt), { addSuffix: true })}
-                      </p>
-                      <div className="mt-3 flex items-center justify-between text-[11px] uppercase text-muted-foreground">
-                        <span>
-                          {contest.problemCount}{" "}
-                          {dashboardConfig.sections.contests.stats.problems.toLowerCase()}
-                        </span>
-                        <span>
-                          {contest.registrationCount}{" "}
-                          {dashboardConfig.sections.contests.upcomingMeta.teams}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-4">
-                  <EmptyState {...dashboardConfig.emptyStates.contests} />
-                </div>
-              )}
+              <CardTitle className="text-base">Contest radar</CardTitle>
+              <CardDescription>Preview windows, registrations, and rating impact.</CardDescription>
             </div>
-          </div>
-        </div>
+            <Badge variant="outline" className="gap-2 text-xs">
+              <Calendar02Icon className="h-4 w-4" />
+              {contestOverview.live.length} live · {contestOverview.upcoming.length} upcoming
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {nextContest ? (
+              <div className="rounded-2xl border border-border/50 bg-accent/20 p-4">
+                <p className="text-xs uppercase text-muted-foreground">Featured contest</p>
+                <h3 className="mt-1 text-xl font-semibold text-foreground">{nextContest.name}</h3>
+                <p className="text-sm text-muted-foreground">{nextContest.description}</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <ContestStat label="Starts" value={formatDate(nextContest.startsAt)} />
+                  <ContestStat label="Problems" value={nextContest.problemCount} />
+                  <ContestStat
+                    label="Registrations"
+                    value={nextContest.registrationCount}
+                    muted={nextContest.viewerRegistration ? "Registered" : "Not registered"}
+                  />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="uppercase">
+                    {nextContest.type.toLowerCase()}
+                  </Badge>
+                  <Badge variant="outline" className="uppercase">
+                    {nextContest.state.toLowerCase()}
+                  </Badge>
+                  {nextContest.isRated ? (
+                    <Badge variant="outline" className="uppercase">
+                      rated
+                    </Badge>
+                  ) : null}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button asChild size="sm">
+                    <Link href={`/contests/${nextContest.slug}`}>Open contest</Link>
+                  </Button>
+                  <Button variant="outline" asChild size="sm">
+                    <Link href="/contests">Contest hub</Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <EmptyState
+                title="No contests available"
+                description="Keep an eye on this feed to catch upcoming windows."
+                actionLabel="Explore contests"
+                actionHref="/contests"
+                compact
+              />
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {contestOverview.upcoming.slice(0, 4).map((contest) => (
+                <div key={contest.id} className="rounded-2xl border border-border/50 p-3">
+                  <p className="text-sm font-medium text-foreground">{contest.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(contest.startsAt), { addSuffix: true })}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{contest.problemCount} problems</span>
+                    <span>{contest.registrationCount} teams</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardHeader className="flex flex-col gap-2">
+            <CardTitle className="text-base">Focus backlog</CardTitle>
+            <CardDescription>Fresh problems to bookmark for this week’s drills.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {practiceDeck.length > 0 ? (
+              practiceDeck.map((problem) => (
+                <div
+                  key={problem.id}
+                  className="rounded-2xl border border-border/60 p-3 transition hover:border-primary/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <Link
+                      href={`/problems/${problem.slug}`}
+                      className="text-sm font-semibold text-foreground hover:text-primary"
+                    >
+                      {problem.title}
+                    </Link>
+                    <Badge variant="outline" className="text-[10px] uppercase">
+                      {problem.difficulty?.toLowerCase() ?? "unknown"}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Acceptance{" "}
+                    {problem.acceptanceRate !== null
+                      ? `${Math.round(problem.acceptanceRate * 100)}%`
+                      : "—"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {problem.tags.slice(0, 3).map((tag) => (
+                      <Badge key={tag.slug} variant="secondary" className="text-[10px]">
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <EmptyState
+                title="No public problems"
+                description="Something went wrong fetching problem suggestions."
+                actionLabel="Open problem list"
+                actionHref="/problems"
+                compact
+              />
+            )}
+          </CardContent>
+        </Card>
       </section>
     </div>
   );
-}
-
-function buildSubmissionOutcomeSeries(
-  items: SubmissionSnapshot["items"],
-): SubmissionOutcomeDatum[] {
-  const uniqueRuns = new Map<string, SubmissionEntry>();
-  for (const entry of items) {
-    const key = `${entry.problemId}:${entry.codeHash ?? entry.id}`;
-    if (!uniqueRuns.has(key)) {
-      uniqueRuns.set(key, entry);
-    }
-  }
-  const buckets = new Map<
-    number,
-    {
-      date: Date;
-      accepted: number;
-      failed: number;
-    }
-  >();
-
-  for (const entry of uniqueRuns.values()) {
-    const created = new Date(entry.createdAt);
-    const bucketKey = new Date(
-      created.getFullYear(),
-      created.getMonth(),
-      created.getDate(),
-    ).getTime();
-    const bucket = buckets.get(bucketKey) ?? {
-      date: new Date(created.getFullYear(), created.getMonth(), created.getDate()),
-      accepted: 0,
-      failed: 0,
-    };
-    if (!buckets.has(bucketKey)) {
-      buckets.set(bucketKey, bucket);
-    }
-    if (entry.verdictCode && ACCEPTED_CODES.has(entry.verdictCode)) {
-      bucket.accepted += 1;
-    } else {
-      bucket.failed += 1;
-    }
-  }
-
-  return Array.from(buckets.values())
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .slice(-10)
-    .map(
-      (bucket): SubmissionOutcomeDatum => ({
-        dateLabel: format(bucket.date, "MMM d"),
-        accepted: bucket.accepted,
-        failed: bucket.failed,
-      }),
-    );
 }
 
 function ensureSubmissionSummary(snapshot: SubmissionSnapshot) {
@@ -561,7 +456,7 @@ function ensureSubmissionSummary(snapshot: SubmissionSnapshot) {
   };
 }
 
-function summarizeProposals(proposals: ProposalEntry[]): ProposalStats {
+function summarizeProposals(proposals: ProposalEntry[]) {
   const statusOrder: ProblemProposalStatus[] = [
     ProblemProposalStatus.SUBMITTED,
     ProblemProposalStatus.PRESCREEN,
@@ -580,192 +475,53 @@ function summarizeProposals(proposals: ProposalEntry[]): ProposalStats {
     counts[proposal.status] = (counts[proposal.status] ?? 0) + 1;
   }
 
-  return {
-    submitted: counts.SUBMITTED,
-    review: counts.IN_REVIEW + counts.PRESCREEN,
-    accepted: counts.ACCEPTED,
-  };
+  return [
+    { label: "Submitted", value: counts.SUBMITTED },
+    { label: "In review", value: counts.IN_REVIEW + counts.PRESCREEN },
+    { label: "Accepted", value: counts.ACCEPTED },
+  ];
 }
 
 function statusBadgeClass(status: ProblemProposalStatus) {
   switch (status) {
-    case ProblemProposalStatus.SUBMITTED:
-      return "border-info/30 bg-info/10 text-info";
-    case ProblemProposalStatus.PRESCREEN:
-    case ProblemProposalStatus.IN_REVIEW:
-      return "border-warning/30 bg-warning/10 text-warning";
-    case ProblemProposalStatus.CHANGES_REQUESTED:
-      return "border-primary/30 bg-primary/10 text-primary";
-    case ProblemProposalStatus.ACCEPTED:
-      return "border-success/30 bg-success/10 text-success";
-    case ProblemProposalStatus.REJECTED:
-      return "border-destructive/30 bg-destructive/10 text-destructive";
+    case "SUBMITTED":
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-300";
+    case "PRESCREEN":
+    case "IN_REVIEW":
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-300";
+    case "CHANGES_REQUESTED":
+      return "bg-purple-500/10 text-purple-600 dark:text-purple-300";
+    case "ACCEPTED":
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300";
+    case "REJECTED":
+      return "bg-rose-500/10 text-rose-600 dark:text-rose-300";
   }
 }
 
-function SectionHeader({
-  marker,
-  title,
-  description,
-}: {
-  marker: string;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="text-xs font-bold uppercase tracking-[0.4em] text-primary/80">{marker}</p>
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-        <h2 className="bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-3xl font-black tracking-tight text-transparent">
-          {title}
-        </h2>
-        {description ? (
-          <p className="text-sm text-muted-foreground lg:max-w-xl">{description}</p>
-        ) : null}
-      </div>
-    </div>
-  );
+function formatDate(date: Date | string) {
+  const instance = typeof date === "string" ? new Date(date) : date;
+  return instance.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
-type IconComponent = ComponentType<ComponentProps<"svg">>;
-
-function QuickActionLink({
-  icon: Icon,
-  label,
-  description,
-  href,
-}: {
-  icon: IconComponent;
-  label: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex flex-col gap-2 border border-border bg-background px-4 py-5 transition-colors hover:border-primary hover:bg-accent/30"
-    >
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{label}</span>
-        <ArrowRight05Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-      </div>
-      <div className="flex items-center gap-3 text-foreground">
-        <Icon className="h-5 w-5 text-primary" />
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-    </Link>
-  );
-}
-
-function MetricCard({
+function ContestStat({
   label,
   value,
-  meta,
-  icon: Icon,
-  accent,
+  muted,
 }: {
   label: string;
-  value: string;
-  meta: string;
-  icon: IconComponent;
-  accent?: string;
+  value: string | number;
+  muted?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 bg-card px-6 py-6">
-      <div className="flex items-center justify-between">
-        <p className="text-xs uppercase text-muted-foreground">{label}</p>
-        <div className="border border-border bg-background p-2">
-          <Icon className={cn("h-5 w-5", accent)} />
-        </div>
-      </div>
-      <p className="text-3xl font-black tracking-tight">{value}</p>
-      <p className="text-xs text-muted-foreground">{meta}</p>
-    </div>
-  );
-}
-
-function HighlightTile({ label, value, meta }: { label: string; value: string; meta: string }) {
-  return (
-    <div className="bg-background px-4 py-5">
+    <div>
       <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-black tracking-tight">{value}</p>
-      <p className="text-xs text-muted-foreground">{meta}</p>
-    </div>
-  );
-}
-
-function FeaturedContestCard({ contest }: { contest: ContestPreview }) {
-  const startsAt = new Date(contest.startsAt);
-
-  return (
-    <article className="border border-border bg-background">
-      <div className="grid gap-4 border-b border-border px-5 py-4 md:grid-cols-[1.6fr_0.4fr]">
-        <div>
-          <p className="text-xs uppercase text-muted-foreground">
-            {dashboardConfig.sections.contests.featuredLabel}
-          </p>
-          <h3 className="mt-1 text-2xl font-black tracking-tight">{contest.name}</h3>
-          <p className="text-sm text-muted-foreground">{contest.description}</p>
-        </div>
-        <div className="flex flex-wrap gap-2 text-[11px] uppercase text-muted-foreground">
-          <Badge variant="outline">
-            {dashboardConfig.sections.contests.badges.type}: {contest.type}
-          </Badge>
-          <Badge variant="outline">
-            {dashboardConfig.sections.contests.badges.state}: {contest.state}
-          </Badge>
-          {contest.isRated ? (
-            <Badge variant="outline">{dashboardConfig.sections.contests.badges.rated}</Badge>
-          ) : null}
-        </div>
-      </div>
-      <div className="grid gap-px bg-border sm:grid-cols-3">
-        <ContestFact
-          label={dashboardConfig.sections.contests.stats.starts}
-          value={format(startsAt, "MMM d · HH:mm")}
-          meta={formatDistanceToNow(startsAt, { addSuffix: true })}
-        />
-        <ContestFact
-          label={dashboardConfig.sections.contests.stats.problems}
-          value={String(contest.problemCount)}
-        />
-        <ContestFact
-          label={dashboardConfig.sections.contests.stats.registrations}
-          value={String(contest.registrationCount)}
-          meta={
-            contest.viewerRegistration
-              ? dashboardConfig.sections.contests.registrationMeta.registered
-              : dashboardConfig.sections.contests.registrationMeta.notRegistered
-          }
-        />
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
-        <div className="text-xs uppercase text-muted-foreground">
-          {contest.viewerRegistration
-            ? dashboardConfig.sections.contests.registrationMeta.registered
-            : dashboardConfig.sections.contests.registrationMeta.notRegistered}
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild size="sm">
-            <Link href={`/contests/${contest.slug}`}>
-              {dashboardConfig.sections.contests.ctas.open}
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/contests">{dashboardConfig.sections.contests.ctas.hub}</Link>
-          </Button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function ContestFact({ label, value, meta }: { label: string; value: string; meta?: string }) {
-  return (
-    <div className="bg-background px-4 py-4">
-      <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      <p className="text-2xl font-black tracking-tight">{value}</p>
-      {meta ? <p className="text-xs text-muted-foreground">{meta}</p> : null}
+      <p className="text-lg font-semibold text-foreground">{value}</p>
+      {muted ? <p className="text-xs text-muted-foreground">{muted}</p> : null}
     </div>
   );
 }
@@ -775,18 +531,25 @@ function EmptyState({
   description,
   actionHref,
   actionLabel,
+  compact = false,
 }: {
   title: string;
   description: string;
   actionHref: string;
   actionLabel: string;
+  compact?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 border-2 border-dashed border-border bg-background px-6 py-10 text-center">
-      <Award02Icon className="h-8 w-8 text-muted-foreground" />
-      <p className="text-sm font-bold uppercase tracking-tight text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground">{description}</p>
-      <Button asChild variant="outline" className="mt-2 px-6">
+    <div
+      className={cn(
+        "rounded-2xl border border-dashed border-border/70 p-6 text-center",
+        compact && "py-8",
+      )}
+    >
+      <Award02Icon className="mx-auto h-10 w-10 text-muted-foreground/60" />
+      <p className="mt-3 font-medium text-foreground">{title}</p>
+      <p className="text-sm text-muted-foreground">{description}</p>
+      <Button asChild size="sm" variant="outline" className="mt-4">
         <Link href={actionHref}>{actionLabel}</Link>
       </Button>
     </div>

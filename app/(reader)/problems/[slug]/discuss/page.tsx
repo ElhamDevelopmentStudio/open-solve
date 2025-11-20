@@ -6,8 +6,6 @@ import { HydrationBoundary } from "@tanstack/react-query";
 import { ProblemDiscussionPanel } from "@/components/discussions/problem-discussion-panel";
 import { getCachedProblemDetail } from "@/lib/cache/problems";
 import type { Metadata } from "next";
-import { problemsConfig } from "@/config/problems";
-import { MessageSquareText } from "@/components/icons";
 
 type DiscussPageParams = { slug: string };
 
@@ -45,21 +43,15 @@ export default async function ProblemDiscussPage({
       { input: { slug, sort: "top" }, staleTime: publicContentQueryOptions.staleTime },
     ),
   ]);
-
-  const { discuss } = problemsConfig;
-
   return (
-    <div className="space-y-12">
-      <div className="space-y-6">
-        <div className="inline-flex items-center gap-2 border-2 border-primary/50 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-primary">
-          <MessageSquareText className="h-4 w-4" />
-          {discuss.badge}
-        </div>
-        <h1 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-4xl font-black leading-tight text-transparent sm:text-5xl lg:text-6xl">
-          {problem.title}
-        </h1>
-        <p className="max-w-2xl font-mono text-base text-muted-foreground">{discuss.description}</p>
-      </div>
+    <div className="space-y-8 py-8">
+      <header className="space-y-2">
+        <p className="text-xs uppercase text-muted-foreground">Problem</p>
+        <h1 className="text-2xl font-semibold">{problem.title}</h1>
+        <p className="text-sm text-muted-foreground">
+          Discuss hints, tricky cases, and approaches with the community.
+        </p>
+      </header>
       <HydrationBoundary state={hydration}>
         <ProblemDiscussionPanel
           problem={{

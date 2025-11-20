@@ -1,4 +1,3 @@
-import { ReaderMobileNav } from "@/components/layout/reader-mobile-nav";
 import { ThemeToggle } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -7,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { CodeIcon } from "hugeicons-react";
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
+import { ReaderMobileNav } from "@/components/layout/reader-mobile-nav";
 
 const navLinks = [
   { label: "Problems", href: "/problems" },
@@ -48,7 +48,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
             href="/"
             className="group flex items-center gap-2 text-base font-bold tracking-tight transition-all hover:scale-105"
           >
-            <div className="flex h-8 w-8 items-center justify-center bg-linear-to-br from-primary to-secondary shadow-lg shadow-primary/20 transition-shadow group-hover:shadow-primary/40">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary shadow-lg shadow-primary/20 transition-shadow group-hover:shadow-primary/40">
               <CodeIcon className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
             <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -65,7 +65,7 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
                 target={link.external ? "_blank" : undefined}
                 rel={link.external ? "noopener noreferrer" : undefined}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium transition-all",
+                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                   link.href === "/problems"
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -83,12 +83,17 @@ export default async function ReaderLayout({ children }: PropsWithChildren) {
               <Button
                 asChild
                 size="sm"
-                className="hidden shadow-lg shadow-primary/20 lg:inline-flex"
+                className="hidden rounded-full shadow-lg shadow-primary/20 lg:inline-flex"
               >
                 <Link href="/dashboard">Workspace</Link>
               </Button>
             ) : (
-              <Button asChild variant="outline" size="sm" className="hidden lg:inline-flex">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="hidden rounded-full lg:inline-flex"
+              >
                 <Link href="/sign-in">Sign in</Link>
               </Button>
             )}

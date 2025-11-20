@@ -40,7 +40,6 @@ import {
   FloppyDiskIcon,
   GithubIcon,
   GlobeIcon,
-  GridIcon,
   GroupLayersIcon,
   Heading02Icon,
   HonourStarIcon,
@@ -62,10 +61,8 @@ import {
   Location01Icon,
   LogoutCircle01Icon,
   Mail01Icon,
-  MailReply01Icon,
   Menu01Icon,
   Message01Icon,
-  Message02Icon,
   Moon02Icon,
   More01Icon,
   More02Icon,
@@ -89,7 +86,6 @@ import {
   TextBoldIcon,
   TextItalicIcon,
   TextSquareIcon,
-  ThirdBracketCircleIcon,
   Tick01Icon,
   Tick02Icon,
   ToggleOffIcon,
@@ -192,7 +188,6 @@ export const Redo = Rotate02Icon;
 export const RefreshCcw = RefreshIcon;
 export const RefreshCw = RefreshIcon;
 export const RotateCcw = Rotate01Icon;
-export const Reply = MailReply01Icon;
 export const Save = FloppyDiskIcon;
 export const Search = Search01Icon;
 export const SearchIcon = Search01Icon;
@@ -220,6 +215,3 @@ export const Users = UserGroupIcon;
 export const Users2 = UserGroupIcon;
 export const XCircle = CancelCircleIcon;
 export const XIcon = Cancel02Icon;
-export const MessageSquareText = Message02Icon;
-export const TrendUp = ThirdBracketCircleIcon;
-export const Hash = GridIcon;

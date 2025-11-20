@@ -63,4 +63,3 @@ export const RATE_LIMITS = {
   MAGIC_LINK: { interval: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
   TWO_FACTOR: { interval: 5 * 60 * 1000, maxRequests: 5 }, // 5 per 5 minutes
 };
-

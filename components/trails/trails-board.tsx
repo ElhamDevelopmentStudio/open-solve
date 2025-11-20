@@ -1,9 +1,8 @@
 "use client";
 
+import { trpc } from "@/lib/trpc/client";
 import { TrailInsightCard } from "@/components/trails/trail-insight-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { trpc } from "@/lib/trpc/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { useMemo, useState } from "react";
 import type { TrailInsightCategory } from "@prisma/client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
 
 type TrailsBoardProps = {
   problemId: string;
@@ -64,7 +64,7 @@ export function TrailsBoard({ problemId }: TrailsBoardProps) {
 
   return (
     <div className="space-y-6">
-      <section className="border border-border/70 bg-card/80 p-6">
+      <section className="rounded-3xl border border-border/70 bg-card/80 p-6">
         {canContribute ? (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid gap-4 md:grid-cols-2">
@@ -141,7 +141,7 @@ export function TrailsBoard({ problemId }: TrailsBoardProps) {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold uppercase text-muted-foreground">Insight stream</h3>
           {insights.length === 0 ? (
-            <p className="border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+            <p className="rounded-3xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
               Nothing yet. Share your first insight!
             </p>
           ) : (
@@ -152,7 +152,7 @@ export function TrailsBoard({ problemId }: TrailsBoardProps) {
             </div>
           )}
         </div>
-        <div className="space-y-3 border border-border/70 bg-card/70 p-6">
+        <div className="space-y-3 rounded-3xl border border-border/70 bg-card/70 p-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold uppercase text-muted-foreground">
               Common next steps

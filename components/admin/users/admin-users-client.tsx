@@ -22,7 +22,6 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Loader2,
   Search,
@@ -48,12 +47,6 @@ export function AdminUsersClient({ initialList }: { initialList: UserListRespons
   const [roleFilter, setRoleFilter] = useState<UserRole | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<UserStatus | undefined>(undefined);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<{
-    type: "role" | "status" | "reset2fa" | "revokeSessions" | "impersonate" | "purge";
-    userId: string;
-    label: string;
-    value?: string;
-  } | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 350);
@@ -256,164 +249,35 @@ export function AdminUsersClient({ initialList }: { initialList: UserListRespons
         isLoading={detailQuery.isLoading}
         onRoleChange={(role) => {
           if (detailQuery.data?.user) {
-            setPendingAction({
-              type: "role",
-              userId: detailQuery.data.user.id,
-              value: role,
-              label: detailQuery.data.user.handle,
-            });
+            updateRole.mutate({ userId: detailQuery.data.user.id, role });
           }
         }}
         onStatusChange={(status) => {
           if (detailQuery.data?.user) {
-            setPendingAction({
-              type: "status",
-              userId: detailQuery.data.user.id,
-              value: status,
-              label: detailQuery.data.user.handle,
-            });
+            updateStatus.mutate({ userId: detailQuery.data.user.id, status });
           }
         }}
         onResetTwoFactor={() => {
           if (detailQuery.data?.user) {
-            setPendingAction({
-              type: "reset2fa",
-              userId: detailQuery.data.user.id,
-              label: detailQuery.data.user.handle,
-            });
+            resetTwoFactor.mutate({ userId: detailQuery.data.user.id });
           }
         }}
         onRevokeSessions={() => {
           if (detailQuery.data?.user) {
-            setPendingAction({
-              type: "revokeSessions",
-              userId: detailQuery.data.user.id,
-              label: detailQuery.data.user.handle,
-            });
+            revokeSessions.mutate({ userId: detailQuery.data.user.id });
           }
         }}
         onImpersonate={() => {
           if (detailQuery.data?.user) {
-            setPendingAction({
-              type: "impersonate",
-              userId: detailQuery.data.user.id,
-              label: detailQuery.data.user.handle,
-            });
+            impersonateMutation.mutate({ userId: detailQuery.data.user.id });
           }
         }}
         onPurge={() => {
           if (detailQuery.data?.user) {
-            setPendingAction({
-              type: "purge",
-              userId: detailQuery.data.user.id,
-              label: detailQuery.data.user.handle,
-            });
+            if (window.confirm("This will permanently remove this anonymized account. Continue?")) {
+              purgeUser.mutate({ userId: detailQuery.data.user.id });
+            }
           }
-        }}
-      />
-      <ConfirmDialog
-        variant={
-          pendingAction?.type === "purge" || pendingAction?.type === "status"
-            ? "destructive"
-            : pendingAction?.type === "revokeSessions" || pendingAction?.type === "reset2fa"
-              ? "warning"
-              : "default"
-        }
-        open={pendingAction !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingAction(null);
-        }}
-        title={
-          pendingAction
-            ? (() => {
-                switch (pendingAction.type) {
-                  case "role":
-                    return "Change user role?";
-                  case "status":
-                    return "Change user status?";
-                  case "reset2fa":
-                    return "Reset two-factor authentication?";
-                  case "revokeSessions":
-                    return "Revoke all sessions?";
-                  case "impersonate":
-                    return "Start impersonation?";
-                  case "purge":
-                    return "Permanently purge user?";
-                  default:
-                    return "Confirm action";
-                }
-              })()
-            : "Confirm action"
-        }
-        description={
-          pendingAction
-            ? (() => {
-                switch (pendingAction.type) {
-                  case "role":
-                    return `Set ${pendingAction.label} role to ${pendingAction.value}.`;
-                  case "status":
-                    return `Update ${pendingAction.label} status to ${pendingAction.value}.`;
-                  case "reset2fa":
-                    return `Reset 2FA for @${pendingAction.label}. They will need to re-enroll.`;
-                  case "revokeSessions":
-                    return `Sign out all active sessions for @${pendingAction.label}.`;
-                  case "impersonate":
-                    return `Begin acting as @${pendingAction.label}. You'll need to reload the app.`;
-                  case "purge":
-                    return `Deletes anonymized traces for @${pendingAction.label}. This cannot be undone.`;
-                  default:
-                    return "";
-                }
-              })()
-            : ""
-        }
-        confirmLabel="Confirm"
-        loading={
-          pendingAction?.type === "role"
-            ? updateRole.isPending
-            : pendingAction?.type === "status"
-              ? updateStatus.isPending
-              : pendingAction?.type === "reset2fa"
-                ? resetTwoFactor.isPending
-                : pendingAction?.type === "revokeSessions"
-                  ? revokeSessions.isPending
-                  : pendingAction?.type === "impersonate"
-                    ? impersonateMutation.isPending
-                    : pendingAction?.type === "purge"
-                      ? purgeUser.isPending
-                      : false
-        }
-        onConfirm={() => {
-          if (!pendingAction) return;
-          switch (pendingAction.type) {
-            case "role":
-              updateRole.mutate({
-                userId: pendingAction.userId,
-                role: pendingAction.value as UserRole,
-              });
-              break;
-            case "status":
-              updateStatus.mutate({
-                userId: pendingAction.userId,
-                status: pendingAction.value as UserStatus,
-              });
-              break;
-            case "reset2fa":
-              resetTwoFactor.mutate({ userId: pendingAction.userId });
-              break;
-            case "revokeSessions":
-              revokeSessions.mutate({ userId: pendingAction.userId });
-              break;
-            case "impersonate":
-              impersonateMutation.mutate({ userId: pendingAction.userId });
-              break;
-            case "purge":
-              purgeUser.mutate({ userId: pendingAction.userId });
-              break;
-            default:
-              break;
-          }
-          setPendingAction(null);
         }}
       />
     </>
@@ -463,7 +327,7 @@ function UserDetailSheet({
           </div>
         ) : (
           <ScrollArea className="h-full">
-            <div className="space-y-6 px-4">
+            <div className="space-y-6 pr-4">
               <Card className="border-border/60 bg-card/80">
                 <CardHeader className="flex flex-row items-center gap-3">
                   <Avatar className="h-12 w-12 border border-border/60">
@@ -604,12 +468,12 @@ function ActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 border-2 px-3 py-2 text-sm font-medium transition-all hover:bg-accent",
+        "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition hover:shadow-sm",
         destructive
-          ? "border-destructive/60 text-destructive"
+          ? "border-destructive/50 bg-destructive/10 text-destructive hover:border-destructive hover:bg-destructive/15"
           : subtle
-            ? "border-border text-muted-foreground hover:text-primary"
-            : "border-border text-foreground",
+            ? "border-border/40 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:text-primary"
+            : "border-border/60 bg-card text-foreground hover:border-primary/40",
       )}
     >
       <Icon className="h-4 w-4" />

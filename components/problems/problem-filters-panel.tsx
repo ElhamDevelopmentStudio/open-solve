@@ -1,17 +1,17 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { PROBLEM_STATUS_FILTERS } from "@/lib/problems/constants";
+import { useMemo, useState, type ReactNode } from "react";
 import type { ProblemFilterMetadata, ProblemFiltersInput } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PROBLEM_STATUS_FILTERS } from "@/lib/problems/constants";
 import { Tick02Icon } from "hugeicons-react";
-import { useMemo, useState, type ReactNode } from "react";
 
 const DIFFICULTY_FALLBACK: ProblemFiltersInput["difficulty"] = ["EASY", "MEDIUM", "HARD"];
 
@@ -88,12 +88,12 @@ export function ProblemFiltersPanel({
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-mono text-sm font-semibold">Filters</h3>
+        <h3 className="text-sm font-semibold">Filters</h3>
         <Button
           variant="ghost"
           size="sm"
           onClick={onReset}
-          className="rounded-none font-mono text-xs"
+          className="text-xs"
           disabled={!hasActiveFilters}
         >
           Clear all
@@ -105,17 +105,17 @@ export function ProblemFiltersPanel({
           <Button
             variant={difficultyValue ? "outline" : "default"}
             size="sm"
-            className="justify-start rounded-none border-2 font-mono"
+            className="justify-start"
             onClick={() => toggleDifficulty(null)}
           >
-            Any
+            Any difficulty
           </Button>
           {difficultyOptions.map((difficulty) => (
             <Button
               key={difficulty}
               variant={difficultyValue === difficulty ? "default" : "outline"}
               size="sm"
-              className="justify-start rounded-none border-2 font-mono"
+              className="justify-start"
               onClick={() => toggleDifficulty(difficulty)}
             >
               {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()}
@@ -142,7 +142,7 @@ export function ProblemFiltersPanel({
                   type="button"
                   onClick={() => toggleStatus(status)}
                   className={cn(
-                    "inline-flex items-center rounded-none border-2 px-3 py-1.5 font-mono text-xs font-medium transition-all hover:bg-accent",
+                    "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all hover:scale-105",
                     active
                       ? statusTone[status]
                       : "border-border bg-background text-muted-foreground hover:bg-muted",
@@ -155,7 +155,7 @@ export function ProblemFiltersPanel({
             })}
           </div>
         ) : (
-          <p className="rounded-none border border-dashed border-border/70 bg-muted/20 px-4 py-3 font-mono text-xs text-muted-foreground">
+          <p className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
             Create a free account or sign in from the reader to use progress filters.
           </p>
         )}
@@ -167,17 +167,17 @@ export function ProblemFiltersPanel({
             placeholder="Search tags"
             value={tagQuery}
             onChange={(event) => setTagQuery(event.target.value)}
-            className="h-9 rounded-none border-2 font-mono"
+            className="h-9"
           />
-          <ScrollArea className="h-60 rounded-none border-2 border-border">
+          <ScrollArea className="h-60 rounded-lg border">
             <div className="space-y-1 p-2">
               {filteredTags.length === 0 ? (
-                <p className="font-mono text-xs text-muted-foreground">No tags found.</p>
+                <p className="text-xs text-muted-foreground">No tags found.</p>
               ) : (
                 filteredTags.map((tag) => (
                   <label
                     key={tag.slug}
-                    className="flex cursor-pointer items-center justify-between rounded-none px-2 py-1 font-mono text-sm hover:bg-muted"
+                    className="flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-muted"
                   >
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -194,7 +194,7 @@ export function ProblemFiltersPanel({
             </div>
           </ScrollArea>
           {filters.tags.length > 0 ? (
-            <Badge variant="secondary" className="rounded-none border font-mono text-[11px]">
+            <Badge variant="secondary" className="rounded-full text-[11px]">
               {filters.tags.length} selected
             </Badge>
           ) : null}
@@ -202,10 +202,10 @@ export function ProblemFiltersPanel({
       </FilterCard>
 
       <FilterCard title="Editorials" description="Show only problems with official editorials.">
-        <div className="flex items-center justify-between gap-3 rounded-none border border-dashed border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3">
           <div className="flex-1">
-            <p className="font-mono text-sm font-medium">Only problems with editorials</p>
-            <p className="font-mono text-xs text-muted-foreground">Curated solutions included</p>
+            <p className="text-sm font-medium">Only problems with editorials</p>
+            <p className="text-xs text-muted-foreground">Curated solutions included</p>
           </div>
           <Switch
             checked={filters.onlyWithEditorial}
@@ -216,12 +216,7 @@ export function ProblemFiltersPanel({
       </FilterCard>
 
       <Separator />
-      <Button
-        variant="outline"
-        onClick={onReset}
-        className="w-full rounded-none border-2 font-mono"
-        disabled={!hasActiveFilters}
-      >
+      <Button variant="outline" onClick={onReset} className="w-full" disabled={!hasActiveFilters}>
         Reset filters
       </Button>
     </div>
@@ -240,9 +235,9 @@ function FilterCard({
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <p className="font-mono text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-sm font-semibold text-foreground">{title}</p>
         {description ? (
-          <p className="font-mono text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         ) : null}
       </div>
       <div className="space-y-2">{children}</div>

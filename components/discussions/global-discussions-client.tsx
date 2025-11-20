@@ -1,13 +1,10 @@
 "use client";
 
-import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useMemo } from "react";
-
 import { DiscussionComposer } from "@/components/discussions/discussion-composer";
 import { DiscussionThreadCard } from "@/components/discussions/discussion-thread-card";
-import { AlertTriangle, Filter, LoaderCircle, XIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -16,20 +13,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { discussionsConfig } from "@/config/discussions";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc/client";
+import { Filter, LoaderCircle } from "@/components/icons";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useMemo } from "react";
 
 type GlobalDiscussionsClientProps = {
   tagOptions: Array<{ slug: string; name: string }>;
   difficultyOptions: string[];
 };
 
+const tabOptions = [
+  { value: "trending", label: "Trending" },
+  { value: "latest", label: "Latest" },
+  { value: "help", label: "Help" },
+  { value: "meta", label: "Meta" },
+];
+
 export function GlobalDiscussionsClient({
   tagOptions,
   difficultyOptions,
 }: GlobalDiscussionsClientProps) {
-  const { global } = discussionsConfig;
-
   const [tab, setTab] = useQueryState(
     "tab",
     parseAsStringLiteral(["trending", "latest", "help", "meta"]).withDefault("trending"),
@@ -75,26 +80,20 @@ export function GlobalDiscussionsClient({
     setDifficultyParam(null);
   };
 
-  const hasActiveFilters = selectedTags.length > 0 || selectedDifficulty.length > 0;
-
   return (
-    <div className="space-y-6">
-      <section className="border-2 border-border bg-background p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="font-mono text-xs font-bold uppercase tracking-wider text-primary/80">
-            [01] {global.composer.title}
+    <div className="space-y-8">
+      <section className="premium-card space-y-5 rounded-2xl p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Start a Topic
+            </p>
+            <h2 className="text-2xl font-semibold">Community Discussions</h2>
           </div>
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="h-8 gap-2 rounded-none border border-border font-mono text-xs hover:border-primary/50 hover:bg-accent"
-            >
-              <XIcon className="h-3.5 w-3.5" />
-              {global.filters.reset}
-            </Button>
-          )}
+          <Button variant="ghost" size="sm" className="gap-2 rounded-xl" onClick={resetFilters}>
+            <Filter className="h-4 w-4" />
+            Reset Filters
+          </Button>
         </div>
         <DiscussionComposer
           mode="thread"
@@ -103,155 +102,111 @@ export function GlobalDiscussionsClient({
         />
       </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between border-2 border-border bg-background p-4">
-          <div className="font-mono text-xs font-bold uppercase tracking-wider text-primary/80">
-            [02] Filter discussions
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-px border-2 border-border bg-border sm:grid-cols-4">
-          {global.tabs.map((tabOption) => (
-            <button
-              key={tabOption.value}
-              onClick={() => setTab(tabOption.value as typeof tab)}
-              className={`border-none bg-background p-4 font-mono text-sm font-bold uppercase tracking-wide transition-colors hover:bg-accent ${
-                tab === tabOption.value
-                  ? "bg-primary/5 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tabOption.label}
-            </button>
-          ))}
-        </div>
-
+      <section className="space-y-5">
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as "trending" | "latest" | "help" | "meta")}
+        >
+          <TabsList className="grid w-full grid-cols-4 rounded-xl">
+            {tabOptions.map((option) => (
+              <TabsTrigger key={option.value} value={option.value} className="rounded-lg">
+                {option.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         <div className="flex flex-wrap items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-2 rounded-none border-2 border-border font-mono text-xs hover:border-primary/50"
-              >
-                <Filter className="h-3.5 w-3.5" />
-                {global.filters.tags}
-                {selectedTags.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 rounded-none border border-primary/30 bg-primary/10 px-1.5 font-mono text-[10px] font-bold text-primary"
-                  >
+              <Button variant="outline" size="sm" className="gap-2 rounded-xl">
+                <Filter className="h-4 w-4" /> Tags
+                {selectedTags.length > 0 ? (
+                  <Badge variant="secondary" className="ml-1 h-5 rounded-full px-1.5 text-[10px]">
                     {selectedTags.length}
                   </Badge>
-                )}
+                ) : null}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 rounded-none border-2 border-border">
-              <DropdownMenuLabel className="font-mono text-xs font-bold uppercase">
-                Popular Tags
-              </DropdownMenuLabel>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>Popular Tags</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {tagOptions.slice(0, 12).map((tag) => (
                 <DropdownMenuCheckboxItem
                   key={tag.slug}
                   checked={selectedTags.includes(tag.slug)}
                   onCheckedChange={() => toggleTag(tag.slug)}
-                  className="font-mono text-xs"
                 >
                   {tag.name}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 rounded-none border-2 border-border font-mono text-xs hover:border-primary/50"
-              >
-                {global.filters.difficulty}
-                {selectedDifficulty.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 rounded-none border border-primary/30 bg-primary/10 px-1.5 font-mono text-[10px] font-bold text-primary"
-                  >
+              <Button variant="outline" size="sm" className="rounded-xl">
+                Difficulty
+                {selectedDifficulty.length > 0 ? (
+                  <Badge variant="secondary" className="ml-2 h-5 rounded-full px-1.5 text-[10px]">
                     {selectedDifficulty.length}
                   </Badge>
-                )}
+                ) : null}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="rounded-none border-2 border-border">
-              <DropdownMenuLabel className="font-mono text-xs font-bold uppercase">
-                Difficulty
-              </DropdownMenuLabel>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Difficulty</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {difficultyOptions.map((difficulty) => (
                 <DropdownMenuCheckboxItem
                   key={difficulty}
                   checked={selectedDifficulty.includes(difficulty)}
                   onCheckedChange={() => toggleDifficulty(difficulty)}
-                  className="font-mono text-xs"
                 >
                   {difficulty}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
           {selectedTags.map((slug) => (
             <Badge
               key={slug}
               variant="secondary"
+              className="cursor-pointer rounded-full"
               onClick={() => toggleTag(slug)}
-              className="cursor-pointer rounded-none border border-border bg-background font-mono text-xs hover:border-destructive hover:bg-destructive/5"
             >
               #{slug}
-              <XIcon className="ml-1 h-3 w-3" />
             </Badge>
           ))}
           {selectedDifficulty.map((value) => (
             <Badge
               key={value}
               variant="outline"
+              className="cursor-pointer rounded-full"
               onClick={() => toggleDifficulty(value)}
-              className="cursor-pointer rounded-none border-2 border-border font-mono text-xs hover:border-destructive hover:bg-destructive/5"
             >
               {value}
-              <XIcon className="ml-1 h-3 w-3" />
             </Badge>
           ))}
         </div>
       </section>
 
       {listQuery.isLoading ? (
-        <div className="flex items-center justify-center border-2 border-border bg-background p-16 font-mono text-sm text-muted-foreground">
-          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-          Loading discussions...
+        <div className="premium-card flex items-center justify-center rounded-2xl p-16 text-sm text-muted-foreground">
+          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading discussions…
         </div>
       ) : listQuery.isError ? (
-        <div className="border-2 border-destructive/50 bg-destructive/5 p-6">
-          <div className="mb-2 flex items-center gap-2 font-mono text-sm font-bold text-destructive">
-            <AlertTriangle className="h-4 w-4" />
-            Failed to load discussions
-          </div>
-          <p className="mb-4 font-mono text-xs text-muted-foreground">
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load discussions</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
             {listQuery.error?.message ?? "Please refresh and try again."}
-          </p>
-          <Button
-            onClick={() => listQuery.refetch()}
-            className="h-9 rounded-none border-2 border-primary bg-primary font-mono text-xs font-bold"
-          >
-            Retry
-          </Button>
-        </div>
+            <Button size="sm" onClick={() => listQuery.refetch()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       ) : threads.length === 0 ? (
-        <div className="border-2 border-dashed border-border bg-background p-16 text-center">
-          <p className="mb-2 font-mono text-sm font-bold text-muted-foreground">
-            {global.empty.headline}
-          </p>
-          <p className="font-mono text-xs text-muted-foreground">{global.empty.description}</p>
+        <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 p-16 text-center">
+          <p className="text-sm font-medium text-muted-foreground">No discussions yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">Start the conversation above</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -261,23 +216,22 @@ export function GlobalDiscussionsClient({
               : `/discuss/${thread.id}`;
             return <DiscussionThreadCard key={thread.id} thread={thread} href={href} />;
           })}
-          {listQuery.hasNextPage && (
+          {listQuery.hasNextPage ? (
             <Button
+              className="w-full rounded-xl"
               variant="outline"
               disabled={listQuery.isFetchingNextPage}
               onClick={() => listQuery.fetchNextPage()}
-              className="h-11 w-full rounded-none border-2 border-border font-mono text-sm font-bold uppercase hover:border-primary/50"
             >
               {listQuery.isFetchingNextPage ? (
                 <>
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Loading…
                 </>
               ) : (
-                "Load more discussions"
+                "Load More"
               )}
             </Button>
-          )}
+          ) : null}
         </div>
       )}
     </div>

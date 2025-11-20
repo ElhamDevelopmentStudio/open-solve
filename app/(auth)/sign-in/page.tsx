@@ -1,54 +1,54 @@
+import { SignInForm } from "@/components/auth/sign-in-form";
 import Link from "next/link";
 
-import { SignInForm } from "@/components/auth/sign-in-form";
-import { ArrowRight } from "@/components/icons";
-import { authConfig } from "@/config/auth";
-
 export default function SignInPage() {
-  const { signIn } = authConfig;
-
   return (
-    <section className="border-2 border-border bg-background p-6 shadow-primary/20">
-      <div className="flex items-center justify-between font-mono text-xs font-bold uppercase tracking-[0.08em]">
-        <span className="flex items-center gap-2 text-primary">[02] Sign in</span>
-        <span className="flex items-center gap-2 text-muted-foreground">
-          <ArrowRight className="h-3.5 w-3.5" />
-          Auth required
-        </span>
+    <div className="space-y-10">
+      <div className="space-y-3">
+        <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+        <p className="text-muted-foreground">Sign in to continue your learning journey</p>
       </div>
+
       <SignInForm />
-      <div className="space-y-3 border-t border-border pt-3 font-mono text-xs text-muted-foreground">
-        <div className="flex items-center justify-between">
-          <span>Need a reset?</span>
-          <Link
-            href={signIn.links.forgot.href}
-            className="text-primary underline-offset-4 hover:underline"
-          >
-            {signIn.links.forgot.label}
-          </Link>
+
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            or
+          </span>
+          <div className="h-px flex-1 bg-border" />
         </div>
-        <div className="flex items-center justify-between">
-          <span>New here?</span>
+
+        <div className="flex flex-col gap-3 text-sm">
           <Link
-            href={signIn.links.signup.href}
-            className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline"
+            href="/auth/forgot-password"
+            className="text-center text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
           >
-            {signIn.links.signup.label}
-            <ArrowRight className="h-3.5 w-3.5" />
+            Forgot your password?
           </Link>
-        </div>
-        <div>
-          By signing in, you agree to our{" "}
-          <Link href={signIn.links.terms.href} className="underline-offset-4 hover:underline">
-            {signIn.links.terms.label}
-          </Link>{" "}
-          and{" "}
-          <Link href={signIn.links.privacy.href} className="underline-offset-4 hover:underline">
-            {signIn.links.privacy.label}
-          </Link>
-          .
+          <div className="text-center text-muted-foreground">
+            New to OpenSolve?{" "}
+            <Link
+              href="/sign-up"
+              className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+            >
+              Create an account
+            </Link>
+          </div>
         </div>
       </div>
-    </section>
+
+      <div className="border-l-2 border-muted pl-4 text-xs text-muted-foreground">
+        By signing in, you agree to our{" "}
+        <Link href="/terms" className="underline-offset-4 hover:underline">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline-offset-4 hover:underline">
+          Privacy Policy
+        </Link>
+      </div>
+    </div>
   );
 }

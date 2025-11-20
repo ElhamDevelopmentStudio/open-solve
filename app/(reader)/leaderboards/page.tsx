@@ -1,15 +1,12 @@
-import { HydrationBoundary } from "@tanstack/react-query";
-import type { Metadata } from "next";
-import Link from "next/link";
-
-import { ArrowRight, Hash, TrendUp, Trophy } from "@/components/icons";
 import { GlobalLeaderboardClient } from "@/components/leaderboards/leaderboard-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { leaderboardsConfig } from "@/config/leaderboards";
 import type { LeaderboardEntry, LeaderboardWindow } from "@/lib/leaderboard/service";
 import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { HydrationBoundary } from "@tanstack/react-query";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 const DEFAULT_WINDOW: LeaderboardWindow = "all_time";
 
@@ -32,7 +29,7 @@ export default async function LeaderboardsPage() {
   ]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <Hero overview={overview} />
       <HydrationBoundary state={state}>
         <GlobalLeaderboardClient initialWindow={DEFAULT_WINDOW} />
@@ -48,135 +45,109 @@ type OverviewCard = {
 };
 
 function Hero({ overview }: { overview: OverviewCard[] }) {
-  const { global } = leaderboardsConfig;
-
   return (
-    <section className="space-y-6">
-      <div className="border-2 border-border bg-background p-8">
-        <div className="mb-6 inline-flex items-center gap-2 border-2 border-primary/50 bg-primary/5 px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-primary">
-          <Trophy className="h-3.5 w-3.5" />
-          {global.badge}
-        </div>
-
-        <div className="mb-6 space-y-4">
-          <h1 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-4xl font-black leading-tight tracking-tight text-transparent sm:text-5xl lg:text-6xl">
-            {global.headline.line1}
-            <br />
-            {global.headline.line2}
-          </h1>
-          <p className="max-w-3xl font-mono text-sm leading-relaxed text-muted-foreground">
-            {global.description}
-          </p>
-        </div>
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          OpenSolve Rankings
+        </p>
+        <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">Leaderboards</h1>
+        <p className="max-w-2xl text-base text-muted-foreground">
+          Discover the most consistent problem solvers across weekly, monthly, and all-time windows.
+        </p>
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {overview.map((window) => (
-          <div key={window.window} className="border-2 border-border bg-background p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-mono text-base font-bold uppercase">
+          <div key={window.window} className="premium-card space-y-4 rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold capitalize">
                 {window.window.replace("_", " ")}
               </h3>
               <Badge
                 variant="secondary"
-                className="rounded-none border font-mono text-[10px] font-bold uppercase"
+                className="rounded-full text-[10px] font-semibold uppercase"
               >
                 Top 3
               </Badge>
             </div>
-            <div className="space-y-3 border-2 border-border bg-background/50 p-4 font-mono text-sm">
+            <div className="space-y-3 text-sm">
               {window.hero.length === 0 ? (
-                <p className="py-6 text-center text-muted-foreground">
-                  {global.overview.emptyState}
-                </p>
+                <p className="py-4 text-center text-muted-foreground">No data yet</p>
               ) : (
                 window.hero.map((entry, idx) => (
                   <div
                     key={entry.user.id}
-                    className="flex items-center justify-between border-b border-border pb-3 last:border-b-0 last:pb-0"
+                    className="flex items-center justify-between rounded-xl border border-border/50 bg-card/30 p-3"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">#{idx + 1}</span>
-                      <span className="text-foreground">@{entry.user.handle}</span>
+                      <span className="text-xs font-bold text-muted-foreground">#{idx + 1}</span>
+                      <span className="font-medium">@{entry.user.handle}</span>
                     </div>
-                    <span className="font-bold">{Math.round(entry.score)}</span>
+                    <span className="font-semibold">{Math.round(entry.score)}</span>
                   </div>
                 ))
               )}
             </div>
-            <Button
-              asChild
-              variant="outline"
-              className="mt-4 h-10 w-full justify-between rounded-none border-2 border-border font-mono text-xs font-bold uppercase hover:border-primary/50"
-            >
+            <Button variant="ghost" size="sm" asChild className="w-full justify-between rounded-xl">
               <Link
                 href={`/leaderboards/${window.window === "all_time" ? "global" : window.window}`}
               >
-                {leaderboardsConfig.section.actions.viewFull}
-                <ArrowRight className="h-3.5 w-3.5" />
+                View Full Board
+                <span aria-hidden>→</span>
               </Link>
             </Button>
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
 function Callouts() {
-  const { global } = leaderboardsConfig;
-
   return (
-    <section className="grid gap-4 sm:grid-cols-2">
-      <div className="border-2 border-border bg-background p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border-2 border-primary bg-primary/10">
-            <TrendUp className="h-5 w-5 text-primary" />
+    <div className="grid gap-6 md:grid-cols-2">
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Badge className="h-6 w-6 rounded-md bg-primary text-[10px] font-bold">D</Badge>
           </div>
-          <h3 className="font-mono text-base font-bold">{global.callouts.difficulty.title}</h3>
+          <h3 className="text-lg font-semibold">Difficulty Capsules</h3>
         </div>
-        <p className="mb-4 font-mono text-sm text-muted-foreground">
-          {global.callouts.difficulty.description}
+        <p className="text-sm text-muted-foreground">
+          Compare how solvers perform on easy, medium, and hard sets independently.
         </p>
         <div className="flex flex-wrap gap-2">
-          {global.callouts.difficulty.levels.map((level) => (
+          {(["easy", "medium", "hard"] as const).map((level) => (
             <Button
               key={level}
               variant="outline"
               size="sm"
               asChild
-              className="h-9 rounded-none border-2 border-border font-mono text-xs font-bold uppercase hover:border-primary/50"
+              className="rounded-xl capitalize"
             >
               <Link href={`/leaderboards/difficulty/${level}`}>{level}</Link>
             </Button>
           ))}
         </div>
       </div>
-
-      <div className="border-2 border-border bg-background p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border-2 border-primary bg-primary/10">
-            <Hash className="h-5 w-5 text-primary" />
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10">
+            <Badge className="h-6 w-6 rounded-md bg-secondary text-[10px] font-bold">#</Badge>
           </div>
-          <h3 className="font-mono text-base font-bold">{global.callouts.tags.title}</h3>
+          <h3 className="text-lg font-semibold">Tag Spotlights</h3>
         </div>
-        <p className="mb-4 font-mono text-sm text-muted-foreground">
-          {global.callouts.tags.description}
+        <p className="text-sm text-muted-foreground">
+          Track mastery for specific topics like DP, graphs, and arrays.
         </p>
         <div className="flex flex-wrap gap-2">
-          {global.callouts.tags.featured.map((slug) => (
-            <Button
-              key={slug}
-              variant="outline"
-              size="sm"
-              asChild
-              className="h-9 rounded-none border-2 border-border font-mono text-xs font-bold hover:border-primary/50"
-            >
+          {["graphs", "dp", "arrays"].map((slug) => (
+            <Button key={slug} variant="outline" size="sm" asChild className="rounded-xl">
               <Link href={`/leaderboards/tag/${slug}`}>#{slug}</Link>
             </Button>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

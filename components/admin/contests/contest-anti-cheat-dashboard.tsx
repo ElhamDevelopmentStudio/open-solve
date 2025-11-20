@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ContestAntiCheatFlagStatus, type ContestState, type ContestType } from "@prisma/client";
 import { formatDistanceToNow } from "date-fns";
 import { Clock, Shield, Sparkles } from "@/components/icons";
@@ -39,11 +38,6 @@ export function ContestAntiCheatDashboard({
   initialParticipants: ParticipantRow[];
 }) {
   const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null);
-  const [pendingStatus, setPendingStatus] = useState<{
-    flagId: string;
-    status: ContestAntiCheatFlagStatus;
-    handle: string;
-  } | null>(null);
   const participantsQuery = trpc.admin.antiCheat.participants.useQuery(
     { contestId: contest.id },
     { initialData: initialParticipants, refetchInterval: 30000 },
@@ -206,11 +200,7 @@ export function ContestAntiCheatDashboard({
                         <DropdownMenuItem
                           key={status}
                           onClick={() =>
-                            setPendingStatus({
-                              flagId: selectedParticipant.id,
-                              status,
-                              handle: selectedParticipant.participant.handle,
-                            })
+                            setStatusMutation.mutate({ flagId: selectedParticipant.id, status })
                           }
                         >
                           {status.toLowerCase()}
@@ -259,30 +249,6 @@ export function ContestAntiCheatDashboard({
           </CardContent>
         </Card>
       </div>
-      <ConfirmDialog
-        variant="warning"
-        open={pendingStatus !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingStatus(null);
-        }}
-        title="Update participant status?"
-        description={
-          pendingStatus
-            ? `Set @${pendingStatus.handle} status to ${pendingStatus.status.toLowerCase()}.`
-            : ""
-        }
-        confirmLabel="Update status"
-        loading={setStatusMutation.isPending}
-        onConfirm={() => {
-          if (pendingStatus) {
-            setStatusMutation.mutate({
-              flagId: pendingStatus.flagId,
-              status: pendingStatus.status,
-            });
-            setPendingStatus(null);
-          }
-        }}
-      />
     </div>
   );
 }

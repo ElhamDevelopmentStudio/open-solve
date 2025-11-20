@@ -1,22 +1,9 @@
 "use client";
 
-import { profileConfig, type ProfileToggleName } from "@/config/profile";
-import {
-  Activity,
-  ArrowRight,
-  Flame,
-  Github,
-  Globe,
-  Linkedin,
-  Link as LinkIcon,
-  MapPin,
-  ShieldAlert,
-  ShieldCheck,
-  Trophy,
-} from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   Form,
@@ -36,25 +23,24 @@ import { cn } from "@/lib/utils";
 import { profileSettingsSchema, type ProfileSettingsInput } from "@/lib/validators/profile";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Activity,
+  ArrowUpRight,
+  Flame,
+  Github,
+  Globe,
+  Linkedin,
+  Link as LinkIcon,
+  MapPin,
+  ShieldAlert,
+  ShieldCheck,
+  Trophy,
+} from "@/components/icons";
 import Link from "next/link";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
-
-const STAT_ICON_MAP = {
-  totalSolved: Trophy,
-  attempted: Activity,
-  acceptance: ShieldCheck,
-  streak: Flame,
-} as const;
-
-const SOCIAL_FIELDS = [
-  { key: "github", label: "GitHub" },
-  { key: "linkedin", label: "LinkedIn" },
-  { key: "twitter", label: "Twitter" },
-  { key: "website", label: "Website" },
-] as const;
 
 type ProfileClientProps = {
   handle: string;
@@ -74,9 +60,14 @@ export function ProfileClient({ handle }: ProfileClientProps) {
 
   if (profileQuery.isError || !profileQuery.data) {
     return (
-      <div className="border-2 border-destructive/40 bg-destructive/10 p-6 font-mono text-sm text-destructive">
-        {profileQuery.error?.message ?? "This profile could not be loaded."}
-      </div>
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="text-destructive">Profile unavailable</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-destructive">
+          {profileQuery.error?.message ?? "This profile could not be loaded."}
+        </CardContent>
+      </Card>
     );
   }
 
@@ -91,12 +82,12 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
   const showPrivacySettings = profile.permissions.isOwner || profile.permissions.isStaff;
 
   return (
-    <div className="space-y-12 font-mono">
+    <div className="mx-auto max-w-7xl space-y-8 animate-fade-in">
       <ProfileHero profile={profile} showCountry={showCountry} showSocials={showSocials} />
       <StatsGrid profile={profile} />
       <ChartsSection profile={profile} />
       <ActivitySection profile={profile} />
-      <RecentSolvesSection profile={profile} />
+      <RecentSolves profile={profile} />
       <BadgesSection profile={profile} />
       {profile.staffInsights ? <StaffInsights insights={profile.staffInsights} /> : null}
       {showPrivacySettings && profile.privacySettings ? (
@@ -115,206 +106,150 @@ function ProfileHero({
   showCountry: boolean;
   showSocials: boolean;
 }) {
-  const { hero } = profileConfig;
   const countryLabel = showCountry && profile.country ? formatCountry(profile.country) : null;
   const socials = useMemo(
     () => buildSocialLinks(profile.socials, showSocials),
     [profile.socials, showSocials],
   );
-  const heroStats = [
-    {
-      label: "TOTAL SOLVED",
-      value: profile.stats.totalSolved.toLocaleString(),
-      helper: profile.stats.lastAcceptedAt
-        ? `Last AC ${formatDistanceToNow(profile.stats.lastAcceptedAt, { addSuffix: true })}`
-        : "No accepted submissions yet",
-    },
-    {
-      label: "ACCEPTANCE",
-      value: `${Math.round(profile.stats.acceptanceRate * 100)}%`,
-      helper: profile.stats.firstAcceptedAt
-        ? `First AC ${new Date(profile.stats.firstAcceptedAt).getFullYear()}`
-        : "No data",
-    },
-    {
-      label: "FAVORITE LANGUAGE",
-      value: profile.stats.favoriteLanguage?.displayName ?? "Untracked",
-      helper: profile.stats.favoriteLanguage
-        ? `${profile.stats.favoriteLanguage.count} solves`
-        : "",
-    },
-    {
-      label: "CURRENT STREAK",
-      value: `${profile.stats.streak.current} days`,
-      helper: `Best ${profile.stats.streak.best} days`,
-    },
-  ];
 
   return (
-    <section className="border-2 border-border bg-background p-8">
-      <div className="mb-4 text-xs font-bold text-primary/80">{hero.marker}</div>
-      <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
-          <Avatar className="h-32 w-32 border-2 border-border bg-accent/30 text-foreground">
+    <div className="premium-card overflow-hidden rounded-2xl">
+      <div className="flex flex-col gap-6 p-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-5 lg:flex-row lg:items-center">
+          <Avatar className="h-28 w-28 ring-4 ring-border/30 ring-offset-2 ring-offset-background">
             {profile.avatarUrl ? (
               <AvatarImage src={profile.avatarUrl} alt={profile.handle} />
             ) : null}
-            <AvatarFallback className="text-2xl font-black">
+            <AvatarFallback className="text-2xl font-bold">
               {profile.handle.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="space-y-4">
-            <div className="text-xs uppercase text-muted-foreground">@{profile.handle}</div>
-            <h1 className="text-3xl font-black leading-tight text-foreground sm:text-4xl">
-              {profile.name ?? hero.fallbackName}
-            </h1>
-            <div className="flex flex-wrap gap-2 text-xs">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">@{profile.handle}</p>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {profile.name ?? "OpenSolve user"}
+                </h1>
+              </div>
               <RoleBadge role={profile.role} status={profile.status} />
-              {profile.permissions.isStaff ? (
-                <Badge variant="outline" className="rounded-none border-2 border-border">
-                  staff view
-                </Badge>
-              ) : null}
               {!profile.showOnLeaderboard ? (
                 <Badge
-                  variant="warning"
-                  className="rounded-none border-2 border-warning/30 text-warning"
+                  variant="outline"
+                  className="rounded-full border-amber-300/60 text-amber-600 dark:border-amber-400/40 dark:text-amber-200"
                 >
-                  {hero.leaderboardOptOut}
+                  Leaderboards opt-out
                 </Badge>
               ) : null}
             </div>
             {profile.bio ? (
-              <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                {profile.bio}
-              </p>
+              <p className="max-w-2xl text-sm text-muted-foreground">{profile.bio}</p>
             ) : null}
-            <div className="flex flex-wrap gap-4 text-xs uppercase text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 text-foreground">
-                <MapPin className="h-4 w-4" />
-                {countryLabel ?? hero.locationHidden}
-              </span>
-              <span>{profile.timezone ?? hero.timezoneHidden}</span>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              {countryLabel ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" />
+                  {countryLabel}
+                </span>
+              ) : null}
+              {profile.timezone ? (
+                <span className="text-xs uppercase">{profile.timezone}</span>
+              ) : null}
             </div>
             {socials.length > 0 ? (
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                  {hero.socialsLabel}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {socials.map((social) => (
-                    <Button
-                      key={social.href}
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="h-8 rounded-none border-2 border-border px-3 text-xs"
-                    >
-                      <a href={social.href} target="_blank" rel="noreferrer">
-                        <span className="inline-flex items-center gap-1">
-                          {social.icon}
-                          {social.label}
-                        </span>
-                      </a>
-                    </Button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {socials.map((social) => (
+                  <Button
+                    key={social.href}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5 rounded-xl"
+                    asChild
+                  >
+                    <a href={social.href} target="_blank" rel="noreferrer">
+                      {social.icon}
+                      <span className="text-xs">{social.label}</span>
+                    </a>
+                  </Button>
+                ))}
               </div>
             ) : null}
           </div>
         </div>
-        <div className="border-2 border-border bg-background/70 p-6">
-          <div className="text-xs font-bold uppercase tracking-wide text-primary/80">
-            {hero.metricsMarker}
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {heroStats.map((stat) => (
-              <div key={stat.label} className="border border-border/70 bg-background/80 p-4">
-                <div className="text-[11px] uppercase text-muted-foreground">{stat.label}</div>
-                <div className="text-2xl font-black text-foreground">{stat.value}</div>
-                <div className="text-[11px] text-muted-foreground">{stat.helper}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button
-              asChild
-              className="h-11 rounded-none border-2 border-primary px-6 text-xs font-bold"
-            >
-              <Link href="/leaderboards">{hero.actions.leaderboards}</Link>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" asChild className="rounded-xl">
+            <Link href="/leaderboards">
+              <Trophy className="mr-2 h-4 w-4" />
+              Leaderboards
+            </Link>
+          </Button>
+          {profile.permissions.isOwner ? (
+            <Button variant="default" asChild className="rounded-xl">
+              <Link href="/settings/profile">
+                Edit Profile
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
-            {profile.permissions.isOwner ? (
-              <Button
-                asChild
-                variant="outline"
-                className="h-11 rounded-none border-2 border-border px-6 text-xs font-bold hover:border-primary/50"
-              >
-                <Link href="/settings/profile">
-                  {hero.actions.editProfile}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
 function StatsGrid({ profile }: { profile: ProfileDetail }) {
-  const { stats } = profileConfig;
   const cards = [
     {
-      key: "totalSolved",
-      label: stats.cards.totalSolved,
+      label: "Total solved",
       value: profile.stats.totalSolved.toLocaleString(),
       helper: profile.stats.lastAcceptedAt
         ? `Last AC ${formatDistanceToNow(profile.stats.lastAcceptedAt, { addSuffix: true })}`
-        : "No accepted submissions yet",
+        : "",
+      icon: <Trophy className="h-5 w-5 text-primary" />,
     },
     {
-      key: "attempted",
-      label: stats.cards.attempted,
+      label: "Problems attempted",
       value: profile.attempts.attempted.toLocaleString(),
       helper: `${profile.attempts.solved.toLocaleString()} solved`,
+      icon: <Activity className="h-5 w-5 text-secondary" />,
     },
     {
-      key: "acceptance",
-      label: stats.cards.acceptance,
+      label: "Acceptance rate",
       value: `${Math.round(profile.stats.acceptanceRate * 100)}%`,
       helper: profile.stats.firstAcceptedAt
         ? `First AC ${new Date(profile.stats.firstAcceptedAt).getFullYear()}`
-        : "No data",
+        : "",
+      icon: <ShieldCheck className="h-5 w-5 text-emerald-500" />,
     },
     {
-      key: "streak",
-      label: stats.cards.streak,
+      label: "Current streak",
       value: `${profile.stats.streak.current} days`,
       helper: `Best ${profile.stats.streak.best} days`,
+      icon: <Flame className="h-5 w-5 text-amber-500" />,
     },
-  ] as const;
+  ];
 
   return (
-    <section className="space-y-4 border-t border-border pt-12">
-      <div className="text-xs font-bold text-primary/80">{stats.marker}</div>
-      <p className="text-sm text-muted-foreground">{stats.description}</p>
-      <div className="grid gap-px bg-border/30 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => {
-          const Icon = STAT_ICON_MAP[card.key as keyof typeof STAT_ICON_MAP];
-          return (
-            <div key={card.key} className="bg-background p-6">
-              <div className="mb-2 flex items-center justify-between text-[11px] uppercase text-muted-foreground">
-                <span>{card.label}</span>
-                <Icon className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-3xl font-black text-foreground">{card.value}</div>
-              <div className="mt-2 text-xs text-muted-foreground">{card.helper}</div>
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <div key={card.label} className="premium-card rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-muted/60">
+              {card.icon}
             </div>
-          );
-        })}
-      </div>
-    </section>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {card.label}
+              </p>
+              <p className="text-2xl font-bold tracking-tight">{card.value}</p>
+              {card.helper ? (
+                <p className="truncate text-xs text-muted-foreground">{card.helper}</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -327,19 +262,18 @@ function RoleBadge({
 }) {
   const base =
     role === "ADMIN"
-      ? "border-primary text-primary"
+      ? "bg-primary/15 text-primary"
       : role === "PROBLEM_CURATOR"
-        ? "border-info text-info"
-        : "border-border text-foreground";
+        ? "bg-purple-500/15 text-purple-500"
+        : "bg-muted text-muted-foreground";
   return (
-    <Badge className={cn("rounded-none border-2 px-2 py-0.5 text-[10px] font-bold", base)}>
-      {status === "SHADOW_BANNED" ? "shadow banned" : role.replace("_", " ").toLowerCase()}
+    <Badge className={cn("rounded-full text-xs font-medium", base)}>
+      {status === "SHADOW_BANNED" ? "Shadow Banned" : role.replace("_", " ").toLowerCase()}
     </Badge>
   );
 }
 
 function ChartsSection({ profile }: { profile: ProfileDetail }) {
-  const { charts } = profileConfig;
   const difficultyData = profile.stats.solvedByDifficulty.map((entry) => ({
     difficulty: entry.difficulty,
     label: formatDifficulty(entry.difficulty),
@@ -348,250 +282,216 @@ function ChartsSection({ profile }: { profile: ProfileDetail }) {
   const tagData = profile.stats.solvedByTag;
 
   return (
-    <section className="space-y-6 border-t border-border pt-12">
-      <div className="text-xs font-bold text-primary/80">{charts.marker}</div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="border-2 border-border bg-background p-6">
-          <h3 className="text-xl font-bold text-foreground">{charts.difficulty.title}</h3>
-          <ChartContainer
-            className="mt-4 h-64"
-            config={{ count: { label: "Problems", color: "var(--chart-1)" } }}
-          >
-            <BarChart data={difficultyData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-              <XAxis
-                dataKey="label"
-                stroke="currentColor"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 0, 0, 0]} />
-            </BarChart>
-          </ChartContainer>
-        </div>
-        <div className="border-2 border-border bg-background p-6">
-          <h3 className="text-xl font-bold text-foreground">{charts.tags.title}</h3>
-          {tagData.length === 0 ? (
-            <p className="mt-6 text-sm text-muted-foreground">{charts.tags.empty}</p>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {tagData.map((tag) => (
-                <div
-                  key={tag.slug}
-                  className="flex items-center justify-between border border-border px-4 py-3 text-sm"
-                >
-                  <div>
-                    <p className="font-bold text-foreground">#{tag.slug}</p>
-                    <p className="text-xs text-muted-foreground">{tag.name}</p>
-                  </div>
-                  <Badge variant="outline" className="rounded-none border-2 border-border px-3">
-                    {tag.count.toLocaleString()}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Solved by Difficulty</h3>
+        <ChartContainer
+          className="h-64"
+          config={{ count: { label: "Problems", color: "var(--chart-1)" } }}
+        >
+          <BarChart data={difficultyData}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+            <XAxis
+              dataKey="label"
+              stroke="currentColor"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-1)" />
+          </BarChart>
+        </ChartContainer>
       </div>
-    </section>
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Top Tags</h3>
+        {tagData.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Tags will appear once this solver has public solves.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {tagData.map((tag) => (
+              <div
+                key={tag.slug}
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 smooth-transition hover:border-border"
+              >
+                <div>
+                  <p className="font-medium">#{tag.slug}</p>
+                  <p className="text-xs text-muted-foreground">{tag.name}</p>
+                </div>
+                <Badge variant="secondary" className="rounded-full">
+                  {tag.count.toLocaleString()}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 function ActivitySection({ profile }: { profile: ProfileDetail }) {
-  const { activity } = profileConfig;
+  const maxHeat = Math.max(...profile.stats.streak.calendar.map((cell) => cell.count), 1);
   const heatCells = profile.stats.streak.calendar;
-  const maxHeat = Math.max(...heatCells.map((cell) => cell.count), 1);
   const hourlyData = profile.stats.hourlyActivity.map((item) => ({
     hour: formatHour(item.hour),
     count: item.count,
   }));
 
   return (
-    <section className="space-y-6 border-t border-border pt-12">
-      <div className="text-xs font-bold text-primary/80">{activity.marker}</div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="border-2 border-border bg-background p-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-foreground">{activity.streakTitle}</h3>
-            <span className="text-xs uppercase text-muted-foreground">
-              {activity.rangeLabel(heatCells.length)}
-            </span>
-          </div>
-          <div className="mt-4 grid grid-cols-[repeat(24,minmax(0,1fr))] gap-1">
-            {heatCells.map((cell) => (
-              <span
-                key={cell.date}
-                title={`${new Date(cell.date).toLocaleDateString()} — ${cell.count} solves`}
-                className={cn("h-4 w-full border border-border/40", heatColor(cell.count, maxHeat))}
-              />
-            ))}
-          </div>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Streak Calendar</h3>
+        <div className="grid grid-cols-[repeat(24,minmax(0,1fr))] gap-1 text-[0px]">
+          {heatCells.map((cell) => (
+            <div
+              key={cell.date}
+              title={`${new Date(cell.date).toLocaleDateString()} — ${cell.count} solves`}
+              className={cn(
+                "h-4 w-full rounded-sm smooth-transition hover:scale-110",
+                heatColor(cell.count, maxHeat),
+              )}
+            />
+          ))}
         </div>
-        <div className="border-2 border-border bg-background p-6">
-          <h3 className="text-xl font-bold text-foreground">{activity.hourlyTitle}</h3>
-          <ChartContainer
-            className="mt-4 h-64"
-            config={{ count: { label: "Solves", color: "var(--chart-5)" } }}
-          >
-            <BarChart data={hourlyData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-              <XAxis
-                dataKey="hour"
-                tickLine={false}
-                axisLine={false}
-                stroke="currentColor"
-                fontSize={11}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="count" fill="var(--chart-5)" radius={[0, 0, 0, 0]} />
-            </BarChart>
-          </ChartContainer>
-        </div>
+        <p className="text-xs text-muted-foreground">Past {heatCells.length} days</p>
       </div>
-    </section>
+      <div className="premium-card space-y-4 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold">Time-of-Day Focus</h3>
+        <ChartContainer
+          className="h-64"
+          config={{ count: { label: "Solves", color: "var(--chart-5)" } }}
+        >
+          <BarChart data={hourlyData}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+            <XAxis
+              dataKey="hour"
+              tickLine={false}
+              axisLine={false}
+              stroke="currentColor"
+              fontSize={11}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="var(--chart-5)" />
+          </BarChart>
+        </ChartContainer>
+      </div>
+    </div>
   );
 }
 
-function RecentSolvesSection({ profile }: { profile: ProfileDetail }) {
+function RecentSolves({ profile }: { profile: ProfileDetail }) {
   const solves = profile.stats.recentSolves;
-  const copy = profileConfig.solves;
-
+  if (solves.length === 0) {
+    return null;
+  }
   return (
-    <section className="space-y-6 border-t border-border pt-12">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="premium-card space-y-4 rounded-2xl p-6">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold text-primary/80">{copy.marker}</div>
-          <h3 className="text-2xl font-black leading-tight text-foreground sm:text-3xl">
-            {copy.title}
-          </h3>
-          <p className="text-sm text-muted-foreground">{copy.description}</p>
+          <h3 className="text-lg font-semibold">Recent Accepted Submissions</h3>
+          <p className="text-sm text-muted-foreground">Highlights from the last few solves</p>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="h-11 rounded-none border-2 border-border px-6 text-xs font-bold hover:border-primary/50"
-        >
-          <Link href="/submissions">{copy.action}</Link>
+        <Button variant="ghost" size="sm" asChild className="rounded-xl">
+          <Link href="/submissions">View All</Link>
         </Button>
       </div>
-      {solves.length === 0 ? (
-        <div className="border-2 border-border bg-background/60 p-6 text-sm text-muted-foreground">
-          {copy.empty}
-        </div>
-      ) : (
-        <div className="grid gap-px bg-border/30">
-          {solves.map((solve) => (
-            <div key={solve.id} className="bg-background p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <Link
-                    href={`/problems/${solve.problem.slug}`}
-                    className="text-sm font-bold uppercase tracking-tight text-foreground transition-colors hover:text-primary"
-                  >
-                    {solve.problem.title}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">
-                    {solve.problem.difficulty
-                      ? `${formatDifficulty(solve.problem.difficulty)} • `
-                      : null}
-                    {formatDistanceToNow(new Date(solve.createdAt), { addSuffix: true })}
-                  </div>
+      <div className="space-y-3">
+        {solves.map((solve) => (
+          <div
+            key={solve.id}
+            className="rounded-xl border border-border/70 bg-card/50 p-4 smooth-transition hover:border-border"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <Link
+                  href={`/problems/${solve.problem.slug}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {solve.problem.title}
+                </Link>
+                <div className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(solve.createdAt), { addSuffix: true })}
                 </div>
-                <Badge variant="outline" className="rounded-none border-2 border-border px-3">
-                  {solve.languageCode}
-                </Badge>
               </div>
+              <Badge variant="secondary" className="rounded-full">
+                {solve.languageCode}
+              </Badge>
             </div>
-          ))}
-        </div>
-      )}
-    </section>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function BadgesSection({ profile }: { profile: ProfileDetail }) {
-  const copy = profileConfig.badges;
   if (profile.badges.length === 0) {
-    return (
-      <section className="space-y-4 border-t border-border pt-12">
-        <div className="text-xs font-bold text-primary/80">{copy.marker}</div>
-        <div className="border-2 border-border bg-background/60 p-6 text-sm text-muted-foreground">
-          {copy.empty}
-        </div>
-      </section>
-    );
+    return null;
   }
-
   return (
-    <section className="space-y-4 border-t border-border pt-12">
-      <div className="text-xs font-bold text-primary/80">{copy.marker}</div>
-      <div className="grid gap-px bg-border/30 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="premium-card space-y-4 rounded-2xl p-6">
+      <h3 className="text-lg font-semibold">Badges</h3>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {profile.badges.map((badge) => (
-          <div key={badge.slug} className="bg-background p-6">
-            <p className="text-sm font-bold uppercase tracking-wide text-foreground">
-              {badge.name}
-            </p>
+          <div
+            key={badge.slug}
+            className="rounded-xl border border-border/70 bg-gradient-to-br from-card to-card/50 p-4 shadow-sm smooth-transition hover:border-border hover:shadow-md"
+          >
+            <p className="font-semibold">{badge.name}</p>
             {badge.description ? (
-              <p className="mt-2 text-xs text-muted-foreground">{badge.description}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{badge.description}</p>
             ) : null}
-            <p className="mt-4 text-[11px] uppercase text-muted-foreground">
-              Awarded {formatDistanceToNow(badge.awardedAt, { addSuffix: true })}
-            </p>
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
 function StaffInsights({ insights }: { insights: NonNullable<ProfileDetail["staffInsights"]> }) {
-  const { staff } = profileConfig;
-  const rows = [
-    {
-      label: staff.fields.rapidSolveSpike,
-      value: insights.rapidSolveSpike ? "Yes" : "No",
-      tone: insights.rapidSolveSpike ? "text-destructive" : "text-muted-foreground",
-    },
-    {
-      label: staff.fields.manualReviewCount,
-      value: insights.manualReviewCount.toString(),
-      tone: "text-foreground",
-    },
-    {
-      label: staff.fields.shadowBanned,
-      value: insights.shadowBanned ? "Shadow banned" : "Active",
-      tone: insights.shadowBanned ? "text-destructive" : "text-success",
-    },
-    {
-      label: "Accepted last 24h",
-      value: insights.last24hAccepted.toString(),
-      tone: "text-foreground",
-    },
-  ];
-
   return (
-    <section className="space-y-4 border-t border-border pt-12">
-      <div className="text-xs font-bold text-primary/80">{staff.marker}</div>
-      <div className="border-2 border-destructive/50 bg-destructive/5 p-6">
-        <div className="mb-4 flex items-center gap-3 text-sm text-destructive">
-          <ShieldAlert className="h-5 w-5" />
-          <span>{staff.description}</span>
+    <div className="premium-card space-y-4 rounded-2xl border-destructive/20 p-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+          <ShieldAlert className="h-5 w-5 text-destructive" />
         </div>
-        <div className="grid gap-px bg-border/30">
-          {rows.map((row) => (
-            <div
-              key={row.label}
-              className="flex items-center justify-between bg-background/80 px-4 py-3 text-sm"
-            >
-              <span className="text-muted-foreground">{row.label}</span>
-              <span className={cn("font-bold uppercase", row.tone)}>{row.value}</span>
-            </div>
-          ))}
+        <div>
+          <h3 className="text-lg font-semibold text-destructive">Staff Insights</h3>
+          <p className="text-xs text-muted-foreground">Visible only to staff and moderators</p>
         </div>
       </div>
-    </section>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <span>Rapid solve spike:</span>
+          <span
+            className={
+              insights.rapidSolveSpike ? "font-semibold text-destructive" : "text-muted-foreground"
+            }
+          >
+            {insights.rapidSolveSpike ? "Yes" : "No"}
+          </span>
+        </div>
+        <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <span>Manual reviews pending:</span>
+          <span className="font-semibold">{insights.manualReviewCount}</span>
+        </div>
+        <div className="flex justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <span>Account status:</span>
+          <span
+            className={
+              insights.shadowBanned
+                ? "font-semibold text-destructive"
+                : "font-semibold text-success"
+            }
+          >
+            {insights.shadowBanned ? "Shadow Banned" : "Active"}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -624,77 +524,95 @@ function ProfilePrivacyCard({
       });
     },
   });
-  const copy = profileConfig.privacy;
 
   return (
-    <section className="space-y-4 border-t border-border pt-12">
-      <div className="text-xs font-bold text-primary/80">{copy.marker}</div>
-      <div className="border-2 border-border bg-background p-8">
-        <p className="text-sm text-muted-foreground">{copy.description}</p>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-            className="mt-6 space-y-8"
-          >
-            <div className="grid gap-3">
-              {copy.toggles.map((toggle) => renderToggle(form, toggle))}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {SOCIAL_FIELDS.map((field) => (
-                <FormField
-                  key={field.key}
-                  control={form.control}
-                  name={`socials.${field.key}` as const}
-                  render={({ field: socialField }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wide">
-                        {field.label}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={`https://${field.key}.com/you`}
-                          value={socialField.value ?? ""}
-                          onChange={(event) => socialField.onChange(event.target.value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={mutation.isPending}
-                className="h-11 rounded-none border-2 border-primary px-8 text-xs font-bold"
-              >
-                {mutation.isPending ? "Saving…" : copy.action}
-              </Button>
-            </div>
-          </form>
-        </Form>
+    <div className="premium-card space-y-6 rounded-2xl p-8">
+      <div>
+        <h3 className="text-lg font-semibold">Privacy & Sharing</h3>
+        <p className="text-sm text-muted-foreground">
+          Control what information is visible on your profile
+        </p>
       </div>
-    </section>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+          className="space-y-6"
+        >
+          <div className="space-y-3">
+            {renderToggle(
+              form,
+              "shareAcceptedCode",
+              "Share Accepted Code",
+              "Opt-in to displaying AC snippets on your profile",
+            )}
+            {renderToggle(
+              form,
+              "showOnLeaderboard",
+              "Appear on Leaderboards",
+              "Opt-out removes you from public rankings",
+            )}
+            {renderToggle(
+              form,
+              "showCountry",
+              "Show Country",
+              "Controls whether your flag is visible to others",
+            )}
+            {renderToggle(
+              form,
+              "showSocials",
+              "Show Social Links",
+              "Hide or reveal linked accounts on your profile",
+            )}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(["github", "linkedin", "twitter", "website"] as const).map((key) => (
+              <FormField
+                key={key}
+                control={form.control}
+                name={`socials.${key}` as const}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-semibold capitalize">{key}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={`https://${key}.com/you`}
+                        value={field.value ?? ""}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        className="rounded-xl"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
+          <Button type="submit" disabled={mutation.isPending} className="rounded-xl">
+            {mutation.isPending ? "Saving..." : "Save Preferences"}
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 }
 
+type ToggleName = "shareAcceptedCode" | "showOnLeaderboard" | "showCountry" | "showSocials";
+
 function renderToggle(
   form: UseFormReturn<ProfileSettingsInput>,
-  toggle: (typeof profileConfig.privacy.toggles)[number],
+  name: ToggleName,
+  label: string,
+  description: string,
 ) {
   return (
     <FormField
-      key={toggle.name}
       control={form.control}
-      name={toggle.name as ProfileToggleName}
+      name={name}
       render={({ field }) => (
-        <FormItem className="flex items-center justify-between border-2 border-border bg-background/70 px-4 py-4">
-          <div className="space-y-1">
-            <FormLabel className="text-xs font-bold uppercase tracking-wide">
-              {toggle.label}
-            </FormLabel>
-            <p className="text-xs text-muted-foreground">{toggle.description}</p>
+        <FormItem className="flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-4">
+          <div className="space-y-0.5">
+            <FormLabel className="text-sm font-semibold">{label}</FormLabel>
+            <p className="text-xs text-muted-foreground">{description}</p>
           </div>
           <FormControl>
             <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -707,30 +625,31 @@ function renderToggle(
 
 function ProfileSkeleton() {
   return (
-    <div className="space-y-8 font-mono">
-      <div className="border-2 border-border bg-background p-8">
-        <Skeleton className="mb-4 h-4 w-32" />
-        <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
-          <Skeleton className="h-32 w-32" />
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center">
+          <Skeleton className="h-24 w-24 rounded-full" />
           <div className="flex-1 space-y-3">
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-4 w-52" />
           </div>
-        </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        </CardContent>
+      </Card>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="border-2 border-border bg-background p-6">
-            <Skeleton className="h-5 w-16" />
-            <Skeleton className="mt-3 h-6 w-20" />
-          </div>
+          <Card key={index}>
+            <CardContent className="p-5">
+              <Skeleton className="h-10 w-32" />
+            </CardContent>
+          </Card>
         ))}
       </div>
-      <div className="border-2 border-border bg-background p-8">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="mt-4 h-64 w-full" />
-      </div>
+      <Card>
+        <CardContent className="h-64">
+          <Skeleton className="h-full w-full" />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -751,7 +670,7 @@ function buildSocialLinks(
   if (!visible) {
     return [];
   }
-  const links: Array<{ href: string; label: string; icon: ReactNode }> = [];
+  const links: Array<{ href: string; label: string; icon: React.ReactNode }> = [];
   if (socials.github) {
     links.push({ href: socials.github, label: "GitHub", icon: <Github className="h-4 w-4" /> });
   }

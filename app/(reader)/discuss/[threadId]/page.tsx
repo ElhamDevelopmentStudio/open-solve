@@ -1,9 +1,8 @@
 import { HydrationBoundary } from "@tanstack/react-query";
-import { notFound } from "next/navigation";
-
-import { DiscussionDetailShell } from "@/components/discussions/discussion-detail-shell";
-import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
+import { DiscussionDetailShell } from "@/components/discussions/discussion-detail-shell";
+import { notFound } from "next/navigation";
 
 type Params = { threadId: string };
 
@@ -27,8 +26,10 @@ export default async function GlobalThreadDetailPage({
     }),
   ]);
   return (
-    <HydrationBoundary state={hydration}>
-      <DiscussionDetailShell threadId={threadId} />
-    </HydrationBoundary>
+    <div className="py-10">
+      <HydrationBoundary state={hydration}>
+        <DiscussionDetailShell threadId={threadId} />
+      </HydrationBoundary>
+    </div>
   );
 }

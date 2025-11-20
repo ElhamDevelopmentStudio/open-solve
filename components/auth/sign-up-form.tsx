@@ -103,17 +103,14 @@ export function SignUpForm() {
     }
   };
 
-  const labelClass =
-    "font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-foreground flex items-center gap-2";
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8 font-mono">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                "flex h-8 w-8 items-center justify-center border-2 text-xs font-bold rounded-none",
+                "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
                 step === 1
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-primary bg-background text-primary",
@@ -123,7 +120,7 @@ export function SignUpForm() {
             </div>
             <span
               className={cn(
-                "text-xs font-bold uppercase tracking-[0.08em]",
+                "text-sm font-medium",
                 step === 1 ? "text-foreground" : "text-muted-foreground",
               )}
             >
@@ -131,15 +128,12 @@ export function SignUpForm() {
             </span>
           </div>
           <div
-            className={cn(
-              "h-[2px] flex-1 transition-colors",
-              step > 1 ? "bg-primary" : "bg-border",
-            )}
+            className={cn("h-px flex-1 transition-colors", step > 1 ? "bg-primary" : "bg-border")}
           />
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                "flex h-8 w-8 items-center justify-center border-2 text-xs font-bold rounded-none",
+                "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
                 step === 2
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-background text-muted-foreground",
@@ -149,7 +143,7 @@ export function SignUpForm() {
             </div>
             <span
               className={cn(
-                "text-xs font-bold uppercase tracking-[0.08em]",
+                "text-sm font-medium",
                 step === 2 ? "text-foreground" : "text-muted-foreground",
               )}
             >
@@ -165,13 +159,13 @@ export function SignUpForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>Email</FormLabel>
+                  <FormLabel className="text-sm font-medium">Email</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="name@company.com"
                       autoComplete="email"
-                      className="h-12 border-2 font-mono"
+                      className="h-11"
                       {...field}
                     />
                   </FormControl>
@@ -185,18 +179,18 @@ export function SignUpForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>Password</FormLabel>
+                  <FormLabel className="text-sm font-medium">Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="Create a secure password"
                       autoComplete="new-password"
-                      className="h-12 border-2 font-mono"
+                      className="h-11"
                       {...field}
                     />
                   </FormControl>
                   <FormMessage />
-                  <p className="text-xs font-mono text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Minimum 8 characters with uppercase, lowercase, and numbers
                   </p>
                 </FormItem>
@@ -205,7 +199,7 @@ export function SignUpForm() {
 
             <Button
               type="button"
-              className="h-12 w-full font-mono font-bold uppercase tracking-tight"
+              className="h-11 w-full font-medium"
               onClick={handleContinueToStep2}
             >
               Continue to profile
@@ -218,7 +212,7 @@ export function SignUpForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>
+                  <FormLabel className="text-sm font-medium">
                     Display name <span className="text-muted-foreground">(optional)</span>
                   </FormLabel>
                   <FormControl>
@@ -226,7 +220,7 @@ export function SignUpForm() {
                       type="text"
                       placeholder="Your full name"
                       autoComplete="name"
-                      className="h-12 border-2 font-mono"
+                      className="h-11"
                       {...field}
                     />
                   </FormControl>
@@ -240,7 +234,7 @@ export function SignUpForm() {
               name="handle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={labelClass}>
+                  <FormLabel className="text-sm font-medium">
                     Username <span className="text-muted-foreground">(optional)</span>
                   </FormLabel>
                   <FormControl>
@@ -248,12 +242,12 @@ export function SignUpForm() {
                       type="text"
                       placeholder="unique-handle"
                       autoComplete="username"
-                      className="h-12 border-2 font-mono"
+                      className="h-11"
                       {...field}
                     />
                   </FormControl>
                   <FormMessage />
-                  <p className="text-xs font-mono text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     3-20 characters: lowercase, numbers, underscores, hyphens
                   </p>
                 </FormItem>
@@ -264,14 +258,14 @@ export function SignUpForm() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-12 w-32 font-mono font-bold uppercase tracking-tight"
+                className="h-11 w-32 font-medium"
                 onClick={() => setStep(1)}
               >
                 Back
               </Button>
               <Button
                 type="submit"
-                className="h-12 flex-1 font-mono font-bold uppercase tracking-tight"
+                className="h-11 flex-1 font-medium"
                 disabled={signUpMutation.isPending}
               >
                 {signUpMutation.isPending ? (
@@ -290,4 +284,3 @@ export function SignUpForm() {
     </Form>
   );
 }
-

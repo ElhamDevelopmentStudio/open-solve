@@ -1,38 +1,14 @@
 "use client";
 
-import { CodeEditor } from "@/components/code/code-editor";
-import { RichTextEditor } from "@/components/editor/rich-text-editor";
-import {
-  Eye,
-  FileText,
-  Info,
-  Loader2,
-  Plus,
-  RotateCcw,
-  Save,
-  Send,
-  ShieldAlert,
-  ShieldCheck,
-  Trash2,
-  UserPlus,
-} from "@/components/icons";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { trpc } from "@/lib/trpc/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -40,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -49,23 +24,46 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { staffConfig } from "@/config/staff";
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
-import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
-import { invalidateTags } from "@/lib/react-query/invalidation";
-import { uploadImageToMinio } from "@/lib/storage/minio-upload";
-import { trpc } from "@/lib/trpc/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CodeEditor } from "@/components/code/code-editor";
+import { RichTextEditor } from "@/components/editor/rich-text-editor";
+import {
+  Loader2,
+  Plus,
+  Save,
+  Send,
+  ShieldCheck,
+  ShieldAlert,
+  UserPlus,
+  Trash2,
+  RotateCcw,
+  Info,
+  Eye,
+  FileText,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/lib/constants";
 import type { ProblemVisibility, Tag } from "@prisma/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { TagInput, type Tag as EmblorTag } from "emblor";
-import { marked } from "marked";
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { uploadImageToMinio } from "@/lib/storage/minio-upload";
 import TurndownService from "turndown";
+import { marked } from "marked";
+import { TagInput, type Tag as EmblorTag } from "emblor";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateTags } from "@/lib/react-query/invalidation";
 
 type TestCaseRow = {
   id?: string;
@@ -127,72 +125,72 @@ const JUDGE_MODE_OPTIONS: Array<{
 export function ProblemEditorShell({ problemId }: { problemId: string }) {
   const utils = trpc.useUtils();
   const queryClient = useQueryClient();
-  const invalidateProblemQueries = useCallback(() => {
+  const invalidateProblemCaches = () => {
+    void invalidateProblemCaches();
     void utils.staff.problems.list.invalidate();
-    void utils.staff.problems.get.invalidate({ id: problemId });
     invalidateTags(queryClient, ["problems", "problemDetail", "tags", "staffProblems"]);
-  }, [problemId, queryClient, utils]);
+  };
   const { data, isLoading } = trpc.staff.problems.get.useQuery({ id: problemId });
   const { data: metadata } = trpc.problems.filterMetadata.useQuery();
   const { data: languageCatalog } = trpc.staff.problems.languagesCatalog.useQuery();
 
   const saveContent = trpc.staff.problems.saveContent.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Content saved");
     },
   });
   const saveMetadata = trpc.staff.problems.saveMetadata.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Metadata saved");
     },
   });
   const saveTests = trpc.staff.problems.updateTests.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Tests updated");
     },
   });
   const submitForReview = trpc.staff.problems.submitForReview.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Sent to review");
     },
   });
   const requestChanges = trpc.staff.problems.requestChanges.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Returned to draft");
     },
   });
   const approve = trpc.staff.problems.approve.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Approved");
     },
   });
   const publish = trpc.staff.problems.publish.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Published");
     },
   });
   const updateLanguagesMutation = trpc.staff.problems.updateLanguages.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Languages saved");
     },
   });
   const addCurator = trpc.staff.problems.addCurator.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Curator added");
     },
   });
   const removeCurator = trpc.staff.problems.removeCurator.useMutation({
     onSuccess: () => {
-      invalidateProblemQueries();
+      invalidateProblemCaches();
       toast.success("Curator removed");
     },
   });
@@ -576,77 +574,17 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
   };
 
   return (
-    <div className="mx-auto max-w-screen-2xl space-y-8 px-4 pb-10 pt-2 font-mono text-foreground lg:px-10">
-      <section className="border-2 border-border bg-background p-6 shadow-sm shadow-primary/20 sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.3em] text-primary/80">
-              {staffConfig.problems.editor.marker}
-              <Badge className="rounded-none border-2 border-primary/40 bg-background px-3 py-1 text-[10px] tracking-[0.2em] text-muted-foreground">
-                {staffConfig.problems.badge}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs uppercase text-muted-foreground">{data.slug}</p>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-                {contentState.title || data.version.title}
-              </h1>
-              <p className="max-w-3xl text-sm text-muted-foreground">
-                {staffConfig.problems.editor.description}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="border-2 uppercase">
-                {data.state.toLowerCase()}
-              </Badge>
-              <Badge variant="outline" className="border-2 uppercase">
-                {data.visibility.toLowerCase()}
-              </Badge>
-              {metadataState.difficultyCode ? (
-                <Badge variant="secondary" className="border-2 border-border uppercase">
-                  {metadataState.difficultyCode.toLowerCase()}
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="border-2 border-border uppercase">
-                  unrated
-                </Badge>
-              )}
-            </div>
-          </div>
-          <div className="grid h-full w-full gap-px bg-border/50 sm:grid-cols-2 lg:w-[420px]">
-            <div className="bg-card p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80">
-                Tests
-              </p>
-              <p className="text-2xl font-black">{orderedTestCases.length}</p>
-              <p className="text-xs text-muted-foreground">
-                {sampleCount} samples · {hiddenCount} hidden
-              </p>
-            </div>
-            <div className="bg-card p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80">
-                Languages
-              </p>
-              <p className="text-2xl font-black">{enabledLanguageCount}</p>
-              <p className="text-xs text-muted-foreground">workspace ready</p>
-            </div>
-            <div className="bg-card p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80">
-                Lint
-              </p>
-              <p className="text-2xl font-black">{lintIssues.length}</p>
-              <p className="text-xs text-muted-foreground">issues to resolve</p>
-            </div>
-            <div className="bg-card p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80">
-                Reviews
-              </p>
-              <p className="text-2xl font-black">{data.reviews.length}</p>
-              <p className="text-xs text-muted-foreground">recent decisions logged</p>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase text-muted-foreground">{data.slug}</p>
+          <h1 className="text-2xl font-semibold">{contentState.title}</h1>
         </div>
-      </section>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline">{data.state.toLowerCase()}</Badge>
+          <Badge variant="outline">{data.visibility.toLowerCase()}</Badge>
+        </div>
+      </div>
 
       <Tabs defaultValue="content" className="space-y-6">
         <TabsList>
@@ -753,7 +691,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   {contentState.samples.map((sample, index) => (
                     <div
                       key={`sample-${index}`}
-                      className="space-y-4 border-2 border-border bg-accent/30 p-4"
+                      className="space-y-4 rounded-2xl border border-white/10 bg-muted/5 p-4"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-medium text-foreground">Sample #{index + 1}</p>
@@ -795,12 +733,12 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
                   {lintIssues.length > 0 ? (
-                    <div className="flex items-center gap-2 text-warning">
+                    <div className="flex items-center gap-2 text-amber-500">
                       <ShieldAlert className="h-4 w-4" />
                       <span>{lintIssues.length} issue(s) detected.</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-success">
+                    <div className="flex items-center gap-2 text-emerald-500">
                       <ShieldCheck className="h-4 w-4" />
                       <span>Structure looks solid.</span>
                     </div>
@@ -831,7 +769,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 {data.curators.map((curator) => (
                   <div
                     key={curator.userId}
-                    className="flex items-center justify-between border-2 border-border bg-accent/20 px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-white/5 bg-muted/30 px-4 py-3"
                   >
                     <div>
                       <p className="font-medium">
@@ -842,28 +780,20 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                       </p>
                     </div>
                     {!curator.isOwner ? (
-                      <ConfirmDialog
-                        variant="warning"
-                        title={staffConfig.problems.editor.confirm.removeCurator}
-                        confirmLabel={staffConfig.problems.editor.actions.removeCurator}
-                        onConfirm={() => handleRemoveCurator(curator.userId)}
-                        loading={removeCurator.isPending}
-                        trigger={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disabled={removeCurator.isPending}
-                          >
-                            {removeCurator.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Remove curator</span>
-                          </Button>
-                        }
-                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveCurator(curator.userId)}
+                        disabled={removeCurator.isPending}
+                      >
+                        {removeCurator.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">Remove curator</span>
+                      </Button>
                     ) : null}
                   </div>
                 ))}
@@ -919,7 +849,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                   return (
                     <div
                       key={language.code}
-                      className="border-2 border-border bg-card/50 p-4 shadow-inner shadow-primary/10"
+                      className="rounded-2xl border border-white/5 bg-card/50 p-4 shadow-inner shadow-black/10"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -964,7 +894,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 })
               )}
             </CardContent>
-            <CardFooter className="flex flex-col gap-2 border-t-2 border-border pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+            <CardFooter className="flex flex-col gap-2 border-t border-white/5 pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
               <span>{enabledLanguageCount} language(s) selected</span>
               <Button
                 type="button"
@@ -1079,7 +1009,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                         key={option.value}
                         htmlFor={id}
                         className={cn(
-                          "cursor-pointer border bg-card/50 p-3 text-left transition hover:border-primary/60",
+                          "cursor-pointer rounded-2xl border bg-card/50 p-3 text-left transition hover:border-primary/60",
                           isActive ? "border-primary shadow-sm" : "border-border/60",
                         )}
                       >
@@ -1216,21 +1146,14 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                               <Eye className="h-4 w-4" />
                               <span className="sr-only">View test case</span>
                             </Button>
-                            <ConfirmDialog
-                              variant="destructive"
-                              title={staffConfig.problems.editor.confirm.deleteTestCase}
-                              description={
-                                staffConfig.problems.editor.confirmDetails.deleteTestCase
-                              }
-                              confirmLabel="Delete case"
-                              onConfirm={() => handleDeleteTestCase(test.id)}
-                              trigger={
-                                <Button variant="ghost" size="icon-sm">
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Remove test case</span>
-                                </Button>
-                              }
-                            />
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleDeleteTestCase(test.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Remove test case</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
@@ -1239,7 +1162,7 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 </Table>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-3 border-t-2 border-border pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+            <CardFooter className="flex flex-col gap-3 border-t border-white/5 pt-4 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="font-medium text-foreground">{hiddenCount} hidden case(s)</p>
                 <p>Strength budget: {hiddenStrengthTotal}</p>
@@ -1262,76 +1185,40 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
               <CardTitle>Review workflow</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <ConfirmDialog
-                  variant="warning"
-                  title={staffConfig.problems.editor.confirm.submit}
-                  description={staffConfig.problems.editor.confirmDetails.submit}
-                  confirmLabel={staffConfig.problems.editor.actions.submit}
-                  loading={submitForReview.isPending}
-                  onConfirm={() => submitForReview.mutate({ problemId })}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      disabled={submitForReview.isPending || data.state === "REVIEW"}
-                    >
-                      {submitForReview.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-4 w-4" />
-                      )}
-                      {staffConfig.problems.editor.actions.submit}
-                    </Button>
-                  }
-                />
-                <ConfirmDialog
-                  variant="warning"
-                  title={staffConfig.problems.editor.confirm.requestChanges}
-                  description={staffConfig.problems.editor.confirmDetails.requestChanges}
-                  confirmLabel={staffConfig.problems.editor.actions.requestChanges}
-                  loading={requestChanges.isPending}
-                  onConfirm={() => requestChanges.mutate({ problemId })}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      disabled={requestChanges.isPending || data.state === "DRAFT"}
-                    >
-                      {staffConfig.problems.editor.actions.requestChanges}
-                    </Button>
-                  }
-                />
-                <ConfirmDialog
-                  title={staffConfig.problems.editor.confirm.approve}
-                  description={staffConfig.problems.editor.confirmDetails.approve}
-                  confirmLabel={staffConfig.problems.editor.actions.approve}
-                  loading={approve.isPending}
-                  onConfirm={() => approve.mutate({ problemId })}
-                  trigger={
-                    <Button variant="outline" className="w-full" disabled={approve.isPending}>
-                      {staffConfig.problems.editor.actions.approve}
-                    </Button>
-                  }
-                />
-                <ConfirmDialog
-                  variant="warning"
-                  title={staffConfig.problems.editor.confirm.publish}
-                  description={
-                    staffConfig.problems.editor.confirmDetails.publish +
-                    ` (${metadataState.visibility.toLowerCase()})`
-                  }
-                  confirmLabel={staffConfig.problems.editor.actions.publish}
-                  loading={publish.isPending}
-                  onConfirm={() =>
-                    publish.mutate({ problemId, visibility: metadataState.visibility })
-                  }
-                  trigger={
-                    <Button variant="default" className="w-full" disabled={publish.isPending}>
-                      {staffConfig.problems.editor.actions.publish}
-                    </Button>
-                  }
-                />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => submitForReview.mutate({ problemId })}
+                  disabled={submitForReview.isPending || data.state === "REVIEW"}
+                >
+                  {submitForReview.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  Send to review
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => requestChanges.mutate({ problemId })}
+                  disabled={requestChanges.isPending || data.state === "DRAFT"}
+                >
+                  Return to draft
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => approve.mutate({ problemId })}
+                  disabled={approve.isPending}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => publish.mutate({ problemId, visibility: metadataState.visibility })}
+                  disabled={publish.isPending}
+                >
+                  Publish
+                </Button>
               </div>
               <div>
                 <p className="text-sm font-medium">Recent review events</p>
@@ -1340,7 +1227,10 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 ) : (
                   <ul className="space-y-2 text-sm">
                     {data.reviews.map((review) => (
-                      <li key={review.id} className="border-2 border-border bg-accent/20 p-2">
+                      <li
+                        key={review.id}
+                        className="rounded-lg border border-white/5 bg-muted/10 p-2"
+                      >
                         <div className="flex items-center justify-between">
                           <span className="font-medium">
                             {review.reviewer.name ?? review.reviewer.handle}
@@ -1516,7 +1406,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
                 onValueChange={handleKindChange}
                 className="grid gap-3 md:grid-cols-2"
               >
-                <div className="flex items-start gap-2 border border-border/60 p-3">
+                <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3">
                   <RadioGroupItem value="sample" id="case-kind-sample" />
                   <div>
                     <Label htmlFor="case-kind-sample" className="font-medium">
@@ -1527,7 +1417,7 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-2 border border-border/60 p-3">
+                <div className="flex items-start gap-2 rounded-xl border border-border/60 p-3">
                   <RadioGroupItem value="hidden" id="case-kind-hidden" />
                   <div>
                     <Label htmlFor="case-kind-hidden" className="font-medium">
@@ -1558,19 +1448,15 @@ function TestCaseModal({ open, onOpenChange, testCase, onSave, onDelete }: TestC
         </ScrollArea>
         <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {draft.id ? (
-            <ConfirmDialog
-              variant="destructive"
-              title={staffConfig.problems.editor.confirm.deleteTestCase}
-              description={staffConfig.problems.editor.confirmDetails.deleteTestCase}
-              confirmLabel="Delete case"
-              onConfirm={() => onDelete(draft.id)}
-              trigger={
-                <Button type="button" variant="ghost" className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete case
-                </Button>
-              }
-            />
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-destructive"
+              onClick={() => onDelete(draft.id)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete case
+            </Button>
           ) : (
             <p className="text-sm text-muted-foreground">
               New cases default to hidden until published.

@@ -21,7 +21,6 @@ import {
   Switch,
   Textarea,
 } from "@/components/ui";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DataTable, type DataTableColumn, DataTableColumnHeader } from "@/components/ui/data-table";
 import {
@@ -145,9 +144,6 @@ export function AdminSystemClient({
 
   const system = systemQuery.data ?? initialSystem;
   const flags = flagsQuery.data ?? initialFlags;
-  const [pendingDeleteFlag, setPendingDeleteFlag] = useState<{ id: string; name: string } | null>(
-    null,
-  );
   const refreshing = systemQuery.isFetching;
   const systemError = systemQuery.error;
   const lastUpdatedLabel =
@@ -787,7 +783,7 @@ export function AdminSystemClient({
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => setPendingDeleteFlag({ id: flag.id, name: flag.name })}
+                  onClick={() => deleteFlag.mutate({ id: flag.id })}
                 >
                   Delete
                 </Button>
@@ -799,27 +795,6 @@ export function AdminSystemClient({
           ) : null}
         </CardContent>
       </Card>
-      <ConfirmDialog
-        variant="destructive"
-        open={pendingDeleteFlag !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingDeleteFlag(null);
-        }}
-        title="Delete feature flag?"
-        description={
-          pendingDeleteFlag
-            ? `This removes ${pendingDeleteFlag.name} and disables related rollout targeting.`
-            : ""
-        }
-        confirmLabel="Delete"
-        loading={deleteFlag.isPending}
-        onConfirm={() => {
-          if (pendingDeleteFlag) {
-            deleteFlag.mutate({ id: pendingDeleteFlag.id });
-            setPendingDeleteFlag(null);
-          }
-        }}
-      />
     </div>
   );
 }

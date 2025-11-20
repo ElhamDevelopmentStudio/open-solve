@@ -1,12 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
-import { QRCodeSVG } from "qrcode.react";
-import { toast } from "sonner";
-
 import {
   Badge,
   Button,
@@ -25,8 +18,6 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
-import { CheckCircle2, Copy, Loader2, Shield } from "@/components/icons";
-import { settingsConfig } from "@/config/settings";
 import { invalidateAuthSession } from "@/lib/react-query/invalidation";
 import { sessionQueryOptions } from "@/lib/react-query/policies";
 import { trpc } from "@/lib/trpc/client";
@@ -36,6 +27,13 @@ import {
   type ChangeEmailInput,
   type ChangePasswordInput,
 } from "@/lib/validators/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, Copy, Key, Loader2, Mail, Shield, ShieldCheck } from "@/components/icons";
+import { QRCodeSVG } from "qrcode.react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function SecuritySettingsPage() {
   const queryClient = useQueryClient();
@@ -144,17 +142,19 @@ export default function SecuritySettingsPage() {
   const handleCopyRecoveryCodes = () => {
     navigator.clipboard.writeText(recoveryCodes.join("\n"));
     toast.success("Recovery codes copied", {
-      description: settingsConfig.security.sections.twoFactor.recoveryDescription,
+      description: "Paste them somewhere safe",
     });
   };
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-8 animate-fade-in font-mono text-foreground">
-        <Skeleton className="h-10 w-64 border-2 border-border" />
-        <div className="space-y-3 border-2 border-border bg-card p-6">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+      <div className="mx-auto max-w-3xl space-y-8 animate-fade-in">
+        <div>
+          <Skeleton className="h-8 w-48 rounded-xl" />
+          <Skeleton className="mt-2 h-4 w-96 rounded-lg" />
+        </div>
+        <div className="premium-card space-y-6 rounded-2xl p-8">
+          <Skeleton className="h-32 w-full rounded-xl" />
         </div>
       </div>
     );
@@ -164,83 +164,43 @@ export default function SecuritySettingsPage() {
     return null;
   }
 
-  const stats = [
-    {
-      label: settingsConfig.security.sections.password.title,
-      value: settingsConfig.security.sections.password.marker,
-    },
-    {
-      label: settingsConfig.security.sections.email.title,
-      value: session.user.email,
-    },
-    {
-      label: settingsConfig.security.sections.twoFactor.title,
-      value: session.user.twoFactorEnabled
-        ? settingsConfig.security.sections.twoFactor.statusEnabled
-        : settingsConfig.security.sections.twoFactor.statusDisabled,
-    },
-  ];
-
   return (
-    <div className="mx-auto max-w-5xl space-y-10 animate-fade-in font-mono text-foreground">
-      <section className="border-2 border-border bg-card p-6 md:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.35em] text-primary/80">
-              {settingsConfig.security.marker}
-              <span className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1 text-[10px] tracking-[0.25em] text-muted-foreground">
-                <Shield className="h-4 w-4 text-primary" />
-                {settingsConfig.security.badge}
-              </span>
-            </div>
-            <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
-              {settingsConfig.security.headline.line1}
-              <br />
-              {settingsConfig.security.headline.line2}
-              <br />
-              <span className="bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
-                {settingsConfig.security.headline.line3}
-              </span>
-            </h1>
-            <p className="max-w-3xl text-sm text-muted-foreground">
-              {settingsConfig.security.description}
+    <div className="mx-auto max-w-3xl space-y-8 animate-fade-in">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Security Settings</h1>
+        <p className="text-base text-muted-foreground">
+          Manage your password, email, and two-factor authentication
+        </p>
+      </div>
+
+      <div className="premium-card space-y-6 rounded-2xl p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <Key className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Change Password</h2>
+            <p className="text-sm text-muted-foreground">
+              Update your password to keep your account secure
             </p>
           </div>
-          <div className="grid w-full gap-3 sm:grid-cols-3 lg:max-w-md">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="border-2 border-border bg-background px-4 py-3 text-left"
-              >
-                <p className="text-[11px] uppercase text-muted-foreground">{stat.label}</p>
-                <p className="text-2xl font-black">{stat.value}</p>
-              </div>
-            ))}
-          </div>
         </div>
-      </section>
 
-      <section className="space-y-6">
-        <SectionHeader
-          marker={settingsConfig.security.sections.password.marker}
-          title={settingsConfig.security.sections.password.title}
-          description={settingsConfig.security.sections.password.description}
-        />
+        <div className="h-px bg-border/50" />
+
         <Form {...passwordForm}>
           <form
             onSubmit={passwordForm.handleSubmit((data) => changePasswordMutation.mutate(data))}
-            className="space-y-5 border-2 border-border bg-card p-6"
+            className="space-y-5"
           >
             <FormField
               control={passwordForm.control}
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-bold uppercase tracking-[0.15em]">
-                    {settingsConfig.security.sections.password.currentLabel}
-                  </FormLabel>
+                  <FormLabel className="text-sm font-semibold">Current Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input type="password" className="rounded-xl" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -252,66 +212,69 @@ export default function SecuritySettingsPage() {
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-bold uppercase tracking-[0.15em]">
-                    {settingsConfig.security.sections.password.newLabel}
-                  </FormLabel>
+                  <FormLabel className="text-sm font-semibold">New Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input type="password" className="rounded-xl" {...field} />
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
-                    {settingsConfig.security.sections.password.helper}
+                    At least 8 characters with uppercase, lowercase, and numbers
                   </p>
                 </FormItem>
               )}
             />
 
-            <div className="flex items-center justify-between border-t-2 border-border pt-3">
+            <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2 text-sm">
                 {changePasswordMutation.isSuccess ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-success" />
-                    <span className="text-success">
-                      {settingsConfig.security.sections.password.success}
-                    </span>
+                    <span className="text-success">Password updated</span>
                   </>
                 ) : null}
               </div>
               <Button
                 type="submit"
                 disabled={changePasswordMutation.isPending}
-                className="h-11 rounded-none border-2 border-primary bg-primary px-6 font-mono text-xs font-bold uppercase text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
+                className="rounded-xl"
               >
                 {changePasswordMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {settingsConfig.security.sections.password.cta}
+                    Updating...
                   </>
                 ) : (
-                  settingsConfig.security.sections.password.cta
+                  "Update Password"
                 )}
               </Button>
             </div>
           </form>
         </Form>
-      </section>
+      </div>
 
-      <section className="space-y-6">
-        <SectionHeader
-          marker={settingsConfig.security.sections.email.marker}
-          title={settingsConfig.security.sections.email.title}
-          description={settingsConfig.security.sections.email.description}
-        />
+      <div className="premium-card space-y-6 rounded-2xl p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+            <Mail className="h-5 w-5 text-info" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Change Email</h2>
+            <p className="text-sm text-muted-foreground">Update your email address</p>
+          </div>
+        </div>
+
+        <div className="h-px bg-border/50" />
+
         <Form {...emailForm}>
           <form
             onSubmit={emailForm.handleSubmit((data) => changeEmailMutation.mutate(data))}
-            className="space-y-5 border-2 border-border bg-card p-6"
+            className="space-y-5"
           >
-            <div className="border-2 border-border bg-background px-4 py-3">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                {settingsConfig.security.sections.email.currentLabel}
+            <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Current Email
               </div>
-              <p className="mt-2 text-base font-black">{session.user.email}</p>
+              <p className="mt-1 font-medium">{session.user.email}</p>
             </div>
 
             <FormField
@@ -319,11 +282,14 @@ export default function SecuritySettingsPage() {
               name="newEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-bold uppercase tracking-[0.15em]">
-                    {settingsConfig.security.sections.email.newLabel}
-                  </FormLabel>
+                  <FormLabel className="text-sm font-semibold">New Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="your@email.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      className="rounded-xl"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -335,81 +301,76 @@ export default function SecuritySettingsPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-bold uppercase tracking-[0.15em]">
-                    {settingsConfig.security.sections.email.passwordLabel}
-                  </FormLabel>
+                  <FormLabel className="text-sm font-semibold">Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Your password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Your password"
+                      className="rounded-xl"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex items-center justify-between border-t-2 border-border pt-3">
+            <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2 text-sm">
                 {changeEmailMutation.isSuccess ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-success" />
-                    <span className="text-success">
-                      {settingsConfig.security.sections.email.success}
-                    </span>
+                    <span className="text-success">Email updated</span>
                   </>
                 ) : null}
               </div>
-              <Button
-                type="submit"
-                disabled={changeEmailMutation.isPending}
-                className="h-11 rounded-none border-2 border-primary bg-primary px-6 font-mono text-xs font-bold uppercase text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
-              >
+              <Button type="submit" disabled={changeEmailMutation.isPending} className="rounded-xl">
                 {changeEmailMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {settingsConfig.security.sections.email.cta}
+                    Updating...
                   </>
                 ) : (
-                  settingsConfig.security.sections.email.cta
+                  "Update Email"
                 )}
               </Button>
             </div>
           </form>
         </Form>
-      </section>
+      </div>
 
-      <section className="space-y-6 border-2 border-border bg-card p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">
-              {settingsConfig.security.sections.twoFactor.marker}
-            </p>
-            <h2 className="text-3xl font-black tracking-tight">
-              {settingsConfig.security.sections.twoFactor.title}
-            </h2>
+      <div className="premium-card space-y-6 rounded-2xl p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+            <ShieldCheck className="h-5 w-5 text-success" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold">Two-Factor Authentication</h2>
             <p className="text-sm text-muted-foreground">
-              {settingsConfig.security.sections.twoFactor.description}
+              Add an extra layer of security to your account
             </p>
           </div>
           <Badge
-            variant={session.user.twoFactorEnabled ? "success" : "secondary"}
-            className="rounded-none border-2 border-border px-3 py-1 font-mono text-[10px] font-bold uppercase"
+            variant={session.user.twoFactorEnabled ? "default" : "secondary"}
+            className="rounded-full"
           >
-            {session.user.twoFactorEnabled
-              ? settingsConfig.security.sections.twoFactor.statusEnabled
-              : settingsConfig.security.sections.twoFactor.statusDisabled}
+            {session.user.twoFactorEnabled ? "Enabled" : "Disabled"}
           </Badge>
         </div>
 
-        <div className="flex flex-col gap-4 border-2 border-border bg-background p-4 md:flex-row md:items-center md:justify-between">
+        <div className="h-px bg-border/50" />
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-bold">
+            <p className="text-sm font-medium">
               {session.user.twoFactorEnabled
-                ? settingsConfig.security.sections.twoFactor.statusEnabled
-                : settingsConfig.security.sections.twoFactor.statusDisabled}
+                ? "Two-factor authentication is active"
+                : "Protect your account with 2FA"}
             </p>
             <p className="text-xs text-muted-foreground">
               {session.user.twoFactorEnabled
-                ? "Your account is secured with an authenticator app."
-                : "Use an authenticator app to generate verification codes."}
+                ? "Your account is secured with an authenticator app"
+                : "Use an authenticator app to generate verification codes"}
             </p>
           </div>
 
@@ -419,45 +380,40 @@ export default function SecuritySettingsPage() {
                 <Button
                   onClick={() => setupTwoFactorMutation.mutate()}
                   disabled={setupTwoFactorMutation.isPending}
-                  className="h-11 rounded-none border-2 border-primary bg-primary px-5 font-mono text-xs font-bold uppercase text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
+                  className="rounded-xl"
                 >
                   {setupTwoFactorMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Shield className="mr-2 h-4 w-4" />
                   )}
-                  {settingsConfig.security.sections.twoFactor.enableCta}
+                  Enable 2FA
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-xl rounded-none border-2 border-border bg-background font-mono">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{settingsConfig.security.sections.twoFactor.enableCta}</DialogTitle>
+                  <DialogTitle>Enable Two-Factor Authentication</DialogTitle>
                   <DialogDescription>
-                    {settingsConfig.security.sections.twoFactor.description}
+                    Scan this QR code with your authenticator app
                   </DialogDescription>
                 </DialogHeader>
 
                 {twoFactorSetup && !recoveryCodes.length ? (
                   <div className="space-y-5">
-                    <div className="flex justify-center border-2 border-border bg-background p-6">
+                    <div className="flex justify-center rounded-xl bg-background p-6">
                       <QRCodeSVG value={twoFactorSetup.uri} size={200} />
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-sm font-bold uppercase tracking-[0.15em]">
-                        {settingsConfig.security.sections.twoFactor.manualCodeLabel}
-                      </p>
-                      <div className="border-2 border-border bg-muted/30 p-3">
+                      <p className="text-sm font-semibold">Manual Entry Code</p>
+                      <div className="rounded-xl border border-border/50 bg-muted/40 p-3">
                         <p className="break-all font-mono text-xs">{twoFactorSetup.secret}</p>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label
-                        htmlFor="setup-password"
-                        className="text-sm font-bold uppercase tracking-[0.15em]"
-                      >
-                        {settingsConfig.security.sections.twoFactor.confirmPasswordLabel}
+                      <label htmlFor="setup-password" className="text-sm font-semibold">
+                        Confirm your password
                       </label>
                       <Input
                         id="setup-password"
@@ -465,15 +421,13 @@ export default function SecuritySettingsPage() {
                         value={setupPassword}
                         onChange={(e) => setSetupPassword(e.target.value)}
                         placeholder="Your password"
+                        className="rounded-xl"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <label
-                        htmlFor="setup-code"
-                        className="text-sm font-bold uppercase tracking-[0.15em]"
-                      >
-                        {settingsConfig.security.sections.twoFactor.verificationCodeLabel}
+                      <label htmlFor="setup-code" className="text-sm font-semibold">
+                        Enter verification code
                       </label>
                       <Input
                         id="setup-code"
@@ -481,10 +435,8 @@ export default function SecuritySettingsPage() {
                         maxLength={6}
                         value={setupCode}
                         onChange={(e) => setSetupCode(e.target.value.replace(/\D/g, ""))}
-                        placeholder={
-                          settingsConfig.security.sections.twoFactor.verificationPlaceholder
-                        }
-                        className="text-center font-mono text-lg tracking-widest"
+                        placeholder="000000"
+                        className="rounded-xl text-center font-mono text-lg tracking-widest"
                       />
                     </div>
 
@@ -502,15 +454,15 @@ export default function SecuritySettingsPage() {
                         setupCode.length !== 6 ||
                         enableTwoFactorMutation.isPending
                       }
-                      className="h-11 w-full rounded-none border-2 border-primary bg-primary px-5 font-mono text-xs font-bold uppercase text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
+                      className="w-full rounded-xl"
                     >
                       {enableTwoFactorMutation.isPending ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {settingsConfig.security.sections.twoFactor.enableAction}
+                          Enabling...
                         </>
                       ) : (
-                        settingsConfig.security.sections.twoFactor.enableAction
+                        "Enable 2FA"
                       )}
                     </Button>
                   </div>
@@ -518,47 +470,43 @@ export default function SecuritySettingsPage() {
 
                 {recoveryCodes.length > 0 ? (
                   <div className="space-y-5">
-                    <div className="border-2 border-success/30 bg-success/5 p-4">
+                    <div className="rounded-xl border border-success/30 bg-success/5 p-4">
                       <div className="flex items-center gap-2 text-sm font-semibold text-success">
                         <CheckCircle2 className="h-4 w-4" />
-                        {settingsConfig.security.sections.twoFactor.statusEnabled}
+                        2FA Successfully Enabled
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {settingsConfig.security.sections.twoFactor.recoveryDescription}
+                        Save these recovery codes in a secure location
                       </p>
                     </div>
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold uppercase tracking-[0.15em]">
-                          {settingsConfig.security.sections.twoFactor.recoveryTitle}
-                        </p>
+                        <p className="text-sm font-semibold">Recovery Codes</p>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={handleCopyRecoveryCodes}
-                          className="h-9 rounded-none px-3 text-xs font-bold uppercase"
+                          className="h-8 rounded-lg text-xs"
                         >
-                          <Copy className="mr-2 h-4 w-4" />
-                          {settingsConfig.security.sections.twoFactor.copyAll}
+                          <Copy className="mr-2 h-3.5 w-3.5" />
+                          Copy All
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 border-2 border-border bg-muted/30 p-4">
-                        {recoveryCodes.map((code) => (
-                          <div
-                            key={code}
-                            className="border-2 border-border bg-background p-2 font-mono text-xs"
-                          >
+                      <div className="grid grid-cols-2 gap-2 rounded-xl border border-border/50 bg-muted/40 p-4">
+                        {recoveryCodes.map((code, i) => (
+                          <div key={i} className="rounded-lg bg-background p-2 font-mono text-xs">
                             {code}
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="border-2 border-warning/30 bg-warning/10 p-3 text-xs text-muted-foreground">
-                      <p className="font-bold text-warning">Important</p>
+                    <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-muted-foreground">
+                      <p className="font-semibold text-warning">Important:</p>
                       <p className="mt-1">
-                        {settingsConfig.security.sections.twoFactor.importantNote}
+                        You&apos;ll need these codes to access your account if you lose your
+                        authenticator device. Store them somewhere safe.
                       </p>
                     </div>
 
@@ -567,9 +515,9 @@ export default function SecuritySettingsPage() {
                         setRecoveryCodes([]);
                         setDialogOpen(false);
                       }}
-                      className="h-11 w-full rounded-none border-2 border-border bg-background px-5 font-mono text-xs font-bold uppercase hover:border-primary/50 hover:bg-accent"
+                      className="w-full rounded-xl"
                     >
-                      {settingsConfig.security.sections.twoFactor.done}
+                      Done
                     </Button>
                   </div>
                 ) : null}
@@ -590,43 +538,20 @@ export default function SecuritySettingsPage() {
                 }
               }}
               disabled={disableTwoFactorMutation.isPending}
-              className="h-11 rounded-none border-2 border-destructive bg-destructive px-5 font-mono text-xs font-bold uppercase text-destructive-foreground hover:bg-destructive/90"
+              className="rounded-xl"
             >
               {disableTwoFactorMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {settingsConfig.security.sections.twoFactor.disableCta}
+                  Disabling...
                 </>
               ) : (
-                settingsConfig.security.sections.twoFactor.disableCta
+                "Disable 2FA"
               )}
             </Button>
           )}
         </div>
-      </section>
-    </div>
-  );
-}
-
-function SectionHeader({
-  marker,
-  title,
-  description,
-}: {
-  marker: string;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">{marker}</p>
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <h2 className="text-3xl font-black tracking-tight">{title}</h2>
-        {description ? (
-          <p className="text-sm text-muted-foreground md:max-w-2xl">{description}</p>
-        ) : null}
       </div>
     </div>
   );
 }
-

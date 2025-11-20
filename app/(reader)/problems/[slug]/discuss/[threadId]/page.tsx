@@ -1,15 +1,15 @@
-import { ArrowLeft, FileText } from "@/components/icons";
 import { HydrationBoundary } from "@tanstack/react-query";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "@/components/icons";
 
-import { DiscussionDetailShell } from "@/components/discussions/discussion-detail-shell";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { problemsConfig } from "@/config/problems";
-import { getCachedProblemDetail } from "@/lib/cache/problems";
-import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
+import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
+import { DiscussionDetailShell } from "@/components/discussions/discussion-detail-shell";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { getCachedProblemDetail } from "@/lib/cache/problems";
 
 type ProblemThreadPageParams = {
   slug: string;
@@ -53,80 +53,57 @@ export default async function ProblemThreadDetailPage({
     }),
   ]);
 
-  const { discuss } = problemsConfig;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-8">
       <Button
         asChild
         variant="ghost"
         size="sm"
-        className="h-9 rounded-none font-mono text-sm text-muted-foreground hover:bg-accent hover:text-primary"
+        className="gap-2 text-muted-foreground hover:text-foreground"
       >
         <Link href={`/problems/${slug}/discuss`}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> {discuss.thread.backLink}
+          <ArrowLeft className="h-4 w-4" /> Back to discussions
         </Link>
       </Button>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <HydrationBoundary state={hydration}>
           <DiscussionDetailShell threadId={threadId} />
         </HydrationBoundary>
-        <aside className="space-y-4">
-          <div className="space-y-4 border-2 border-border bg-background p-6">
-            <div className="space-y-2">
-              <div className="font-mono text-xs font-bold uppercase text-primary/80">
-                {discuss.sidebar.problem}
+        <aside className="space-y-4 rounded-3xl border border-border/70 bg-card/60 p-6">
+          <div>
+            <p className="text-xs uppercase text-muted-foreground">Problem</p>
+            <h2 className="text-lg font-semibold leading-tight">{problem.title}</h2>
+            {problem.difficulty ? <Badge className="mt-2">{problem.difficulty}</Badge> : null}
+          </div>
+          {problem.tags.length ? (
+            <div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="font-semibold uppercase tracking-wide">Tags</span>
+                <span>{problem.tags.length}</span>
               </div>
-              <h2 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-xl font-black leading-tight text-transparent">
-                {problem.title}
-              </h2>
-              {problem.difficulty ? (
-                <Badge className="rounded-none border font-mono text-xs font-bold uppercase">
-                  {problem.difficulty}
-                </Badge>
-              ) : null}
-            </div>
-            {problem.tags.length ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between font-mono text-xs font-bold uppercase text-primary/80">
-                  <span>{discuss.sidebar.tags}</span>
-                  <span>{problem.tags.length}</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {problem.tags.map((tag) => (
-                    <Badge
-                      key={tag.slug}
-                      variant="outline"
-                      className="rounded-none border font-mono text-xs font-bold uppercase"
-                    >
-                      #{tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            {problem.hasEditorial ? (
-              <Button
-                variant="outline"
-                asChild
-                className="h-10 w-full rounded-none border-2 border-border bg-transparent px-8 font-mono text-sm hover:border-primary/50 hover:bg-accent"
-              >
-                <Link href={`/problems/${slug}/editorial`}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  {discuss.sidebar.editorial}
-                </Link>
-              </Button>
-            ) : null}
-            <div className="space-y-2 border-t border-border pt-4 font-mono text-xs text-muted-foreground">
-              <div className="font-mono text-xs font-bold uppercase text-primary/80">
-                {discuss.sidebar.rules.title}
-              </div>
-              <ul className="list-disc space-y-1 pl-4">
-                {discuss.sidebar.rules.items.map((rule, index) => (
-                  <li key={index}>{rule}</li>
+              <Separator className="my-2" />
+              <div className="flex flex-wrap gap-2 text-xs">
+                {problem.tags.map((tag) => (
+                  <Badge key={tag.slug} variant="outline">
+                    #{tag.name}
+                  </Badge>
                 ))}
-              </ul>
+              </div>
             </div>
+          ) : null}
+          {problem.hasEditorial ? (
+            <Button variant="secondary" asChild className="w-full">
+              <Link href={`/problems/${slug}/editorial`}>View editorial</Link>
+            </Button>
+          ) : null}
+          <Separator />
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <p className="font-semibold uppercase tracking-wide">House rules</p>
+            <ul className="list-disc space-y-1 pl-4">
+              <li>Share hints, not full solutions.</li>
+              <li>Mark spoilers and be respectful.</li>
+              <li>Report abuse so moderators can step in.</li>
+            </ul>
           </div>
         </aside>
       </div>
