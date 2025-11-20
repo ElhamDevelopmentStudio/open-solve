@@ -1,8 +1,4 @@
-import {
-  ArrowRight,
-  Code2,
-  Github,
-} from "@/components/icons";
+import { ArrowRight, Code2, Github } from "@/components/icons";
 import { CommandPalette } from "@/components/marketing/command-palette";
 import { SplitEditor } from "@/components/marketing/split-editor";
 import { ThemeToggleLanding } from "@/components/marketing/theme-toggle-landing";
@@ -17,7 +13,7 @@ export default function Home() {
   return (
     <>
       <CommandPalette />
-      
+
       <div className="min-h-screen bg-background text-foreground">
         <nav className="fixed left-0 right-0 top-0 z-40 border-b border-border/50 bg-background/90 backdrop-blur-sm">
           <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-4 lg:px-12">
@@ -145,7 +141,9 @@ export default function Home() {
                     <div className="mb-4 font-mono text-xs font-bold text-primary/80">
                       [{feature.num}]
                     </div>
-                    <h3 className="mb-4 font-mono text-xl font-bold text-foreground">{feature.title}</h3>
+                    <h3 className="mb-4 font-mono text-xl font-bold text-foreground">
+                      {feature.title}
+                    </h3>
                     <p className="font-mono text-sm leading-relaxed text-muted-foreground">
                       {feature.description}
                     </p>
@@ -157,9 +155,7 @@ export default function Home() {
 
           <section className="border-t border-border py-24 lg:py-32">
             <div className="mb-16">
-              <div className="mb-4 font-mono text-xs font-bold text-primary/80">
-                [02] THE STACK
-              </div>
+              <div className="mb-4 font-mono text-xs font-bold text-primary/80">[02] THE STACK</div>
               <h2 className="bg-linear-to-br from-foreground via-foreground to-foreground/70 bg-clip-text font-mono text-4xl font-black leading-tight tracking-tight text-transparent sm:text-5xl lg:text-6xl">
                 {landingConfig.techStack.title}
               </h2>
@@ -172,7 +168,9 @@ export default function Home() {
                   className="group relative overflow-hidden border-2 border-border bg-background p-6 text-center transition-all hover:border-primary/50 hover:bg-accent"
                 >
                   <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                  <span className="relative z-10 font-mono text-sm font-bold text-foreground">{tech}</span>
+                  <span className="relative z-10 font-mono text-sm font-bold text-foreground">
+                    {tech}
+                  </span>
                 </div>
               ))}
             </div>
@@ -188,7 +186,7 @@ export default function Home() {
             <div className="relative overflow-hidden border-2 border-primary/50 bg-linear-to-br from-primary/5 via-background to-background p-12 shadow-2xl shadow-primary/10 lg:p-24">
               <div className="absolute right-0 top-0 h-96 w-96 bg-linear-to-br from-primary/10 to-transparent blur-3xl" />
               <div className="absolute bottom-0 left-0 h-96 w-96 bg-linear-to-tr from-primary/10 to-transparent blur-3xl" />
-              
+
               <div className="relative z-10 mx-auto max-w-3xl text-center">
                 <div className="mb-6 font-mono text-xs font-bold text-primary/80">
                   [03] GET STARTED
@@ -253,16 +251,28 @@ export default function Home() {
               <div>
                 <div className="mb-4 font-mono text-xs font-bold text-primary/80">PLATFORM</div>
                 <nav className="space-y-2 font-mono text-xs">
-                  <Link href="/problems" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/problems"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Problems
                   </Link>
-                  <Link href="/contests" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/contests"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Contests
                   </Link>
-                  <Link href="/discuss" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/discuss"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Discussions
                   </Link>
-                  <Link href="/leaderboards" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/leaderboards"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Leaderboard
                   </Link>
                 </nav>
@@ -271,13 +281,22 @@ export default function Home() {
               <div>
                 <div className="mb-4 font-mono text-xs font-bold text-primary/80">RESOURCES</div>
                 <nav className="space-y-2 font-mono text-xs">
-                  <Link href={siteConfig.links.docs} className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href={siteConfig.links.docs}
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Documentation
                   </Link>
-                  <Link href={siteConfig.links.github} className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href={siteConfig.links.github}
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     GitHub
                   </Link>
-                  <Link href="/api" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/api"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     API
                   </Link>
                 </nav>
@@ -286,13 +305,22 @@ export default function Home() {
               <div>
                 <div className="mb-4 font-mono text-xs font-bold text-primary/80">LEGAL</div>
                 <nav className="space-y-2 font-mono text-xs">
-                  <Link href="/privacy" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/privacy"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Privacy
                   </Link>
-                  <Link href="/terms" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/terms"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     Terms
                   </Link>
-                  <Link href="/license" className="block text-muted-foreground transition-colors hover:text-primary">
+                  <Link
+                    href="/license"
+                    className="block text-muted-foreground transition-colors hover:text-primary"
+                  >
                     MIT License
                   </Link>
                 </nav>

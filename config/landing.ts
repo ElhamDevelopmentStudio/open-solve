@@ -28,32 +28,27 @@ export const landingConfig = {
       {
         num: "02",
         title: "ICPC CONTESTS",
-        description:
-          "Live leaderboards. Freeze mechanics. Virtual participation. The real deal.",
+        description: "Live leaderboards. Freeze mechanics. Virtual participation. The real deal.",
       },
       {
         num: "03",
         title: "OPEN SOURCE",
-        description:
-          "MIT licensed. Fork it. Deploy it. Own your data. PostgreSQL + Docker.",
+        description: "MIT licensed. Fork it. Deploy it. Own your data. PostgreSQL + Docker.",
       },
       {
         num: "04",
         title: "COMMUNITY",
-        description:
-          "Discussions. Solution trails. Editorial content. Learn from the best.",
+        description: "Discussions. Solution trails. Editorial content. Learn from the best.",
       },
       {
         num: "05",
         title: "ANALYTICS",
-        description:
-          "Track progress. Identify weak spots. Visualize growth. Get better.",
+        description: "Track progress. Identify weak spots. Visualize growth. Get better.",
       },
       {
         num: "06",
         title: "NO BULLSHIT",
-        description:
-          "No ads. No tracking. No premium tiers. Just pure algorithmic practice.",
+        description: "No ads. No tracking. No premium tiers. Just pure algorithmic practice.",
       },
     ],
   },
@@ -74,8 +69,7 @@ export const landingConfig = {
   },
   cta: {
     title: "READY TO LEVEL UP?",
-    subtitle:
-      "Join 50,000+ developers grinding on OpenSolve. Free. Open source. Forever.",
+    subtitle: "Join 50,000+ developers grinding on OpenSolve. Free. Open source. Forever.",
     benefits: [
       { label: "NO CREDIT CARD", icon: "✓" },
       { label: "FREE FOREVER", icon: "✓" },
@@ -85,4 +79,3 @@ export const landingConfig = {
 };
 
 export type LandingConfig = typeof landingConfig;
-

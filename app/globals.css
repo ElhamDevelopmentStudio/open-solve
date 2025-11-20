@@ -115,65 +115,65 @@
   --font-geist-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-geist-mono: "JetBrains Mono", "Menlo", ui-monospace, SFMono-Regular, monospace;
   --radius: 0.75rem;
-  
+
   /* Base colors */
-  --background: 220 26% 97%;           /* #f5f7fa - Soft off-white */
-  --foreground: 227 25% 10%;           /* #1a1f2e - Deep charcoal */
-  --card: 0 0% 100%;                   /* #ffffff - Pure white */
-  --card-foreground: 227 25% 10%;      /* #1a1f2e - Deep charcoal */
-  --popover: 210 33% 98%;              /* #f8fafc - Subtle blue-white */
-  --popover-foreground: 227 25% 10%;   /* #1a1f2e - Deep charcoal */
-  
+  --background: 220 26% 97%; /* #f5f7fa - Soft off-white */
+  --foreground: 227 25% 10%; /* #1a1f2e - Deep charcoal */
+  --card: 0 0% 100%; /* #ffffff - Pure white */
+  --card-foreground: 227 25% 10%; /* #1a1f2e - Deep charcoal */
+  --popover: 210 33% 98%; /* #f8fafc - Subtle blue-white */
+  --popover-foreground: 227 25% 10%; /* #1a1f2e - Deep charcoal */
+
   /* Primary brand color */
-  --primary: 226 78% 58%;              /* #5b7ef6 - Vibrant blue */
-  --primary-foreground: 0 0% 100%;     /* #ffffff - White */
-  
+  --primary: 226 78% 58%; /* #5b7ef6 - Vibrant blue */
+  --primary-foreground: 0 0% 100%; /* #ffffff - White */
+
   /* Secondary colors */
-  --secondary: 221 24% 94%;            /* #eff1f5 - Light gray-blue */
+  --secondary: 221 24% 94%; /* #eff1f5 - Light gray-blue */
   --secondary-foreground: 226 28% 20%; /* #28344d - Dark blue */
-  
+
   /* Muted colors (secondary text, disabled states) */
-  --muted: 215 28% 93%;                /* #e8edf5 - Light muted */
-  --muted-foreground: 224 18% 48%;     /* #64748b - Muted gray-blue */
-  
+  --muted: 215 28% 93%; /* #e8edf5 - Light muted */
+  --muted-foreground: 224 18% 48%; /* #64748b - Muted gray-blue */
+
   /* Accent colors (highlights, hover states) */
-  --accent: 182 65% 88%;               /* #d1f0f7 - Cyan accent */
-  --accent-foreground: 185 34% 20%;    /* #234850 - Dark cyan */
-  
+  --accent: 182 65% 88%; /* #d1f0f7 - Cyan accent */
+  --accent-foreground: 185 34% 20%; /* #234850 - Dark cyan */
+
   /* State colors */
-  --destructive: 358 76% 61%;          /* #ef4444 - Red (errors) */
+  --destructive: 358 76% 61%; /* #ef4444 - Red (errors) */
   --destructive-foreground: 0 0% 100%; /* #ffffff - White */
-  
-  --success: 156 63% 40%;              /* #10b981 - Green (success) */
-  --success-foreground: 0 0% 100%;     /* #ffffff - White */
-  
-  --warning: 31 92% 54%;               /* #f59e0b - Amber (warnings) */
-  --warning-foreground: 0 0% 100%;     /* #ffffff - White */
-  
-  --info: 199 84% 52%;                 /* #3b82f6 - Blue (info) */
-  --info-foreground: 0 0% 100%;        /* #ffffff - White */
-  
+
+  --success: 156 63% 40%; /* #10b981 - Green (success) */
+  --success-foreground: 0 0% 100%; /* #ffffff - White */
+
+  --warning: 31 92% 54%; /* #f59e0b - Amber (warnings) */
+  --warning-foreground: 0 0% 100%; /* #ffffff - White */
+
+  --info: 199 84% 52%; /* #3b82f6 - Blue (info) */
+  --info-foreground: 0 0% 100%; /* #ffffff - White */
+
   /* Borders and inputs */
-  --border: 214 28% 86%;               /* #d4dce8 - Light border */
-  --input: 214 28% 86%;                /* #d4dce8 - Input border */
-  --ring: 226 78% 58%;                 /* #5b7ef6 - Focus ring (same as primary) */
-  
+  --border: 214 28% 86%; /* #d4dce8 - Light border */
+  --input: 214 28% 86%; /* #d4dce8 - Input border */
+  --ring: 226 78% 58%; /* #5b7ef6 - Focus ring (same as primary) */
+
   /* Chart colors */
-  --chart-1: 226 78% 58%;              /* Blue */
-  --chart-2: 267 69% 60%;              /* Purple */
-  --chart-3: 199 84% 52%;              /* Cyan */
-  --chart-4: 156 63% 40%;              /* Green */
-  --chart-5: 32 94% 52%;               /* Orange */
-  
+  --chart-1: 226 78% 58%; /* Blue */
+  --chart-2: 267 69% 60%; /* Purple */
+  --chart-3: 199 84% 52%; /* Cyan */
+  --chart-4: 156 63% 40%; /* Green */
+  --chart-5: 32 94% 52%; /* Orange */
+
   /* Sidebar (app shell) */
-  --sidebar: 216 32% 96%;              /* Light sidebar bg */
-  --sidebar-foreground: 222 28% 16%;   /* Dark sidebar text */
-  --sidebar-primary: 226 78% 58%;      /* Primary in sidebar */
+  --sidebar: 216 32% 96%; /* Light sidebar bg */
+  --sidebar-foreground: 222 28% 16%; /* Dark sidebar text */
+  --sidebar-primary: 226 78% 58%; /* Primary in sidebar */
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 222 24% 92%;       /* Sidebar hover */
+  --sidebar-accent: 222 24% 92%; /* Sidebar hover */
   --sidebar-accent-foreground: 222 45% 18%;
-  --sidebar-border: 214 28% 86%;       /* Sidebar borders */
-  --sidebar-ring: 226 78% 58%;         /* Sidebar focus ring */
+  --sidebar-border: 214 28% 86%; /* Sidebar borders */
+  --sidebar-ring: 226 78% 58%; /* Sidebar focus ring */
 }
 
 /**
@@ -197,63 +197,63 @@
  */
 .dark {
   /* Base colors */
-  --background: 232 32% 6%;            /* #0f1419 - Rich dark blue-black */
-  --foreground: 220 27% 96%;           /* #f5f7fa - Soft white */
-  --card: 234 30% 10%;                 /* #16202b - Dark card */
-  --card-foreground: 220 27% 96%;      /* #f5f7fa - Soft white */
-  --popover: 233 32% 9%;               /* #121825 - Dark popover */
-  --popover-foreground: 220 27% 96%;   /* #f5f7fa - Soft white */
-  
+  --background: 232 32% 6%; /* #0f1419 - Rich dark blue-black */
+  --foreground: 220 27% 96%; /* #f5f7fa - Soft white */
+  --card: 234 30% 10%; /* #16202b - Dark card */
+  --card-foreground: 220 27% 96%; /* #f5f7fa - Soft white */
+  --popover: 233 32% 9%; /* #121825 - Dark popover */
+  --popover-foreground: 220 27% 96%; /* #f5f7fa - Soft white */
+
   /* Primary brand color (brighter in dark mode) */
-  --primary: 226 100% 77%;             /* #7c9eff - Bright blue */
-  --primary-foreground: 234 32% 10%;   /* #16202b - Dark (for contrast) */
-  
+  --primary: 226 100% 77%; /* #7c9eff - Bright blue */
+  --primary-foreground: 234 32% 10%; /* #16202b - Dark (for contrast) */
+
   /* Secondary colors */
-  --secondary: 229 26% 16%;            /* #20273a - Dark gray-blue */
+  --secondary: 229 26% 16%; /* #20273a - Dark gray-blue */
   --secondary-foreground: 220 27% 96%; /* #f5f7fa - Soft white */
-  
+
   /* Muted colors */
-  --muted: 230 23% 18%;                /* #242d3d - Dark muted */
-  --muted-foreground: 227 18% 72%;     /* #b8c4d9 - Light muted */
-  
+  --muted: 230 23% 18%; /* #242d3d - Dark muted */
+  --muted-foreground: 227 18% 72%; /* #b8c4d9 - Light muted */
+
   /* Accent colors */
-  --accent: 189 42% 22%;               /* #1e3a45 - Dark cyan */
-  --accent-foreground: 180 45% 90%;    /* #d9f0f5 - Light cyan */
-  
+  --accent: 189 42% 22%; /* #1e3a45 - Dark cyan */
+  --accent-foreground: 180 45% 90%; /* #d9f0f5 - Light cyan */
+
   /* State colors (adjusted for dark background) */
-  --destructive: 358 72% 55%;          /* #f87171 - Lighter red */
+  --destructive: 358 72% 55%; /* #f87171 - Lighter red */
   --destructive-foreground: 0 0% 100%; /* #ffffff - White */
-  
-  --success: 150 47% 45%;              /* #34d399 - Lighter green */
-  --success-foreground: 0 0% 100%;     /* #ffffff - White */
-  
-  --warning: 36 96% 63%;               /* #fbbf24 - Lighter amber */
-  --warning-foreground: 234 32% 10%;   /* #16202b - Dark (for contrast) */
-  
-  --info: 202 100% 70%;                /* #60a5fa - Lighter blue */
-  --info-foreground: 234 32% 10%;      /* #16202b - Dark (for contrast) */
-  
+
+  --success: 150 47% 45%; /* #34d399 - Lighter green */
+  --success-foreground: 0 0% 100%; /* #ffffff - White */
+
+  --warning: 36 96% 63%; /* #fbbf24 - Lighter amber */
+  --warning-foreground: 234 32% 10%; /* #16202b - Dark (for contrast) */
+
+  --info: 202 100% 70%; /* #60a5fa - Lighter blue */
+  --info-foreground: 234 32% 10%; /* #16202b - Dark (for contrast) */
+
   /* Borders and inputs */
-  --border: 230 21% 22%;               /* #2d3748 - Dark border */
-  --input: 230 21% 22%;                /* #2d3748 - Input border */
-  --ring: 226 100% 77%;                /* #7c9eff - Focus ring (same as primary) */
-  
+  --border: 230 21% 22%; /* #2d3748 - Dark border */
+  --input: 230 21% 22%; /* #2d3748 - Input border */
+  --ring: 226 100% 77%; /* #7c9eff - Focus ring (same as primary) */
+
   /* Chart colors (brighter for visibility) */
-  --chart-1: 226 100% 77%;             /* Bright blue */
-  --chart-2: 267 80% 72%;              /* Bright purple */
-  --chart-3: 202 100% 70%;             /* Bright cyan */
-  --chart-4: 150 47% 45%;              /* Bright green */
-  --chart-5: 36 96% 63%;               /* Bright orange */
-  
+  --chart-1: 226 100% 77%; /* Bright blue */
+  --chart-2: 267 80% 72%; /* Bright purple */
+  --chart-3: 202 100% 70%; /* Bright cyan */
+  --chart-4: 150 47% 45%; /* Bright green */
+  --chart-5: 36 96% 63%; /* Bright orange */
+
   /* Sidebar (app shell) */
-  --sidebar: 232 32% 9%;               /* Dark sidebar bg */
-  --sidebar-foreground: 222 22% 88%;   /* Light sidebar text */
-  --sidebar-primary: 226 100% 77%;     /* Primary in sidebar */
+  --sidebar: 232 32% 9%; /* Dark sidebar bg */
+  --sidebar-foreground: 222 22% 88%; /* Light sidebar text */
+  --sidebar-primary: 226 100% 77%; /* Primary in sidebar */
   --sidebar-primary-foreground: 232 32% 9%;
-  --sidebar-accent: 229 26% 16%;       /* Sidebar hover */
+  --sidebar-accent: 229 26% 16%; /* Sidebar hover */
   --sidebar-accent-foreground: 220 27% 96%;
-  --sidebar-border: 229 26% 16%;       /* Sidebar borders */
-  --sidebar-ring: 226 100% 77%;        /* Sidebar focus ring */
+  --sidebar-border: 229 26% 16%; /* Sidebar borders */
+  --sidebar-ring: 226 100% 77%; /* Sidebar focus ring */
 }
 
 @layer base {
@@ -427,55 +427,22 @@
 
   @keyframes gradient {
     0% {
-      background: radial-gradient(
-        circle at 30% 20%,
-        rgba(59, 130, 246, 0.15) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 70% 60%,
-        rgba(147, 51, 234, 0.12) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 50% 100%,
-        rgba(6, 182, 212, 0.1) 0%,
-        transparent 50%
-      );
+      background:
+        radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(147, 51, 234, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
     }
     50% {
-      background: radial-gradient(
-        circle at 70% 30%,
-        rgba(59, 130, 246, 0.12) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 30% 70%,
-        rgba(147, 51, 234, 0.15) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 50% 0%,
-        rgba(6, 182, 212, 0.1) 0%,
-        transparent 50%
-      );
+      background:
+        radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 30% 70%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
     }
     100% {
-      background: radial-gradient(
-        circle at 30% 20%,
-        rgba(59, 130, 246, 0.15) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 70% 60%,
-        rgba(147, 51, 234, 0.12) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 50% 100%,
-        rgba(6, 182, 212, 0.1) 0%,
-        transparent 50%
-      );
+      background:
+        radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(147, 51, 234, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
     }
   }
 

@@ -78,10 +78,7 @@ export const SplitEditor = () => {
         {showResults ? (
           <div className="space-y-3">
             {testCases.map((test, idx) => (
-              <div
-                key={idx}
-                className="rounded-none border border-border bg-accent p-4"
-              >
+              <div key={idx} className="rounded-none border border-border bg-accent p-4">
                 <div className="mb-2 flex items-center gap-2 font-mono text-xs text-foreground">
                   {test.passed ? (
                     <CheckCircle2 className="h-4 w-4 text-success" />

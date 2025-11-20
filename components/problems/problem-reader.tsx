@@ -437,11 +437,7 @@ function ProblemReaderContent({
 
             {problem.content.hints ? (
               <ProblemSection id="notes" title="Notes & Hints">
-                <Markdown
-                  content={problem.content.hints}
-                  problemId={problem.id}
-                  field="Notes"
-                />
+                <Markdown content={problem.content.hints} problemId={problem.id} field="Notes" />
               </ProblemSection>
             ) : null}
 

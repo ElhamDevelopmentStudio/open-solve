@@ -10,7 +10,12 @@ const commands = [
   { id: "signup", label: "Sign Up", href: "/sign-up", shortcut: "S" },
   { id: "signin", label: "Sign In", href: "/sign-in", shortcut: "I" },
   { id: "docs", label: "Documentation", href: "https://docs.opensolve.dev", shortcut: "D" },
-  { id: "github", label: "View on GitHub", href: "https://github.com/ElhamDevelopmentStudio/open-solve", shortcut: "G" },
+  {
+    id: "github",
+    label: "View on GitHub",
+    href: "https://github.com/ElhamDevelopmentStudio/open-solve",
+    shortcut: "G",
+  },
 ];
 
 export const CommandPalette = () => {
@@ -20,7 +25,7 @@ export const CommandPalette = () => {
   const router = useRouter();
 
   const filteredCommands = commands.filter((cmd) =>
-    cmd.label.toLowerCase().includes(search.toLowerCase())
+    cmd.label.toLowerCase().includes(search.toLowerCase()),
   );
 
   useEffect(() => {

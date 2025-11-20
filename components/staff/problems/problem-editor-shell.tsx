@@ -1214,7 +1214,9 @@ export function ProblemEditorShell({ problemId }: { problemId: string }) {
                 </Button>
                 <Button
                   variant="default"
-                  onClick={() => publish.mutate({ problemId, visibility: metadataState.visibility })}
+                  onClick={() =>
+                    publish.mutate({ problemId, visibility: metadataState.visibility })
+                  }
                   disabled={publish.isPending}
                 >
                   Publish

@@ -15,8 +15,7 @@ const alertVariants = cva(
           "text-success bg-success/10 border-success/30 [&>svg]:text-current *:data-[slot=alert-description]:text-success/90",
         warning:
           "text-warning bg-warning/10 border-warning/30 [&>svg]:text-current *:data-[slot=alert-description]:text-warning/90",
-        info:
-          "text-info bg-info/10 border-info/30 [&>svg]:text-current *:data-[slot=alert-description]:text-info/90",
+        info: "text-info bg-info/10 border-info/30 [&>svg]:text-current *:data-[slot=alert-description]:text-info/90",
       },
     },
     defaultVariants: {
@@ -44,7 +43,10 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-title"
-      className={cn("col-start-2 line-clamp-1 min-h-4 font-mono font-bold tracking-tight", className)}
+      className={cn(
+        "col-start-2 line-clamp-1 min-h-4 font-mono font-bold tracking-tight",
+        className,
+      )}
       {...props}
     />
   );

@@ -50,7 +50,15 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { forwardRef, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {
   relevance: "Relevance",

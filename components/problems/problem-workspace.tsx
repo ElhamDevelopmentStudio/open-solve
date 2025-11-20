@@ -220,9 +220,7 @@ export function ProblemWorkspace({
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(draftKey);
     if (stored) {
-      startTransition(() =>
-        setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: stored })),
-      );
+      startTransition(() => setCodeByLanguage((prev) => ({ ...prev, [activeLanguage]: stored })));
     }
   }, [draftKey, activeLanguage]);
 
