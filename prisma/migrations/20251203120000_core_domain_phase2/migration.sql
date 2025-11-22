@@ -581,7 +581,8 @@ CREATE INDEX "User_status_role_idx" ON "User"("status", "role");
 CREATE UNIQUE INDEX "Problem_currentVersionId_key" ON "Problem"("currentVersionId");
 
 -- CreateIndex
-CREATE INDEX "Problem_state_visibility_difficultyId_createdAt_idx" ON "Problem"("state", "visibility", "difficultyId", "createdAt");
+-- Ensure the Problem composite index exists without colliding when earlier migrations already created it
+CREATE INDEX IF NOT EXISTS "Problem_state_visibility_difficultyId_createdAt_idx" ON "Problem"("state", "visibility", "difficultyId", "createdAt" DESC);
 
 -- CreateIndex
 CREATE INDEX "Tag_category_isFeatured_idx" ON "Tag"("category", "isFeatured");
@@ -594,6 +595,12 @@ CREATE INDEX "Submission_userId_problemId_createdAt_idx" ON "Submission"("userId
 
 -- CreateIndex
 CREATE INDEX "Submission_problemId_verdictCode_createdAt_idx" ON "Submission"("problemId", "verdictCode", "createdAt");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Submission_contestId_userId_idx" ON "Submission"("contestId", "userId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Submission_contestId_problemId_userId_idx" ON "Submission"("contestId", "problemId", "userId");
 
 -- CreateIndex
 CREATE INDEX "Submission_codeHash_idx" ON "Submission"("codeHash");

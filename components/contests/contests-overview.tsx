@@ -1,5 +1,6 @@
 "use client";
 
+import { contestsConfig } from "@/config/contests";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
@@ -10,10 +11,12 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { CellContext } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
-import { ArrowRight, Clock, Sparkles, Trophy, Users } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { ArrowRight, Users } from "@/components/icons";
+
+const overviewConfig = contestsConfig.overview;
 
 export const ContestsOverview = () => {
   const router = useRouter();
@@ -39,14 +42,12 @@ export const ContestsOverview = () => {
   const contestRows = useMemo(() => {
     if (!overview.data) return [];
     const rows: ContestSummary[] = [];
-
     if (overview.data.featured) {
       rows.push(overview.data.featured);
     }
     rows.push(...overview.data.live);
     rows.push(...overview.data.upcoming);
     rows.push(...overview.data.past.slice(0, 10));
-
     return rows;
   }, [overview.data]);
 
@@ -63,19 +64,21 @@ export const ContestsOverview = () => {
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border text-sm font-semibold uppercase",
+                "flex size-10 items-center justify-center border-2 text-xs font-bold uppercase",
                 row.original.state === "RUNNING"
-                  ? "border-success/50 bg-success/10 text-success"
+                  ? "border-success text-success"
                   : row.original.state === "UPCOMING"
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/60 bg-muted/60 text-muted-foreground",
+                    ? "border-primary text-primary"
+                    : "border-border text-muted-foreground",
               )}
             >
               {row.original.name.slice(0, 2)}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{row.original.name}</p>
-              <p className="truncate text-xs text-muted-foreground">@{row.original.slug}</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold">{row.original.name}</p>
+              <p className="truncate text-[11px] uppercase text-muted-foreground">
+                @{row.original.slug}
+              </p>
             </div>
           </div>
         ),
@@ -85,11 +88,11 @@ export const ContestsOverview = () => {
         header: "Timing",
         cell: ({ row }: CellContext<ContestSummary, unknown>) => (
           <div className="text-xs">
-            <p className="font-medium">
+            <p className="font-semibold">
               {formatDistanceToNow(new Date(row.original.startsAt), { addSuffix: true })}
             </p>
             <p className="text-muted-foreground">
-              {format(new Date(row.original.startsAt), "MMM d, HH:mm")}
+              {format(new Date(row.original.startsAt), "MMM d • HH:mm")}
             </p>
           </div>
         ),
@@ -98,13 +101,10 @@ export const ContestsOverview = () => {
         accessorKey: "state",
         header: "Status",
         cell: ({ row }: CellContext<ContestSummary, unknown>) => (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <ContestStateBadge state={row.original.state} />
             {row.original.isRated ? (
-              <Badge
-                variant="secondary"
-                className="w-fit rounded-full border border-primary/30 bg-primary/5 text-[10px] text-primary"
-              >
+              <Badge variant="outline" className="text-[10px] uppercase">
                 Rated
               </Badge>
             ) : null}
@@ -117,7 +117,7 @@ export const ContestsOverview = () => {
         cell: ({ row }: CellContext<ContestSummary, unknown>) => (
           <div className="flex items-center gap-2 text-xs">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{row.original.registrationCount.toLocaleString()}</span>
+            <span className="font-semibold">{row.original.registrationCount.toLocaleString()}</span>
           </div>
         ),
       },
@@ -130,14 +130,11 @@ export const ContestsOverview = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/contests/${row.original.slug}`);
-            }}
+            className="h-8 px-3 text-xs font-bold uppercase"
             onMouseEnter={() => prefetchContestDetail(row.original.slug)}
-            className="h-8 rounded-lg"
+            onClick={() => router.push(`/contests/${row.original.slug}`)}
           >
-            View
+            Open
             <ArrowRight className="ml-1 h-3.5 w-3.5" />
           </Button>
         ),
@@ -147,141 +144,186 @@ export const ContestsOverview = () => {
 
   if (overview.isLoading) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 animate-fade-in">
-        <div>
-          <Skeleton className="h-10 w-64 rounded-xl" />
-          <Skeleton className="mt-3 h-5 w-96 rounded-lg" />
-        </div>
-        <div className="premium-card rounded-2xl p-8">
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </div>
+      <div className="space-y-8 font-mono">
+        <Skeleton className="h-48 w-full border-2 border-border" />
+        <Skeleton className="h-32 w-full border-2 border-border" />
+        <Skeleton className="h-96 w-full border-2 border-border" />
       </div>
     );
   }
 
-  const featuredContest = overview.data?.featured;
   const liveCount = overview.data?.live.length ?? 0;
   const upcomingCount = overview.data?.upcoming.length ?? 0;
+  const pastCount = overview.data?.past.length ?? 0;
+  const stats = [
+    { ...overviewConfig.stats[0], value: liveCount },
+    { ...overviewConfig.stats[1], value: upcomingCount },
+    { ...overviewConfig.stats[2], value: pastCount },
+  ];
+  const featuredContest = overview.data?.featured ?? null;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 animate-fade-in">
-      <div className="space-y-3">
-        <h1 className="text-4xl font-bold tracking-tight">Contests</h1>
-        <p className="text-base text-muted-foreground">
-          Compete in rated coding challenges and climb the leaderboard
-        </p>
-
-        <div className="flex flex-wrap gap-3 pt-2">
-          <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">{liveCount} Live</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-card/50 px-4 py-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{upcomingCount} Upcoming</span>
-          </div>
-        </div>
-      </div>
-
-      {featuredContest ? (
-        <div className="premium-card group overflow-hidden rounded-2xl p-0">
-          <div className="relative flex flex-col gap-6 p-8 md:flex-row md:items-center">
-            <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-
-            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg">
-              <Trophy className="h-8 w-8 text-primary-foreground" />
+    <div className="space-y-12 font-mono text-foreground">
+      <section className="border-2 border-border bg-card p-6 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.35em] text-primary/70">
+              {overviewConfig.hero.marker}
+              <span className="inline-flex items-center gap-2 border border-border px-3 py-1 text-[10px] tracking-[0.25em] text-muted-foreground">
+                <span className="h-2 w-2 animate-pulse bg-primary" />
+                {overviewConfig.hero.badge}
+              </span>
             </div>
-
-            <div className="flex-1 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
-                  Featured
-                </Badge>
-                <ContestStateBadge state={featuredContest.state} />
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight">{featuredContest.name}</h2>
-              {featuredContest.description ? (
-                <p className="text-sm text-muted-foreground">{featuredContest.description}</p>
-              ) : null}
-              <div className="flex flex-wrap gap-4 pt-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  {formatDistanceToNow(new Date(featuredContest.startsAt), { addSuffix: true })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  {featuredContest.registrationCount.toLocaleString()} participants
-                </div>
-              </div>
-            </div>
-
-            <Button asChild size="lg" className="rounded-xl md:flex-shrink-0">
-              <Link
-                href={`/contests/${featuredContest.slug}`}
-                onMouseEnter={() => prefetchContestDetail(featuredContest.slug)}
+            <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+              {overviewConfig.hero.headline.line1}
+              <br />
+              {overviewConfig.hero.headline.line2}
+              <br />
+              <span className="bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
+                {overviewConfig.hero.headline.line3}
+              </span>
+            </h1>
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              {overviewConfig.hero.description}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild className="h-11 px-6 text-xs font-bold uppercase">
+                <Link href={overviewConfig.hero.primaryCta.href}>
+                  {overviewConfig.hero.primaryCta.label}
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 border-2 border-border px-6 text-xs font-bold uppercase"
               >
-                View Contest
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+                <Link href={overviewConfig.hero.secondaryCta.href}>
+                  {overviewConfig.hero.secondaryCta.label}
+                </Link>
+              </Button>
+            </div>
+          </div>
+          <div className="grid w-full gap-3 sm:grid-cols-3 lg:max-w-md">
+            {stats.map((stat) => (
+              <div key={stat.key} className="border border-border bg-background px-4 py-3">
+                <p className="text-[11px] uppercase text-muted-foreground">{stat.label}</p>
+                <p className="text-3xl font-black">{stat.value}</p>
+              </div>
+            ))}
           </div>
         </div>
-      ) : null}
+      </section>
 
-      <div className="premium-card space-y-6 rounded-2xl p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">All Contests</h2>
-            <p className="text-sm text-muted-foreground">Browse and join upcoming competitions</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => overview.refetch()}
-            className="rounded-xl"
-          >
-            Refresh
-          </Button>
+      <section className="space-y-4">
+        <SectionHeader
+          marker={overviewConfig.featured.marker}
+          title={overviewConfig.featured.title}
+          description={overviewConfig.featured.description}
+        />
+        <div className="border-2 border-border bg-card p-6">
+          {featuredContest ? (
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
+              <div className="space-y-2">
+                <ContestStateBadge state={featuredContest.state} />
+                <h2 className="text-3xl font-black tracking-tight">{featuredContest.name}</h2>
+                <p className="text-sm text-muted-foreground">{featuredContest.description}</p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <StatBlock
+                    label="Starts"
+                    value={format(new Date(featuredContest.startsAt), "MMM d • HH:mm")}
+                    helper={formatDistanceToNow(new Date(featuredContest.startsAt), {
+                      addSuffix: true,
+                    })}
+                  />
+                  <StatBlock label="Problems" value={featuredContest.problemCount.toString()} />
+                  <StatBlock
+                    label="Registrations"
+                    value={featuredContest.registrationCount.toLocaleString()}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Badge variant="outline" className="text-[10px] uppercase">
+                  {featuredContest.isRated ? "Rated" : "Unrated"}
+                </Badge>
+                <Button
+                  className="h-12 px-6 text-xs font-bold uppercase"
+                  onClick={() => router.push(`/contests/${featuredContest.slug}`)}
+                >
+                  {overviewConfig.featured.ctaLabel}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{overviewConfig.featured.fallback}</p>
+          )}
         </div>
+      </section>
 
+      <section className="space-y-4">
+        <SectionHeader
+          marker={overviewConfig.table.marker}
+          title={overviewConfig.table.title}
+          description={overviewConfig.table.description}
+        />
         <DataTable
           columns={contestColumns}
           data={contestRows}
           searchKey="name"
-          searchPlaceholder="Search contests..."
-          pageSize={10}
-          onRowClick={(row) => router.push(`/contests/${row.slug}`)}
+          searchPlaceholder={overviewConfig.table.searchPlaceholder}
+          enableColumnVisibility={false}
+          enablePagination={false}
+          className="border-2 border-border bg-card p-4"
           onRowHover={(row) => prefetchContestDetail(row.slug)}
-          emptyMessage="No contests available at the moment."
+          onRowClick={(row) => router.push(`/contests/${row.slug}`)}
         />
-      </div>
+      </section>
     </div>
   );
 };
 
-const ContestStateBadge = ({ state }: { state: string }) => {
-  const styles: Record<string, string> = {
-    UPCOMING: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200",
-    RUNNING: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
-    FINISHED: "bg-muted text-muted-foreground",
-    ARCHIVED: "bg-muted text-muted-foreground",
-  };
-
-  const labelMap: Record<string, string> = {
-    UPCOMING: "Upcoming",
-    RUNNING: "Live",
-    FINISHED: "Finished",
-    ARCHIVED: "Archived",
-  };
-
+function SectionHeader({
+  marker,
+  title,
+  description,
+}: {
+  marker: string;
+  title: string;
+  description?: string;
+}) {
   return (
-    <span
-      className={cn(
-        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        styles[state] ?? "bg-muted text-muted-foreground",
-      )}
-    >
-      {labelMap[state] ?? state.toLowerCase()}
-    </span>
+    <div className="space-y-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary/80">{marker}</p>
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <h2 className="text-3xl font-black tracking-tight">{title}</h2>
+        {description ? (
+          <p className="text-sm text-muted-foreground lg:max-w-xl">{description}</p>
+        ) : null}
+      </div>
+    </div>
   );
-};
+}
+
+function ContestStateBadge({ state }: { state: ContestSummary["state"] }) {
+  const base = "border px-3 py-1 text-[11px] font-bold uppercase";
+  switch (state) {
+    case "RUNNING":
+      return <span className={cn(base, "border-success text-success")}>Live</span>;
+    case "UPCOMING":
+      return <span className={cn(base, "border-primary text-primary")}>Upcoming</span>;
+    default:
+      return (
+        <span className={cn(base, "border-muted-foreground text-muted-foreground")}>Past</span>
+      );
+  }
+}
+
+function StatBlock({ label, value, helper }: { label: string; value: string; helper?: string }) {
+  return (
+    <div className="border border-border bg-background px-4 py-3">
+      <p className="text-[11px] uppercase text-muted-foreground">{label}</p>
+      <p className="text-xl font-black tracking-tight">{value}</p>
+      {helper ? <p className="text-xs text-muted-foreground">{helper}</p> : null}
+    </div>
+  );
+}

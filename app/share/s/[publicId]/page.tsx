@@ -3,7 +3,7 @@ import { CommandPalette } from "@/components/marketing/command-palette";
 import { SubmissionReadOnlyView } from "@/components/submissions/submission-detail";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Code2, Link as LinkIcon, ShieldCheck, Share2 } from "@/components/icons";
+import { Code2, Link as LinkIcon, ShieldCheck } from "@/components/icons";
 import { sharedPageConfig } from "@/config/share";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
 import { notFound } from "next/navigation";
@@ -86,18 +86,6 @@ export default async function SharedSubmissionPage({
                       <div className="mt-1 text-sm font-bold">{item.value}</div>
                     </div>
                   ))}
-                </div>
-                <div className="space-y-2 border-2 border-border bg-background px-4 py-3">
-                  <div className="flex items-center gap-2 text-xs font-mono uppercase text-primary">
-                    <Share2 className="h-4 w-4" />
-                    {sharedPageConfig.link.label}
-                  </div>
-                  <div className="flex items-center justify-between gap-2 font-mono text-sm">
-                    <span className="truncate">{sharedPageConfig.link.copy}</span>
-                    <span className="rounded-none border border-border px-2 py-1 text-xs">
-                      {resolved.publicId}
-                    </span>
-                  </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Link href={sharedPageConfig.ctas.primary.href}>

@@ -34,3 +34,4 @@ export function verifyRecoveryCode(code: string, hashedCode: string): boolean {
   const computedHash = hashRecoveryCode(code);
   return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(hashedCode));
 }
+

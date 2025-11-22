@@ -7,28 +7,28 @@ import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -43,15 +43,15 @@ import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/t
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { invalidateTags } from "@/lib/react-query/invalidation";
 import {
-  sessionQueryOptions,
-  submissionDraftQueryOptions,
-  submissionHistoryQueryOptions,
+    sessionQueryOptions,
+    submissionDraftQueryOptions,
+    submissionHistoryQueryOptions,
 } from "@/lib/react-query/policies";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
 import type {
-  SampleRunResult,
-  SubmissionDetailPayload,
-  SubmissionHistoryEntry,
+    SampleRunResult,
+    SubmissionDetailPayload,
+    SubmissionHistoryEntry,
 } from "@/lib/submissions/types";
 import { trpc } from "@/lib/trpc/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
@@ -60,17 +60,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
-  Alert01Icon,
-  BookOpen01Icon,
-  CircleArrowReload01Icon,
-  Copy01Icon,
-  Legal01Icon,
-  PlayIcon,
-  SaveEnergy01Icon,
-  SentIcon,
-  Settings02Icon,
-  TimeScheduleIcon,
-  Train01Icon,
+    Alert01Icon,
+    BookOpen01Icon,
+    CircleArrowReload01Icon,
+    Copy01Icon,
+    Legal01Icon,
+    PlayIcon,
+    SaveEnergy01Icon,
+    SentIcon,
+    Settings02Icon,
+    TimeScheduleIcon,
+    Train01Icon,
 } from "hugeicons-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -585,8 +585,8 @@ export function ProblemWorkspace({
               Device Not Supported
             </h3>
             <p className="font-mono text-sm text-muted-foreground">
-              The code editor requires a larger screen. Please use a laptop, desktop, or tablet (iPad
-              or larger) to solve problems.
+              The code editor requires a larger screen. Please use a laptop, desktop, or tablet
+              (iPad or larger) to solve problems.
             </p>
           </div>
           <div className="flex flex-col gap-2 font-mono text-xs text-muted-foreground">
@@ -599,7 +599,10 @@ export function ProblemWorkspace({
 
       <section
         id="editor"
-        className={cn("hidden border-2 border-border bg-background p-4 md:block md:p-6", examModeClass)}
+        className={cn(
+          "hidden border-2 border-border bg-background p-4 md:block md:p-6",
+          examModeClass,
+        )}
       >
         <div className="flex flex-wrap items-center gap-3 md:gap-4">
           <div className="flex-1 min-w-[200px]">
@@ -798,14 +801,18 @@ export function ProblemWorkspace({
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent className="rounded-none border-t-2 border-border bg-background">
           <DrawerHeader className="px-4 md:px-6">
-            <DrawerTitle className="font-mono text-lg font-bold md:text-xl">{problem.title}</DrawerTitle>
+            <DrawerTitle className="font-mono text-lg font-bold md:text-xl">
+              {problem.title}
+            </DrawerTitle>
             <DrawerDescription className="font-mono text-xs text-muted-foreground md:text-sm">
               Quick reference of the statement without leaving the editor.
             </DrawerDescription>
           </DrawerHeader>
           <ScrollArea className="max-h-[60vh] px-4 pb-6 md:max-h-[70vh] md:px-6">
             <article className="prose prose-sm font-mono dark:prose-invert">
-              <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">{problem.content.statement}</pre>
+              <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">
+                {problem.content.statement}
+              </pre>
             </article>
           </ScrollArea>
         </DrawerContent>
@@ -891,7 +898,9 @@ function EditorColumn(props: {
               )}
             >
               <span className="h-2 w-2 rounded-none bg-current" />
-              <span className="hidden md:inline">{autosaveState === "saving" ? "Saving…" : "Saved"}</span>
+              <span className="hidden md:inline">
+                {autosaveState === "saving" ? "Saving…" : "Saved"}
+              </span>
               <span className="md:hidden">{autosaveState === "saving" ? "…" : "✓"}</span>
             </span>
             <Button
@@ -1154,7 +1163,10 @@ function SidePanel(props: {
               <p className="text-muted-foreground">No cloud drafts yet.</p>
             ) : (
               drafts.map((draft) => (
-                <div key={draft.id} className="border-2 border-border bg-background p-2 text-left md:p-3">
+                <div
+                  key={draft.id}
+                  className="border-2 border-border bg-background p-2 text-left md:p-3"
+                >
                   <div className="flex items-center justify-between font-mono text-[10px] text-muted-foreground md:text-xs">
                     <span className="truncate">{new Date(draft.updatedAt).toLocaleString()}</span>
                     <Badge
@@ -1239,7 +1251,9 @@ function ResultPanel({ result }: { result: WorkspaceResult | null }) {
       </div>
       <div>
         {result.cases.length === 0 ? (
-          <p className="font-mono text-[10px] text-muted-foreground md:text-xs">No per-test details yet.</p>
+          <p className="font-mono text-[10px] text-muted-foreground md:text-xs">
+            No per-test details yet.
+          </p>
         ) : (
           <div className="max-h-64 space-y-2 overflow-auto md:max-h-80">
             {result.cases.map((test) => (

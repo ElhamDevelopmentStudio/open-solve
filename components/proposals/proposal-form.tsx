@@ -1,14 +1,16 @@
 "use client";
 
+import { proposalsConfig } from "@/config/proposals";
 import { trpc } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "@/components/icons";
 import { useRouter } from "next/navigation";
+
+type Sample = { input: string; output: string };
 
 export function ProposalForm() {
   const router = useRouter();
@@ -19,7 +21,7 @@ export function ProposalForm() {
     },
   });
 
-  const [samples, setSamples] = useState([{ input: "", output: "" }]);
+  const [samples, setSamples] = useState<Sample[]>([{ input: "", output: "" }]);
   const [form, setForm] = useState({
     title: "",
     intendedDifficulty: "Medium",
@@ -28,21 +30,36 @@ export function ProposalForm() {
   });
 
   const canSubmit =
-    form.title.length >= 8 &&
-    form.statement.length >= 200 &&
-    samples.every((sample) => sample.input && sample.output) &&
+    form.title.length >= proposalsConfig.form.requirements.titleMin &&
+    form.statement.length >= proposalsConfig.form.requirements.statementMin &&
+    samples.every((sample) => sample.input.trim() && sample.output.trim()) &&
     form.originalityConfirmed;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Submit a proposal</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-10 font-mono text-foreground">
+      <section className="border-2 border-border bg-card p-6 md:p-8">
+        <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">
+          {proposalsConfig.form.hero.marker}
+        </p>
+        <h1 className="mt-2 text-4xl font-black tracking-tight">
+          {proposalsConfig.form.hero.title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          {proposalsConfig.form.hero.description}
+        </p>
+      </section>
+
+      <section className="border-2 border-border bg-card p-6 space-y-6">
+        <SectionHeader
+          marker={proposalsConfig.form.sections.metadata.marker}
+          title={proposalsConfig.form.sections.metadata.title}
+          description={proposalsConfig.form.sections.metadata.description}
+        />
         <Input
-          placeholder="Title"
+          placeholder="Problem title"
           value={form.title}
           onChange={(event) => setForm((state) => ({ ...state, title: event.target.value }))}
+          className="border-2 border-border"
         />
         <Input
           placeholder="Intended difficulty"
@@ -50,60 +67,79 @@ export function ProposalForm() {
           onChange={(event) =>
             setForm((state) => ({ ...state, intendedDifficulty: event.target.value }))
           }
+          className="border-2 border-border"
+        />
+      </section>
+
+      <section className="border-2 border-border bg-card p-6 space-y-4">
+        <SectionHeader
+          marker={proposalsConfig.form.sections.statement.marker}
+          title={proposalsConfig.form.sections.statement.title}
+          description={proposalsConfig.form.sections.statement.description}
         />
         <Textarea
-          placeholder="Statement (Markdown supported)"
+          placeholder="Statement (markdown supported)"
           value={form.statement}
           onChange={(event) => setForm((state) => ({ ...state, statement: event.target.value }))}
-          rows={12}
+          rows={14}
+          className="border-2 border-border"
         />
-        <div>
-          <p className="text-sm font-medium">Samples</p>
-          <div className="space-y-3">
-            {samples.map((sample, index) => (
-              <div key={index} className="rounded-xl border border-white/5 bg-muted/10 p-3">
-                <Textarea
-                  placeholder="Input"
-                  value={sample.input}
-                  onChange={(event) => {
-                    const next = [...samples];
-                    next[index] = { ...next[index], input: event.target.value };
-                    setSamples(next);
-                  }}
-                  rows={3}
-                />
-                <Textarea
-                  placeholder="Output"
-                  className="mt-2"
-                  value={sample.output}
-                  onChange={(event) => {
-                    const next = [...samples];
-                    next[index] = { ...next[index], output: event.target.value };
-                    setSamples(next);
-                  }}
-                  rows={3}
-                />
-              </div>
-            ))}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2"
-            onClick={() => setSamples((list) => [...list, { input: "", output: "" }])}
-          >
-            Add sample
-          </Button>
+        <p className="text-xs text-muted-foreground">{proposalsConfig.form.helper.length}</p>
+      </section>
+
+      <section className="border-2 border-border bg-card p-6 space-y-4">
+        <SectionHeader
+          marker={proposalsConfig.form.sections.samples.marker}
+          title={proposalsConfig.form.sections.samples.title}
+          description={proposalsConfig.form.sections.samples.description}
+        />
+        <div className="space-y-4">
+          {samples.map((sample, index) => (
+            <div key={index} className="border border-border bg-background p-4 space-y-3">
+              <Textarea
+                placeholder="Input"
+                value={sample.input}
+                onChange={(event) => updateSample(index, { input: event.target.value })}
+                rows={3}
+                className="border border-border"
+              />
+              <Textarea
+                placeholder="Output"
+                value={sample.output}
+                onChange={(event) => updateSample(index, { output: event.target.value })}
+                rows={3}
+                className="border border-border"
+              />
+            </div>
+          ))}
         </div>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 border-2 border-border px-4 text-xs font-bold uppercase"
+          onClick={() => setSamples((list) => [...list, { input: "", output: "" }])}
+        >
+          {proposalsConfig.form.sections.samples.addLabel}
+        </Button>
+        <p className="text-xs text-muted-foreground">{proposalsConfig.form.helper.samples}</p>
+      </section>
+
+      <section className="border-2 border-border bg-card p-6 space-y-4">
+        <SectionHeader
+          marker={proposalsConfig.form.sections.confirmation.marker}
+          title={proposalsConfig.form.sections.confirmation.title}
+          description={proposalsConfig.form.sections.confirmation.description}
+        />
+        <label className="flex items-start gap-3 text-xs text-muted-foreground">
           <input
             type="checkbox"
             checked={form.originalityConfirmed}
             onChange={(event) =>
               setForm((state) => ({ ...state, originalityConfirmed: event.target.checked }))
             }
+            className="mt-0.5 h-4 w-4 border-2 border-border bg-background"
           />
-          I confirm this problem idea is original.
+          {proposalsConfig.form.sections.confirmation.checkboxLabel}
         </label>
         <Button
           disabled={!canSubmit || submit.isPending}
@@ -116,11 +152,46 @@ export function ProposalForm() {
               originalityConfirmed: form.originalityConfirmed,
             })
           }
+          className="h-11 px-6 text-xs font-bold uppercase"
         >
-          {submit.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Submit proposal
+          {submit.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {proposalsConfig.form.pendingLabel}
+            </>
+          ) : (
+            proposalsConfig.form.submitLabel
+          )}
         </Button>
-      </CardContent>
-    </Card>
+      </section>
+    </div>
+  );
+
+  function updateSample(index: number, patch: Partial<Sample>) {
+    setSamples((current) =>
+      current.map((sample, idx) => (idx === index ? { ...sample, ...patch } : sample)),
+    );
+  }
+}
+
+function SectionHeader({
+  marker,
+  title,
+  description,
+}: {
+  marker: string;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">{marker}</p>
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <h2 className="text-2xl font-black tracking-tight">{title}</h2>
+        {description ? (
+          <p className="text-xs text-muted-foreground lg:max-w-3xl">{description}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "@/components/icons";
 import { formatDistanceToNow } from "date-fns";
+import { staffConfig } from "@/config/staff";
 
 export function StaffProblemsDashboard() {
   const router = useRouter();
@@ -27,29 +28,59 @@ export function StaffProblemsDashboard() {
     },
   });
 
+  const totalCount = data?.length ?? 0;
+  const draftCount = data?.filter((problem) => problem.state === "DRAFT").length ?? 0;
+  const reviewCount = data?.filter((problem) => problem.state === "REVIEW").length ?? 0;
+  const publishedCount = data?.filter((problem) => problem.state === "PUBLISHED").length ?? 0;
+  const metricValueByKey: Record<string, number> = {
+    total: totalCount,
+    draft: draftCount,
+    review: reviewCount,
+    published: publishedCount,
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase text-muted-foreground">Workspace</p>
-          <h1 className="text-2xl font-semibold">Draft Problems</h1>
+    <div className="space-y-8 font-mono text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary/70">
+            {staffConfig.problems.list.marker}
+          </p>
+          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
+            {staffConfig.problems.list.title}
+          </h1>
         </div>
         <Button
           onClick={() => createProblem.mutate({ title: "Untitled Problem" })}
           disabled={createProblem.isPending}
+          className="h-12 border-2 border-primary bg-primary px-6 text-xs font-bold uppercase text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
         >
           {createProblem.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Plus className="mr-2 h-4 w-4" />
-          )}{" "}
-          New draft
+          )}
+          {createProblem.isPending
+            ? staffConfig.problems.list.actions.creating
+            : staffConfig.problems.list.actions.newDraft}
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Draft queue</CardTitle>
+      <div className="grid gap-px bg-border/50 sm:grid-cols-2 lg:grid-cols-4">
+        {staffConfig.problems.list.metrics.map((metric) => (
+          <div key={metric.key} className="bg-card p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80">
+              {metric.title}
+            </p>
+            <p className="text-2xl font-black">{metricValueByKey[metric.key] ?? 0}</p>
+            <p className="text-xs text-muted-foreground">{metric.description}</p>
+          </div>
+        ))}
+      </div>
+
+      <Card className="border-2 border-border bg-background shadow-sm shadow-primary/10">
+        <CardHeader className="border-b-2 border-border">
+          <CardTitle className="text-xl font-black">{staffConfig.problems.list.title}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -58,28 +89,30 @@ export function StaffProblemsDashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>State</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Updated</TableHead>
+                  <TableHead>{staffConfig.problems.list.columns.title}</TableHead>
+                  <TableHead>{staffConfig.problems.list.columns.state}</TableHead>
+                  <TableHead>{staffConfig.problems.list.columns.author}</TableHead>
+                  <TableHead>{staffConfig.problems.list.columns.updated}</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.map((problem) => (
-                  <TableRow key={problem.id}>
+                  <TableRow key={problem.id} className="transition-colors hover:border-primary/40">
                     <TableCell>
-                      <div>
-                        <p className="font-medium">{problem.slug}</p>
+                      <div className="space-y-1">
+                        <p className="font-bold uppercase tracking-tight">{problem.slug}</p>
                         <p className="text-xs text-muted-foreground">
                           {problem.difficulty?.code ?? "Unrated"}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{problem.state.toLowerCase()}</Badge>
+                      <Badge variant="outline" className="border-2 uppercase">
+                        {problem.state.toLowerCase()}
+                      </Badge>
                     </TableCell>
-                    <TableCell>{problem.author?.handle ?? "Unknown"}</TableCell>
+                    <TableCell className="text-sm">{problem.author?.handle ?? "Unknown"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(problem.updatedAt), { addSuffix: true })}
                     </TableCell>
@@ -88,8 +121,9 @@ export function StaffProblemsDashboard() {
                         variant="ghost"
                         size="sm"
                         onClick={() => router.push(`/staff/problems/${problem.id}`)}
+                        className="border-2 border-border px-3 text-[11px] font-bold uppercase hover:border-primary/50"
                       >
-                        Open
+                        {staffConfig.problems.list.actions.open}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -97,7 +131,17 @@ export function StaffProblemsDashboard() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-sm text-muted-foreground">No drafts yet.</p>
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <p className="text-sm text-muted-foreground">{staffConfig.problems.list.empty}</p>
+              <Button
+                variant="outline"
+                onClick={() => createProblem.mutate({ title: "Untitled Problem" })}
+                disabled={createProblem.isPending}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {staffConfig.problems.list.actions.newDraft}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

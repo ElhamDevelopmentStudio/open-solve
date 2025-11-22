@@ -1,10 +1,12 @@
+import { HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { HydrationBoundary } from "@tanstack/react-query";
+
+import { CommandPalette } from "@/components/marketing/command-palette";
+import { ProfileClient } from "@/components/profile/profile-client";
+import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { buildHydrationState, prefetchTrpcQuery } from "@/lib/react-query/server";
 import { createTRPCCaller } from "@/lib/trpc/server/caller";
-import { publicContentQueryOptions } from "@/lib/react-query/policies";
-import { ProfileClient } from "@/components/profile/profile-client";
 
 export const dynamic = "force-dynamic";
 
@@ -54,8 +56,11 @@ export default async function UserProfilePage({ params }: { params: Params | Pro
   }
 
   return (
-    <HydrationBoundary state={state}>
-      <ProfileClient handle={handle} />
-    </HydrationBoundary>
+    <>
+      <CommandPalette />
+      <HydrationBoundary state={state}>
+        <ProfileClient handle={handle} />
+      </HydrationBoundary>
+    </>
   );
 }
