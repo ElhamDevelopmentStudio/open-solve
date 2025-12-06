@@ -6,22 +6,22 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,33 +31,33 @@ import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { publicContentQueryOptions } from "@/lib/react-query/policies";
 import { trpc } from "@/lib/trpc/client";
 import type {
-  ProblemFiltersInput,
-  ProblemListItem,
-  ProblemListResponse,
+    ProblemFiltersInput,
+    ProblemListItem,
+    ProblemListResponse,
 } from "@/lib/trpc/router/problems";
 import { cn } from "@/lib/utils";
 import { stableHash } from "@/lib/utils/stable-hash";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { formatDistanceToNow } from "date-fns";
 import {
-  ArrowRight01Icon,
-  Cancel01Icon,
-  Clock01Icon,
-  FilterIcon,
-  Search01Icon,
-  SlidersHorizontalIcon,
+    ArrowRight01Icon,
+    Cancel01Icon,
+    Clock01Icon,
+    FilterIcon,
+    Search01Icon,
+    SlidersHorizontalIcon,
 } from "hugeicons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
 import {
-  forwardRef,
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    forwardRef,
+    startTransition,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 
 const SORT_LABELS: Record<ProblemFiltersInput["sort"], string> = {

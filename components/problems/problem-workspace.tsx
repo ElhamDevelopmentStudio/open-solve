@@ -7,28 +7,28 @@ import { SubmissionStatusBadge } from "@/components/submissions/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -43,15 +43,15 @@ import type { ContestProblemAntiCheatContext } from "@/lib/contests/anti-cheat/t
 import { getDefaultCodeStub } from "@/lib/problems/editor-presets";
 import { invalidateTags } from "@/lib/react-query/invalidation";
 import {
-  sessionQueryOptions,
-  submissionDraftQueryOptions,
-  submissionHistoryQueryOptions,
+    sessionQueryOptions,
+    submissionDraftQueryOptions,
+    submissionHistoryQueryOptions,
 } from "@/lib/react-query/policies";
 import { simulateSampleRun } from "@/lib/submissions/simulator";
 import type {
-  SampleRunResult,
-  SubmissionDetailPayload,
-  SubmissionHistoryEntry,
+    SampleRunResult,
+    SubmissionDetailPayload,
+    SubmissionHistoryEntry,
 } from "@/lib/submissions/types";
 import { trpc } from "@/lib/trpc/client";
 import { ProblemDetailPayload } from "@/lib/trpc/router/problems";
@@ -60,17 +60,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
-  Alert01Icon,
-  BookOpen01Icon,
-  CircleArrowReload01Icon,
-  Copy01Icon,
-  Legal01Icon,
-  PlayIcon,
-  SaveEnergy01Icon,
-  SentIcon,
-  Settings02Icon,
-  TimeScheduleIcon,
-  Train01Icon,
+    Alert01Icon,
+    BookOpen01Icon,
+    CircleArrowReload01Icon,
+    Copy01Icon,
+    Legal01Icon,
+    PlayIcon,
+    SaveEnergy01Icon,
+    SentIcon,
+    Settings02Icon,
+    TimeScheduleIcon,
+    Train01Icon,
 } from "hugeicons-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";

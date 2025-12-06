@@ -73,3 +73,4 @@ export const discussionsConfig = {
 };
 
 export type DiscussionsConfig = typeof discussionsConfig;
+

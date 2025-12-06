@@ -1,5 +1,5 @@
-import { CommandPalette } from "@/components/marketing/command-palette";
 import { ArrowRight } from "@/components/icons";
+import { CommandPalette } from "@/components/marketing/command-palette";
 import { Button } from "@/components/ui/button";
 import { problemsConfig } from "@/config/problems";
 import Link from "next/link";

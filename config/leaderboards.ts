@@ -78,3 +78,4 @@ export const leaderboardsConfig = {
 };
 
 export type LeaderboardsConfig = typeof leaderboardsConfig;
+
