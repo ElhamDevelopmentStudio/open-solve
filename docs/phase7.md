@@ -152,7 +152,7 @@ Provide a **deterministic, secure, horizontally scalable** judging platform with
 ## 7.13 Implementation Notes (OpenSolve)
 
 - **RabbitMQ wiring:** submissions publish to `judge.submissions` (quorum queue, DLX-backed). If RabbitMQ is missing the API falls back to the inline simulator so local dev still works.
-- **Worker runtime:** `npm run judge:worker` (or `docker compose --profile judge up judge-worker`) launches the consumer that executes sandboxes via Docker. Profiles map to stock images (`gcc`, `python`, `temurin`, `node`) with `--network none`, CPU/memory caps, and `pids-limit`.
+- **Worker runtime:** `npm run judge:worker` (or `docker compose up worker`) launches the consumer that executes sandboxes via Docker. Profiles map to stock images (`gcc`, `python`, `temurin`, `node`) with `--network none`, CPU/memory caps, and `pids-limit`.
 - **Drivers:** `JUDGE_SANDBOX_DRIVER=mock` reuses the simulator; otherwise Docker is required. `JUDGE_SANDBOX_WORKDIR` controls ephemeral workspace roots under `/tmp`.
 - **Manual + hybrid mode:** `Problem.judgeMode` governs routing. HYBRID problems run auto checks and then flip to `MANUAL_PENDING`; MANUAL problems skip the worker entirely. The staff console (`/staff/judge/manual`) lets curators post `MANUAL_ACCEPTED|REJECTED|PARTIAL` verdicts with notes/score.
 - **Statuses/verdicts:** Prisma enums now include `QUEUED|SUCCEEDED|RETRYING|MANUAL_PENDING` plus the manual verdict codes. Client polling slows to 30s while a submission is waiting on manual review.

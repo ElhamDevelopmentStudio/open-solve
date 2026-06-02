@@ -12,4 +12,4 @@ This folder documents every operational surface for the Docker-first rollout.
 | `ci-cd.md`              | Explanation of `.github/workflows/ci-cd.yml`, required stages, and artifact outputs.   |
 | `rollouts.md`           | Canary/blue-green guidance for compose stacks and Fly apps.                            |
 
-All env files referenced here live under `ops/env/*.env`; compose specs live in `ops/docker/*.yml`. Update these docs whenever infrastructure changes.
+All env files referenced here live under `ops/env/*.env`. The root `docker-compose.yml` is the default local contributor stack; staging and production compose specs live in `ops/docker/*.yml`. Update these docs whenever infrastructure changes.

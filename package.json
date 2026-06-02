@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:ps": "docker compose ps",
+    "docker:reset": "docker compose down --volumes --remove-orphans",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint \"components/contests/**/*\" \"components/staff/contests/**/*\" \"app/(platform)/contests/page.tsx\" \"app/staff/contests/page.tsx\" \"app/(platform)/problems/[slug]/submissions/page.tsx\" \"app/(platform)/submissions/[submissionId]/page.tsx\" \"app/share/s/[publicId]/page.tsx\" \"app/(reader)/u/[handle]/page.tsx\" \"app/(auth)/auth/verify-email/page.tsx\" \"app/(auth)/auth/forgot-password/page.tsx\" \"app/(platform)/settings/account/page.tsx\" \"app/(platform)/settings/security/page.tsx\" \"app/api/webhooks/resend/route.ts\" --max-warnings=0",

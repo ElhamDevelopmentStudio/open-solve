@@ -13,7 +13,7 @@ _Scope:_ Validate the telemetry pipeline, analytics ingestion, CI/CD artifacts, 
 
 ### 2.1 Dev/staging env instructions don’t match Compose files
 
-- **Where:** `ops/infra/local-setup.md:18-36`, `ops/infra/staging-deployment.md:18-39`, `ops/docker/docker-compose.dev.yml:6-30`, `ops/docker/docker-compose.staging.yml`, `ops/docker/docker-compose.prod.yml`
+- **Where:** `ops/infra/local-setup.md:18-36`, `ops/infra/staging-deployment.md:18-39`, `docker-compose.yml`, `ops/docker/docker-compose.staging.yml`, `ops/docker/docker-compose.prod.yml`
 - **Issue:** The docs tell operators to copy `ops/env/<env>.env` into a host-specific file (e.g., `dev.local.env`, `staging.runtime.env`) and pass it via `--env-file`. However, each Compose file hardcodes `env_file: ../env/<env>.env` for the `web` and `worker` services. Passing `--env-file` only influences variable substitution, not the container env. So any secrets edited in the runtime file are ignored; containers still read the checked-in template values.
 - **Fix:** Update the compose specs to honor an override (e.g., respect an `ENV_FILE` variable or point `env_file` to the path supplied via `--env-file`), or change the docs to instruct editing `ops/env/<env>.env` directly so the instructions are accurate.
 - **Impact:** Operators think they’re using secure secrets but the stacks boot with the default placeholder values, breaking deployments and leaking demo credentials in real environments.

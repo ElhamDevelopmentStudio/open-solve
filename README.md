@@ -51,7 +51,22 @@ Clone, fork, or self-host — and help make OpenSolve the ultimate open coding p
 ```bash
 git clone https://github.com/opensolve/opensolve.git
 cd opensolve
-docker-compose up
+docker compose up --build
+```
+
+Prefer shortcuts? Use `make up` or `npm run docker:up`. The default stack starts the web app, Postgres, RabbitMQ, MinIO, and the judge worker.
+
+Useful local URLs:
+
+- App: http://localhost:3000
+- RabbitMQ: http://localhost:15672 (`opensolve` / `opensolve`)
+- MinIO console: http://localhost:9001 (`opensolve` / `opensolve-secret`)
+
+To use a private local env file, copy `ops/env/dev.env` and point Compose at it:
+
+```bash
+cp ops/env/dev.env ops/env/dev.local.env
+OPENSOLVE_ENV_FILE=./ops/env/dev.local.env docker compose up --build
 ```
 
 ---
@@ -88,24 +103,24 @@ Uploads (avatars, attachments, future problem assets) use the S3 API via `lib/st
    MINIO_ROOT_PASSWORD=opensolve-secret
    ```
 
-2. **Start MinIO** (runs alongside the Next.js app):
+2. **Start MinIO** (or run the full stack with `docker compose up --build`):
 
    ```bash
-   docker compose up minio -d
+   docker compose up -d minio minio-mc
    ```
 
    - API: `http://localhost:9000`
    - Console UI: `http://localhost:9001`
 
-3. **Provision the bucket (one-time).** Use the bundled MinIO Client profile:
+3. **Provision the bucket (one-time).** The bundled MinIO Client helper is the `minio-mc` service:
 
    ```bash
-   docker compose --profile storage up minio-mc
+   docker compose up minio-mc
    ```
 
    The helper exits after calling `mc mb --ignore-existing local/$MINIO_BUCKET`, so it’s safe to rerun.
 
-4. **Run the app** (`docker compose up app`). Upload routes will now stream directly into your MinIO bucket. In production, point the same variables at any S3-compatible endpoint (e.g., AWS S3, DigitalOcean Spaces, Cloudflare R2) and update `MINIO_PUBLIC_URL` to whatever domain/CDN exposes the objects.
+4. **Run the app** (`docker compose up web`). Upload routes will now stream directly into your MinIO bucket. In production, point the same variables at any S3-compatible endpoint (e.g., AWS S3, DigitalOcean Spaces, Cloudflare R2) and update `MINIO_PUBLIC_URL` to whatever domain/CDN exposes the objects.
 
 If the storage variables are omitted the upload endpoints throw a descriptive error, so you can disable attachments entirely if desired.
 
@@ -123,7 +138,7 @@ Phase 7 introduces a standalone judge worker that consumes RabbitMQ queues and r
    ```
 
 2. **Start RabbitMQ + worker**
-   - Dev mode: `docker compose --profile judge up rabbitmq judge-worker`
+   - Dev mode: `docker compose up rabbitmq worker`
    - Bare metal: run `npm run judge:worker` alongside `npm run dev`
 
 3. **Manual review tools** — staff can review hybrid/manual submissions at `/staff/judge/manual`, posting `MANUAL_ACCEPTED`, `MANUAL_PARTIAL`, or `MANUAL_REJECTED` verdicts with notes/score.
@@ -179,7 +194,7 @@ Remember: admins can publish/archive problems, edit roles, and bypass reviewer r
 
 ## 🛠 Deployment & Ops
 
-- **Environment parity:** `ops/env/*.env` hold canonical dev/staging/prod configs. Pair them with the compose files under `ops/docker/`.
+- **Environment parity:** `ops/env/*.env` hold canonical dev/staging/prod configs. Root `docker-compose.yml` is the contributor default; staging and production compose specs live under `ops/docker/`.
 - **CI/CD pipeline:** `.github/workflows/ci-cd.yml` runs lint → tests → Playwright → Docker builds → image pushes → staged releases.
 - **Deploy targets:** use the docker-compose stacks under `ops/docker/` for dev/staging/VM setups or the [`fly.toml`](fly.toml) spec for Fly.io. Secrets live in `ops/env/*.env`.
 - **Runbooks:** outages, judge issues, DB slowdowns, and restore drills live under [`docs/quality`](docs/quality).
